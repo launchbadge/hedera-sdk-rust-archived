@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    'hedera-sdk-rust'
+]
+
+[patch.crates-io]
+# Unreleased
+simple_asn1 = { git = "https://github.com/acw/simple_asn1.git", rev = "daf9cf18fdea18fb42a004e05ab1f1da9d4123eb" }
