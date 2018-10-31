@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/hedera/hedera-sdk/hedera-sdk-go"
+	"github.com/mehcode/hedera-sdk/hedera-sdk-go"
 	"os"
 	"time"
 )
