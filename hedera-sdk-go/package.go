@@ -1,7 +1,6 @@
 package hedera
 
-// #cgo CFLAGS: -I ../hedera-sdk-rust/src/bridge/include
-// #cgo LDFLAGS: -L ../target/release -l hedera
-// #cgo linux LDFLAGS: -l openssl -l c++
-// #cgo darwin LDFLAGS: -framework Security -l c++
+// #cgo CFLAGS: -I ./include
+// #cgo LDFLAGS: -l hedera
+// #cgo darwin LDFLAGS: -L libs/x86_64-apple-darwin -framework Security -l c++
 import "C"
