@@ -6,9 +6,9 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new(address: &str) -> Self {
+    pub fn new(address: impl AsRef<str>) -> Self {
         let env = Arc::new(EnvBuilder::new().build());
-        let ch = ChannelBuilder::new(env).connect(address);
+        let ch = ChannelBuilder::new(env).connect(address.as_ref());
 
         Self { channel: ch }
     }

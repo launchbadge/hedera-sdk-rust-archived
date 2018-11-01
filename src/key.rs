@@ -286,15 +286,15 @@ impl PublicKey {
 
     /// Format a `PublicKey` as a vec of bytes in ASN.1 format.
     pub fn to_bytes(&self) -> Vec<u8> {
-        // NOTE: Not possible to fail. Only fail case the library has is if OIDs are
-        // given       incorrectly.
         der_encode(&SubjectPublicKeyInfo {
             algorithm: AlgorithmIdentifier {
                 algorithm: OID_ED25519.clone(),
             },
             subject_public_key: self.0.to_bytes().to_vec(),
         })
-        .unwrap()
+            // NOTE: Not possible to fail. Only fail case the library has is if OIDs are
+            //       given incorrectly.
+            .unwrap()
     }
 
     /// Verify a signature on a message with this `PublicKey`.
@@ -388,15 +388,15 @@ impl SecretKey {
 
     /// Format a `SecretKey` as a vec of bytes in ASN.1 format.
     pub fn to_bytes(&self) -> Vec<u8> {
-        // NOTE: Not possible to fail. Only fail case the library has is if OIDs are
-        // given       incorrectly.
         der_encode(&PrivateKeyInfo {
             algorithm: AlgorithmIdentifier {
                 algorithm: OID_ED25519.clone(),
             },
             private_key: self.0.to_bytes().to_vec(),
         })
-        .unwrap()
+            // NOTE: Not possible to fail. Only fail case the library has is if OIDs are
+            //       given incorrectly.
+            .unwrap()
     }
 
     /// Derive a `PublicKey` from this `SecretKey`.
@@ -511,6 +511,7 @@ impl ToProto<proto::BasicTypes::Signature> for Signature {
 mod tests {
     use super::{KeyPair, PublicKey, SecretKey, Signature};
     use crate::test::{black_box, Bencher};
+    use failure::Error;
 
     const KEY_PUBLIC_ASN1_HEX: &str =
         "302a300506032b6570032100e0c8ec2758a5879ffac226a13c0c516b799e72e35141a0dd828f94d37988a4b7";
@@ -527,65 +528,77 @@ mod tests {
     const SIGNATURE: &str = "73bea53f31ca9c42a422ecb7516ec08d0bbd1a6bfd630ccf10ec1872454814d29f4a8011129cd007eab544af01a75f508285b591e5bed24b68f927751e49e30e";
 
     #[test]
-    fn test_parse() {
-        let public_key1: PublicKey = KEY_PUBLIC_ASN1_HEX.parse().unwrap();
-        let public_key2: PublicKey = KEY_PUBLIC_HEX.parse().unwrap();
+    fn test_parse() -> Result<(), Error> {
+        let public_key1: PublicKey = KEY_PUBLIC_ASN1_HEX.parse()?;
+        let public_key2: PublicKey = KEY_PUBLIC_HEX.parse()?;
 
-        let secret_key1: SecretKey = KEY_SECRET_ASN1_HEX.parse().unwrap();
-        let secret_key2: SecretKey = KEY_SECRET_HEX.parse().unwrap();
+        let secret_key1: SecretKey = KEY_SECRET_ASN1_HEX.parse()?;
+        let secret_key2: SecretKey = KEY_SECRET_HEX.parse()?;
 
         assert_eq!(public_key1, public_key2);
         assert_eq!(secret_key1.0.as_bytes(), secret_key2.0.as_bytes());
         assert_eq!(public_key1, secret_key1.public());
         assert_eq!(public_key2, secret_key2.public());
         assert_eq!(secret_key2.public(), secret_key1.public());
+
+        Ok(())
     }
 
     #[test]
-    fn test_verify() {
-        let key: PublicKey = KEY_PUBLIC_ASN1_HEX.parse().unwrap();
-        let signature: Signature = SIGNATURE.parse().unwrap();
-        let verified = key.verify(MESSAGE.as_bytes(), &signature).unwrap();
+    fn test_verify() -> Result<(), Error> {
+        let key: PublicKey = KEY_PUBLIC_ASN1_HEX.parse()?;
+        let signature: Signature = SIGNATURE.parse()?;
+        let verified = key.verify(MESSAGE.as_bytes(), &signature)?;
 
         assert!(verified);
+
+        Ok(())
     }
 
     #[test]
-    fn test_sign() {
-        let key: SecretKey = KEY_SECRET_ASN1_HEX.parse().unwrap();
+    fn test_sign() -> Result<(), Error> {
+        let key: SecretKey = KEY_SECRET_ASN1_HEX.parse()?;
         let signature = key.sign(MESSAGE.as_bytes());
 
         assert_eq!(SIGNATURE, signature.to_string());
+
+        Ok(())
     }
 
     #[test]
-    fn test_generate() {
+    fn test_generate() -> Result<(), Error> {
         let key = SecretKey::generate();
         let signature = key.sign(MESSAGE.as_bytes());
-        let verified = key.public().verify(MESSAGE.as_bytes(), &signature).unwrap();
+        let verified = key.public().verify(MESSAGE.as_bytes(), &signature)?;
 
         assert!(verified);
+
+        Ok(())
     }
 
     #[test]
-    fn test_display() {
-        let public_key1: PublicKey = KEY_PUBLIC_ASN1_HEX.parse().unwrap();
-        let public_key2: PublicKey = public_key1.to_string().parse().unwrap();
+    fn test_display() -> Result<(), Error> {
+        let public_key1: PublicKey = KEY_PUBLIC_ASN1_HEX.parse()?;
+        let public_key2: PublicKey = public_key1.to_string().parse()?;
 
-        let secret_key1: SecretKey = KEY_SECRET_ASN1_HEX.parse().unwrap();
-        let secret_key2: SecretKey = secret_key1.to_string().parse().unwrap();
+        let secret_key1: SecretKey = KEY_SECRET_ASN1_HEX.parse()?;
+        let secret_key2: SecretKey = secret_key1.to_string().parse()?;
 
         assert_eq!(public_key1, public_key2);
         assert_eq!(secret_key1.0.as_bytes(), secret_key2.0.as_bytes());
+
+        Ok(())
     }
 
     #[test]
-    fn test_key_pair_generate() {
+    fn test_key_pair_generate() -> Result<(), Error> {
         let key_pair = KeyPair::generate();
         let signature = key_pair.sign(MESSAGE.as_bytes());
-        let verified = key_pair.verify(MESSAGE.as_bytes(), &signature).unwrap();
+        let verified = key_pair.verify(MESSAGE.as_bytes(), &signature)?;
 
         assert!(verified);
+
+        Ok(())
     }
 
     #[bench]
@@ -600,7 +613,7 @@ mod tests {
 
     #[bench]
     fn bench_sign(b: &mut Bencher) {
-        let key: SecretKey = KEY_SECRET_ASN1_HEX.parse().unwrap();
+        let key: SecretKey = KEY_SECRET_ASN1_HEX.parse()?;
 
         b.iter(|| {
             black_box(key.sign(MESSAGE.as_bytes()));
@@ -615,7 +628,7 @@ mod tests {
         let signature = key.sign(message);
 
         b.iter(|| {
-            black_box(public.verify(message, &signature).unwrap());
+            black_box(public.verify(message, &signature)?);
         });
     }
 }

@@ -69,6 +69,7 @@ impl ToProto<proto::Timestamp::Timestamp> for Timestamp {
 #[cfg(test)]
 mod tests {
     use super::Timestamp;
+    use failure::Error;
 
     #[test]
     fn test_display() {
@@ -81,12 +82,14 @@ mod tests {
     }
 
     #[test]
-    fn test_parse() {
+    fn test_parse() -> Result<(), Error> {
         let timestamp = Timestamp {
             seconds: 1234567,
             nanos: 10001,
         };
 
-        assert_eq!("1234567.10001".parse::<Timestamp>().unwrap(), timestamp);
+        assert_eq!("1234567.10001".parse::<Timestamp>()?, timestamp);
+
+        Ok(())
     }
 }

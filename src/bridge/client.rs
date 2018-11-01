@@ -8,7 +8,7 @@ pub extern "C" fn hedera_client_dial(address: *const c_char) -> *mut Client {
     debug_assert!(!address.is_null());
 
     let address = unsafe { CStr::from_ptr(address) };
-    let address = address.to_str().unwrap();
+    let address = address.to_string_lossy();
 
     let client = Client::new(address);
     let client = Box::new(client);

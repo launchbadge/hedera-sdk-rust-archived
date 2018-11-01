@@ -1,70 +1,66 @@
 use crate::{PublicKey, SecretKey};
-use ed25519_dalek::{PUBLIC_KEY_LENGTH, SECRET_KEY_LENGTH};
 use libc::c_char;
 use mbox::MString;
-use std::{ffi::CStr, mem};
+use std::ffi::CStr;
 
 // Secret Key
 // ----------------------------------------------------------------------------
 
-pub(crate) type CSecretKey = [u8; SECRET_KEY_LENGTH];
-
 #[doc(hidden)]
 #[no_mangle]
-pub extern "C" fn hedera_secret_key_generate() -> CSecretKey {
-    unsafe { mem::transmute(SecretKey::generate()) }
+pub extern "C" fn hedera_secret_key_generate() -> SecretKey {
+    SecretKey::generate()
 }
 
 #[doc(hidden)]
 #[no_mangle]
-pub extern "C" fn hedera_secret_key_to_str(p: *mut CSecretKey) -> *mut c_char {
+pub extern "C" fn hedera_secret_key_to_str(p: *mut SecretKey) -> *mut c_char {
     debug_assert!(!p.is_null());
 
-    let key: &SecretKey = unsafe { mem::transmute(&*p) };
+    let key: &SecretKey = unsafe { &*p };
 
     MString::from_str(&key.to_string())
         .into_mbox_with_sentinel()
-        .into_raw() as _
+        .into_raw() as *mut c_char
 }
 
 #[doc(hidden)]
 #[no_mangle]
-pub extern "C" fn hedera_secret_key_from_str(s: *const c_char) -> CSecretKey {
+pub extern "C" fn hedera_secret_key_from_str(s: *const c_char, out: *mut SecretKey) -> u64 {
     debug_assert!(!s.is_null());
+    debug_assert!(!out.is_null());
 
     let s = unsafe { CStr::from_ptr(s) };
-    let s = s.to_str().unwrap();
+    let s = s.to_string_lossy();
 
-    // FIXME: Handle errors
-    let key: SecretKey = s.parse().unwrap();
+    let key = try_ffi!(s.parse());
+    unsafe {
+        *out = key;
+    }
 
-    unsafe { mem::transmute(key) }
+    0
 }
 
 // Public Key
 // ----------------------------------------------------------------------------
 
-pub(crate) type CPublicKey = [u8; PUBLIC_KEY_LENGTH];
-
 #[doc(hidden)]
 #[no_mangle]
-pub extern "C" fn hedera_public_key_from_secret_key(p: *mut CSecretKey) -> CPublicKey {
+pub extern "C" fn hedera_public_key_from_secret_key(p: *mut SecretKey) -> PublicKey {
     debug_assert!(!p.is_null());
 
-    let secret: &SecretKey = unsafe { mem::transmute(&*p) };
-    let public = secret.public();
-
-    unsafe { mem::transmute(public) }
+    let secret: &SecretKey = unsafe { &*p };
+    secret.public()
 }
 
 #[doc(hidden)]
 #[no_mangle]
-pub extern "C" fn hedera_public_key_to_str(p: *mut CPublicKey) -> *mut c_char {
+pub extern "C" fn hedera_public_key_to_str(p: *mut PublicKey) -> *mut c_char {
     debug_assert!(!p.is_null());
 
-    let key: &PublicKey = unsafe { mem::transmute(&*p) };
+    let key: &PublicKey = unsafe { &*p };
 
     MString::from_str(&key.to_string())
         .into_mbox_with_sentinel()
-        .into_raw() as _
+        .into_raw() as *mut c_char
 }

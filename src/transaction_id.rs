@@ -86,7 +86,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse() {
+    fn test_parse() -> Result<(), Error> {
         let account_id = AccountId::new(7, 5, 1001);
         let transaction_valid_start = Timestamp {
             seconds: 1234567,
@@ -98,8 +98,10 @@ mod tests {
         };
 
         assert_eq!(
-            "7:5:1001@1234567.10001".parse::<TransactionId>().unwrap(),
+            "7:5:1001@1234567.10001".parse::<TransactionId>()?,
             transaction_id
         );
+
+        OK(())
     }
 }

@@ -1,7 +1,6 @@
-use super::{CPublicKey, CSecretKey};
 use crate::{
-    AccountId, Client, Transaction, TransactionCreateAccount, TransactionCryptoTransfer,
-    TransactionResponse,
+    AccountId, Client, PublicKey, SecretKey, Transaction, TransactionCreateAccount,
+    TransactionCryptoTransfer, TransactionResponse,
 };
 use libc::c_char;
 use std::{ffi::CStr, mem};
@@ -38,7 +37,7 @@ pub extern "C" fn hedera_transaction_set_memo(tx: *mut Transaction<()>, memo: *c
     debug_assert!(!memo.is_null());
 
     let memo = unsafe { CStr::from_ptr(memo) };
-    let memo = memo.to_str().unwrap();
+    let memo = memo.to_string_lossy();
 
     let mut tx = unsafe { Box::from_raw(tx) };
     tx.memo(memo);
@@ -48,11 +47,10 @@ pub extern "C" fn hedera_transaction_set_memo(tx: *mut Transaction<()>, memo: *c
 
 #[doc(hidden)]
 #[no_mangle]
-pub extern "C" fn hedera_transaction_sign(tx: *mut Transaction<()>, secret: CSecretKey) {
+pub extern "C" fn hedera_transaction_sign(tx: *mut Transaction<()>, secret: SecretKey) {
     debug_assert!(!tx.is_null());
 
     let mut tx = unsafe { Box::from_raw(tx) };
-    let secret = unsafe { mem::transmute(secret) };
 
     tx.sign(secret);
 
@@ -107,14 +105,14 @@ pub extern "C" fn hedera_transaction__create_account__new(
 #[no_mangle]
 pub extern "C" fn hedera_transaction__create_account__set_key(
     tx: *mut Transaction<TransactionCreateAccount>,
-    public: CPublicKey,
+    public: PublicKey,
 ) {
     debug_assert!(!tx.is_null());
 
     let mut tx = unsafe { Box::from_raw(tx) };
-    let public = unsafe { mem::transmute(public) };
 
     tx.key(public);
+
     mem::forget(tx);
 }
 

@@ -28,6 +28,8 @@ itertools = "0.7"
 grpcio = "0.4.0"
 futures = "0.1"
 chrono = "0.4.6"
+slotmap = { version = "0.3.0", features = [ "unstable" ] }
+parking_lot = "0.6.4"
 
 [build-dependencies]
 protoc-grpcio = "0.3.0"
