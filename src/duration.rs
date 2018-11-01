@@ -1,5 +1,5 @@
 use crate::proto::{self, ToProto};
-use failure::{Error};
+use failure::Error;
 
 #[derive(Debug, PartialEq)]
 #[repr(C)]

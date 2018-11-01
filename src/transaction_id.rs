@@ -1,3 +1,4 @@
+use crate::error::ErrorKind;
 use crate::{
     proto::{self, ToProto},
     timestamp::Timestamp,
@@ -6,7 +7,6 @@ use crate::{
 use failure::Error;
 use itertools::Itertools;
 use std::{fmt, str::FromStr};
-use crate::error::HederaError;
 
 #[derive(Debug, PartialEq)]
 #[repr(C)]
@@ -34,9 +34,10 @@ impl FromStr for TransactionId {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (account_id, timestamp) = s.split('@').next_tuple().ok_or_else(|| {
-            HederaError::ImproperFormat{format: "{realm}:{shard}:{account}@{seconds}.{nanos}"}
-        })?;
+        let (account_id, timestamp) = s
+            .split('@')
+            .next_tuple()
+            .ok_or_else(|| ErrorKind::Parse("{realm}:{shard}:{account}@{seconds}.{nanos}"))?;
 
         Ok(Self {
             account_id: account_id.parse()?,

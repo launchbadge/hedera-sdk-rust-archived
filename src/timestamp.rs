@@ -1,9 +1,9 @@
 use chrono::{Duration, Utc};
+use crate::error::ErrorKind;
 use crate::proto::{self, ToProto};
 use failure::Error;
 use itertools::Itertools;
 use std::{fmt, str::FromStr};
-use crate::error::HederaError;
 
 #[derive(Debug, PartialEq)]
 #[repr(C)]
@@ -38,7 +38,7 @@ impl FromStr for Timestamp {
         let (seconds, nanos) = s
             .split('.')
             .next_tuple()
-            .ok_or_else(|| HederaError::ImproperFormat{format: "{seconds}.{nanos}" })?;
+            .ok_or_else(|| ErrorKind::Parse("{seconds}.{nanos}"))?;
 
         Ok(Self {
             seconds: seconds.parse()?,

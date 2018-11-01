@@ -1,11 +1,11 @@
+use crate::error::ErrorKind;
 use crate::{
     proto::{self, ToProto},
     AccountId, Client, Duration, PublicKey, SecretKey, TransactionId,
 };
+use failure::Error;
 use grpcio::Channel;
 use protobuf::{Message, RepeatedField};
-use failure::Error;
-use crate::error::HederaError;
 
 // Transaction
 // ----------------------------------------------------------------------------
@@ -80,7 +80,6 @@ where
     Transaction<T>: ToProto<proto::Transaction::TransactionBody>,
     T: ToProto<proto::Transaction::TransactionBody_oneof_data>,
 {
-
     fn to_proto(&self) -> Result<proto::Transaction::Transaction, Error> {
         let body = ToProto::<proto::Transaction::TransactionBody>::to_proto(self)?;
 
@@ -109,25 +108,16 @@ where
     T: ToProto<proto::Transaction::TransactionBody_oneof_data>,
 {
     fn to_proto(&self) -> Result<proto::Transaction::TransactionBody, Error> {
-
-        // FIXME: Better error message
-        let account_id = match self.operator {
-            Some(account_id) => account_id,
-            None => return Err(HederaError::MissingField{ field: "account_id"})?
-        };
-
+        let account_id = self
+            .operator
+            .ok_or_else(|| ErrorKind::MissingField("account_id"))?;
         let tx_id = TransactionId::new(account_id);
-
         let mut body = proto::Transaction::TransactionBody::new();
-        // FIXME: Better error message
-        let node = match self.node {
-            Some(node) => node,
-            None => return Err(HederaError::MissingField{field: "node"})?
-        };
+        let node = self.node.ok_or_else(|| ErrorKind::MissingField("node"))?;
 
         body.set_nodeAccountID(node.to_proto()?);
         body.set_transactionValidDuration(Duration::new(120, 0).to_proto()?);
-        // FIXME: Figure out a good way to do fees
+        // TODO: Figure out a good way to do fees
         body.set_transactionFee(10);
         body.set_generateRecord(false);
         body.set_transactionID(tx_id.to_proto()?);
@@ -177,14 +167,13 @@ impl Transaction<TransactionCreateAccount> {
 }
 
 impl ToProto<proto::Transaction::TransactionBody_oneof_data> for TransactionCreateAccount {
-
     fn to_proto(&self) -> Result<proto::Transaction::TransactionBody_oneof_data, Error> {
         let mut data = proto::CryptoCreate::CryptoCreateTransactionBody::new();
         data.set_initialBalance(self.initial_balance);
 
         let key = match self.key.as_ref() {
             Some(key) => key,
-            None => return Err(HederaError::MissingField{ field: "public_key"})?
+            None => Err(ErrorKind::MissingField("public_key"))?,
         };
 
         data.set_key(key.to_proto()?);
@@ -223,13 +212,16 @@ impl Transaction<TransactionCryptoTransfer> {
 
 impl ToProto<proto::Transaction::TransactionBody_oneof_data> for TransactionCryptoTransfer {
     fn to_proto(&self) -> Result<proto::Transaction::TransactionBody_oneof_data, Error> {
-
-        let amounts: Result<Vec<proto::CryptoTransfer::AccountAmount>, Error> = self.transfers.iter().map(|(id, amount)| {
-            let mut pb = proto::CryptoTransfer::AccountAmount::new();
-            pb.set_accountID(id.to_proto()?);
-            pb.set_amount(*amount);
-            Ok(pb)
-        }).collect();
+        let amounts: Result<Vec<proto::CryptoTransfer::AccountAmount>, Error> = self
+            .transfers
+            .iter()
+            .map(|(id, amount)| {
+                let mut pb = proto::CryptoTransfer::AccountAmount::new();
+                pb.set_accountID(id.to_proto()?);
+                pb.set_amount(*amount);
+                Ok(pb)
+            })
+            .collect();
 
         let mut transfers = proto::CryptoTransfer::TransferList::new();
         transfers.set_accountAmounts(RepeatedField::from_vec(amounts?));

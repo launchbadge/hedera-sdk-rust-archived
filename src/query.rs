@@ -2,7 +2,7 @@ use crate::{
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
     AccountId, Client, TransactionId,
 };
-use failure::{Error};
+use failure::Error;
 use grpcio::Channel;
 
 // ResponseType
@@ -90,7 +90,6 @@ pub struct QueryGetAccountBalanceAnswer {
 }
 
 impl Query<QueryGetAccountBalance> {
-
     pub fn new(ch: &Client, account: AccountId) -> Self {
         Self {
             channel: ch.channel.clone(),
