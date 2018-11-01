@@ -5,14 +5,14 @@ fn main() {
     let dest_path = Path::new(&out_dir).join("proto");
     fs::create_dir_all(&dest_path).unwrap();
 
-    let proto_src_files = glob_simple("../proto/*.proto");
+    let proto_src_files = glob_simple("./proto/*.proto");
 
     protoc_grpcio::compile_grpc_protos(
         &proto_src_files
             .iter()
             .map(|proto_file| proto_file.as_ref())
             .collect::<Vec<&str>>(),
-        &["../proto"],
+        &["./proto"],
         &dest_path,
     )
     .expect("protoc");

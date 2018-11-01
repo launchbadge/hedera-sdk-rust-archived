@@ -1,2 +1,5 @@
+# Intellij
+.idea/workspace.xml
+
 # Rust build artifacts
 target/
