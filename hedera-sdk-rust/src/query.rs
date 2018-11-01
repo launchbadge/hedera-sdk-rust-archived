@@ -162,7 +162,7 @@ impl Query<QueryGetTransactionReceipt> {
         let account_id = if receipt.has_accountID() {
             Some(Box::new(receipt.take_accountID().into()))
         } else {
-          None
+            None
         };
 
         QueryResponse {

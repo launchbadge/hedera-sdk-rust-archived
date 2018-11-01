@@ -1,5 +1,6 @@
 use crate::{
-    AccountId, Client, Query, QueryGetAccountBalance, QueryGetTransactionReceipt, QueryGetTransactionReceiptAnswer, TransactionId, QueryGetAccountBalanceAnswer, QueryResponse,
+    AccountId, Client, Query, QueryGetAccountBalance, QueryGetAccountBalanceAnswer,
+    QueryGetTransactionReceipt, QueryGetTransactionReceiptAnswer, QueryResponse, TransactionId,
 };
 use std::mem::forget;
 

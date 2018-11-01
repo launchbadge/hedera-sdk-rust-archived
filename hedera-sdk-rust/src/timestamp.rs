@@ -1,4 +1,4 @@
-use chrono::{Utc, Duration};
+use chrono::{Duration, Utc};
 use crate::proto::{self, ToProto};
 use failure::{err_msg, Error};
 use itertools::Itertools;

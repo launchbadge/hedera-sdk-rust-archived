@@ -18,15 +18,27 @@ mod transaction_id;
 #[macro_use]
 mod id;
 
-define_id!(account, AccountId, AccountID, set_accountNum, get_accountNum);
+define_id!(
+    account,
+    AccountId,
+    AccountID,
+    set_accountNum,
+    get_accountNum
+);
 define_id!(file, FileId, FileID, set_fileNum, get_fileNum);
-define_id!(contract, ContractId, ContractID, set_contractNum, get_contractNum);
+define_id!(
+    contract,
+    ContractId,
+    ContractID,
+    set_contractNum,
+    get_contractNum
+);
 
 pub use self::{
     bridge::*,
     client::Client,
     duration::Duration,
-    key::{PublicKey, SecretKey},
+    key::{KeyPair, PublicKey, SecretKey},
     query::*,
     timestamp::Timestamp,
     transaction::*,

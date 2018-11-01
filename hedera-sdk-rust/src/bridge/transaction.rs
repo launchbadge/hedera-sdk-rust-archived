@@ -1,5 +1,8 @@
 use super::{CPublicKey, CSecretKey};
-use crate::{AccountId, Client, Transaction, TransactionCreateAccount, TransactionResponse, TransactionCryptoTransfer};
+use crate::{
+    AccountId, Client, Transaction, TransactionCreateAccount, TransactionCryptoTransfer,
+    TransactionResponse,
+};
 use libc::c_char;
 use std::{ffi::CStr, mem};
 

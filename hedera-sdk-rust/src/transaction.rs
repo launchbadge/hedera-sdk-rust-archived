@@ -175,7 +175,6 @@ impl ToProto<proto::Transaction::TransactionBody_oneof_data> for TransactionCrea
     }
 }
 
-
 // TransactionCryptoTransfer
 // ----------------------------------------------------------------------------
 
@@ -205,12 +204,16 @@ impl Transaction<TransactionCryptoTransfer> {
 
 impl ToProto<proto::Transaction::TransactionBody_oneof_data> for TransactionCryptoTransfer {
     fn to_proto(&self) -> proto::Transaction::TransactionBody_oneof_data {
-        let amounts = self.transfers.iter().map(|(id, amount)| {
-            let mut pb = proto::CryptoTransfer::AccountAmount::new();
-            pb.set_accountID(id.to_proto());
-            pb.set_amount(*amount);
-            pb
-        }).collect();
+        let amounts = self
+            .transfers
+            .iter()
+            .map(|(id, amount)| {
+                let mut pb = proto::CryptoTransfer::AccountAmount::new();
+                pb.set_accountID(id.to_proto());
+                pb.set_amount(*amount);
+                pb
+            })
+            .collect();
 
         let mut transfers = proto::CryptoTransfer::TransferList::new();
         transfers.set_accountAmounts(RepeatedField::from_vec(amounts));
