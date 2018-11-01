@@ -3,9 +3,10 @@ use crate::{
     timestamp::Timestamp,
     AccountId,
 };
-use failure::{err_msg, Error};
+use failure::Error;
 use itertools::Itertools;
 use std::{fmt, str::FromStr};
+use crate::error::HederaError;
 
 #[derive(Debug, PartialEq)]
 #[repr(C)]
@@ -34,7 +35,7 @@ impl FromStr for TransactionId {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (account_id, timestamp) = s.split('@').next_tuple().ok_or_else(|| {
-            err_msg("expected string of the format: {realm}:{shard}:{account}@{seconds}.{nanos}")
+            HederaError::ImproperFormat{format: "{realm}:{shard}:{account}@{seconds}.{nanos}"}
         })?;
 
         Ok(Self {
@@ -54,12 +55,12 @@ impl From<crate::proto::BasicTypes::TransactionID> for TransactionId {
 }
 
 impl ToProto<proto::BasicTypes::TransactionID> for TransactionId {
-    fn to_proto(&self) -> proto::BasicTypes::TransactionID {
+    fn to_proto(&self) -> Result<proto::BasicTypes::TransactionID, Error> {
         let mut id = proto::BasicTypes::TransactionID::new();
-        id.set_transactionValidStart(self.transaction_valid_start.to_proto());
-        id.set_accountID(self.account_id.to_proto());
+        id.set_transactionValidStart(self.transaction_valid_start.to_proto()?);
+        id.set_accountID(self.account_id.to_proto()?);
 
-        id
+        Ok(id)
     }
 }
 

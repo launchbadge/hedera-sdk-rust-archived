@@ -4,6 +4,8 @@ use crate::{
 };
 use grpcio::Channel;
 use protobuf::{Message, RepeatedField};
+use failure::Error;
+use crate::error::HederaError;
 
 // Transaction
 // ----------------------------------------------------------------------------
@@ -51,10 +53,10 @@ where
 
     T: ToProto<proto::Transaction::TransactionBody_oneof_data>,
 {
-    pub fn execute(self) -> TransactionResponse {
+    pub fn execute(self) -> Result<TransactionResponse, Error> {
         use self::proto::Transaction::TransactionBody_oneof_data::*;
 
-        let mut tx: proto::Transaction::Transaction = self.to_proto();
+        let mut tx: proto::Transaction::Transaction = self.to_proto()?;
         let client = proto::CryptoService_grpc::CryptoServiceClient::new(self.channel);
 
         let response = match tx.get_body().data {
@@ -64,13 +66,12 @@ where
             _ => unimplemented!(),
         };
 
-        // FIXME: Handle errors
-        let response = response.unwrap();
+        let response = response?;
 
-        TransactionResponse {
+        Ok(TransactionResponse {
             id: tx.take_body().take_transactionID().into(),
             precheck: response.get_nodeTransactionPrecheckCode() as u8,
-        }
+        })
     }
 }
 
@@ -79,26 +80,27 @@ where
     Transaction<T>: ToProto<proto::Transaction::TransactionBody>,
     T: ToProto<proto::Transaction::TransactionBody_oneof_data>,
 {
-    fn to_proto(&self) -> proto::Transaction::Transaction {
-        let body = ToProto::<proto::Transaction::TransactionBody>::to_proto(self);
+
+    fn to_proto(&self) -> Result<proto::Transaction::Transaction, Error> {
+        let body = ToProto::<proto::Transaction::TransactionBody>::to_proto(self)?;
 
         // NOTE: This cannot fail.
         let body_bytes = body.write_to_bytes().unwrap();
 
-        let signatures = self
+        let signatures: Result<Vec<proto::BasicTypes::Signature>, Error> = self
             .secrets
             .iter()
-            .map(|secret| secret.sign(&body_bytes).to_proto())
+            .map(|secret| Ok(secret.sign(&body_bytes).to_proto()?))
             .collect();
 
         let mut signature_list = proto::BasicTypes::SignatureList::new();
-        signature_list.set_sigs(RepeatedField::from_vec(signatures));
+        signature_list.set_sigs(RepeatedField::from_vec(signatures?));
 
         let mut tx = proto::Transaction::Transaction::new();
         tx.set_body(body);
         tx.set_sigs(signature_list);
 
-        tx
+        Ok(tx)
     }
 }
 
@@ -106,26 +108,37 @@ impl<T> ToProto<proto::Transaction::TransactionBody> for Transaction<T>
 where
     T: ToProto<proto::Transaction::TransactionBody_oneof_data>,
 {
-    fn to_proto(&self) -> proto::Transaction::TransactionBody {
-        // FIXME: Handle errors
-        let tx_id = TransactionId::new(self.operator.unwrap());
+    fn to_proto(&self) -> Result<proto::Transaction::TransactionBody, Error> {
+
+        // FIXME: Better error message
+        let account_id = match self.operator {
+            Some(account_id) => account_id,
+            None => return Err(HederaError::MissingField{ field: "account_id"})?
+        };
+
+        let tx_id = TransactionId::new(account_id);
 
         let mut body = proto::Transaction::TransactionBody::new();
-        // FIXME: Handle errors
-        body.set_nodeAccountID(self.node.unwrap().to_proto());
-        body.set_transactionValidDuration(Duration::new(120, 0).to_proto());
+        // FIXME: Better error message
+        let node = match self.node {
+            Some(node) => node,
+            None => return Err(HederaError::MissingField{field: "node"})?
+        };
+
+        body.set_nodeAccountID(node.to_proto()?);
+        body.set_transactionValidDuration(Duration::new(120, 0).to_proto()?);
         // FIXME: Figure out a good way to do fees
         body.set_transactionFee(10);
         body.set_generateRecord(false);
-        body.set_transactionID(tx_id.to_proto());
-        body.data = Some(self.inner.to_proto());
+        body.set_transactionID(tx_id.to_proto()?);
+        body.data = Some(self.inner.to_proto()?);
         body.set_memo(if let Some(memo) = &self.memo {
             memo.to_owned()
         } else {
             String::new()
         });
 
-        body
+        Ok(body)
     }
 }
 
@@ -164,14 +177,20 @@ impl Transaction<TransactionCreateAccount> {
 }
 
 impl ToProto<proto::Transaction::TransactionBody_oneof_data> for TransactionCreateAccount {
-    fn to_proto(&self) -> proto::Transaction::TransactionBody_oneof_data {
+
+    fn to_proto(&self) -> Result<proto::Transaction::TransactionBody_oneof_data, Error> {
         let mut data = proto::CryptoCreate::CryptoCreateTransactionBody::new();
         data.set_initialBalance(self.initial_balance);
-        // FIXME: Handle errors
-        data.set_key(self.key.as_ref().unwrap().to_proto());
-        data.set_autoRenewPeriod(Duration::new(2592000, 0).to_proto());
 
-        proto::Transaction::TransactionBody_oneof_data::cryptoCreateAccount(data)
+        let key = match self.key.as_ref() {
+            Some(key) => key,
+            None => return Err(HederaError::MissingField{ field: "public_key"})?
+        };
+
+        data.set_key(key.to_proto()?);
+        data.set_autoRenewPeriod(Duration::new(2592000, 0).to_proto()?);
+
+        Ok(proto::Transaction::TransactionBody_oneof_data::cryptoCreateAccount(data))
     }
 }
 
@@ -203,24 +222,21 @@ impl Transaction<TransactionCryptoTransfer> {
 }
 
 impl ToProto<proto::Transaction::TransactionBody_oneof_data> for TransactionCryptoTransfer {
-    fn to_proto(&self) -> proto::Transaction::TransactionBody_oneof_data {
-        let amounts = self
-            .transfers
-            .iter()
-            .map(|(id, amount)| {
-                let mut pb = proto::CryptoTransfer::AccountAmount::new();
-                pb.set_accountID(id.to_proto());
-                pb.set_amount(*amount);
-                pb
-            })
-            .collect();
+    fn to_proto(&self) -> Result<proto::Transaction::TransactionBody_oneof_data, Error> {
+
+        let amounts: Result<Vec<proto::CryptoTransfer::AccountAmount>, Error> = self.transfers.iter().map(|(id, amount)| {
+            let mut pb = proto::CryptoTransfer::AccountAmount::new();
+            pb.set_accountID(id.to_proto()?);
+            pb.set_amount(*amount);
+            Ok(pb)
+        }).collect();
 
         let mut transfers = proto::CryptoTransfer::TransferList::new();
-        transfers.set_accountAmounts(RepeatedField::from_vec(amounts));
+        transfers.set_accountAmounts(RepeatedField::from_vec(amounts?));
 
         let mut data = proto::CryptoTransfer::CryptoTransferTransactionBody::new();
         data.set_transfers(transfers);
 
-        proto::Transaction::TransactionBody_oneof_data::cryptoTransfer(data)
+        Ok(proto::Transaction::TransactionBody_oneof_data::cryptoTransfer(data))
     }
 }

@@ -11,7 +11,6 @@ pub extern "C" fn hedera_account_id_from_str(s: *const c_char) -> AccountId {
     let s = unsafe { CStr::from_ptr(s) };
     let s = s.to_str().unwrap();
 
-    // FIXME: Handle errors
     let key: AccountId = s.parse().unwrap();
 
     unsafe { mem::transmute(key) }

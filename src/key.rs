@@ -331,10 +331,10 @@ impl Display for PublicKey {
 }
 
 impl ToProto<proto::BasicTypes::Key> for PublicKey {
-    fn to_proto(&self) -> proto::BasicTypes::Key {
+    fn to_proto(&self) -> Result<proto::BasicTypes::Key, Error> {
         let mut key = proto::BasicTypes::Key::new();
         key.set_ed25519(self.0.to_bytes().to_vec());
-        key
+        Ok(key)
     }
 }
 
@@ -500,10 +500,10 @@ impl Display for Signature {
 }
 
 impl ToProto<proto::BasicTypes::Signature> for Signature {
-    fn to_proto(&self) -> proto::BasicTypes::Signature {
+    fn to_proto(&self) -> Result<proto::BasicTypes::Signature, Error> {
         let mut signature = proto::BasicTypes::Signature::new();
         signature.set_ed25519(self.0.to_bytes().to_vec());
-        signature
+        Ok(signature)
     }
 }
 

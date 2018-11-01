@@ -36,7 +36,7 @@ macro_rules! define_id {
                     .map(str::parse)
                     .next_tuple()
                     .ok_or_else(|| {
-                        failure::err_msg("expected exactly 3 numbers separated by ':'")
+                        crate::error::HederaError::InvalidID
                     })?;
 
                 Ok(Self::new(shard?, realm?, $field?))
@@ -54,13 +54,14 @@ macro_rules! define_id {
         }
 
         impl crate::proto::ToProto<crate::proto::BasicTypes::$proto> for $name {
-            fn to_proto(&self) -> crate::proto::BasicTypes::$proto {
+
+            fn to_proto(&self) -> Result<crate::proto::BasicTypes::$proto, failure::Error> {
                 let mut proto = crate::proto::BasicTypes::$proto::new();
                 proto.set_shardNum(self.shard);
                 proto.set_realmNum(self.realm);
                 proto.$method_set(self.$field);
 
-                proto
+                Ok(proto)
             }
         }
     };

@@ -8,6 +8,7 @@ extern crate test;
 mod bridge;
 mod client;
 mod duration;
+mod error;
 mod key;
 mod proto;
 mod query;

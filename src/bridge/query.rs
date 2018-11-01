@@ -14,7 +14,7 @@ pub extern "C" fn hedera_query__get_account_balance__send(
     debug_assert!(!query.is_null());
 
     let query = unsafe { Box::from_raw(query) };
-    query.send()
+    query.send().unwrap()
 }
 
 #[doc(hidden)]
@@ -25,7 +25,7 @@ pub extern "C" fn hedera_query__get_transaction_receipt__send(
     debug_assert!(!query.is_null());
 
     let query = unsafe { Box::from_raw(query) };
-    query.send()
+    query.send().unwrap()
 }
 
 // QueryGetAccountBalance

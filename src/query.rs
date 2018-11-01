@@ -2,6 +2,7 @@ use crate::{
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
     AccountId, Client, TransactionId,
 };
+use failure::{Error};
 use grpcio::Channel;
 
 // ResponseType
@@ -38,7 +39,7 @@ impl From<ResponseKind> for proto::QueryHeader::ResponseType {
 // ----------------------------------------------------------------------------
 
 pub trait ToQueryProto {
-    fn to_query_proto(&self, header: QueryHeader) -> Query_oneof_query;
+    fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error>;
 }
 
 // Query
@@ -65,14 +66,14 @@ impl<T: ToQueryProto> Query<T> {
         self
     }
 
-    fn to_proto(&self) -> proto::Query::Query {
+    fn to_proto(&self) -> Result<proto::Query::Query, Error> {
         let mut header = proto::QueryHeader::QueryHeader::new();
         header.set_responseType(self.kind.into());
 
         let mut query = proto::Query::Query::new();
-        query.query = Some(self.inner.to_query_proto(header));
+        query.query = Some(self.inner.to_query_proto(header)?);
 
-        query
+        Ok(query)
     }
 }
 
@@ -89,6 +90,7 @@ pub struct QueryGetAccountBalanceAnswer {
 }
 
 impl Query<QueryGetAccountBalance> {
+
     pub fn new(ch: &Client, account: AccountId) -> Self {
         Self {
             channel: ch.channel.clone(),
@@ -97,32 +99,32 @@ impl Query<QueryGetAccountBalance> {
         }
     }
 
-    pub fn send(self) -> QueryResponse<QueryGetAccountBalanceAnswer> {
-        let query = self.to_proto();
+    pub fn send(self) -> Result<QueryResponse<QueryGetAccountBalanceAnswer>, Error> {
+        let query = self.to_proto()?;
         let client = proto::CryptoService_grpc::CryptoServiceClient::new(self.channel);
-        // FIXME: Handle errors
-        let mut response = client.crypto_get_balance(&query).unwrap();
+
+        let mut response = client.crypto_get_balance(&query)?;
         let mut response = response.take_cryptogetAccountBalance();
         let header = response.take_header();
 
-        QueryResponse {
+        Ok(QueryResponse {
             precheck: header.get_nodeTransactionPrecheckCode() as u8,
             kind: self.kind,
             cost: header.get_cost(),
             answer: QueryGetAccountBalanceAnswer {
                 balance: response.get_balance(),
             },
-        }
+        })
     }
 }
 
 impl ToQueryProto for QueryGetAccountBalance {
-    fn to_query_proto(&self, header: QueryHeader) -> Query_oneof_query {
+    fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error> {
         let mut query = proto::CryptoGetAccountBalance::CryptoGetAccountBalanceQuery::new();
         query.set_header(header);
-        query.set_accountID(self.account.to_proto());
+        query.set_accountID(self.account.to_proto()?);
 
-        Query_oneof_query::cryptogetAccountBalance(query)
+        Ok(Query_oneof_query::cryptogetAccountBalance(query))
     }
 }
 
@@ -150,11 +152,11 @@ impl Query<QueryGetTransactionReceipt> {
         }
     }
 
-    pub fn send(self) -> QueryResponse<QueryGetTransactionReceiptAnswer> {
-        let query = self.to_proto();
+    pub fn send(self) -> Result<QueryResponse<QueryGetTransactionReceiptAnswer>, Error> {
+        let query = self.to_proto()?;
         let client = proto::CryptoService_grpc::CryptoServiceClient::new(self.channel);
-        // FIXME: Handle errors
-        let mut response = client.get_transaction_receipts(&query).unwrap();
+
+        let mut response = client.get_transaction_receipts(&query)?;
         let mut response = response.take_transactionGetReceipt();
         let header = response.take_header();
         let mut receipt = response.take_receipt();
@@ -165,7 +167,7 @@ impl Query<QueryGetTransactionReceipt> {
             None
         };
 
-        QueryResponse {
+        Ok(QueryResponse {
             precheck: header.get_nodeTransactionPrecheckCode() as u8,
             kind: self.kind,
             cost: header.get_cost(),
@@ -173,16 +175,16 @@ impl Query<QueryGetTransactionReceipt> {
                 status: receipt.get_status() as u8,
                 account_id,
             },
-        }
+        })
     }
 }
 
 impl ToQueryProto for QueryGetTransactionReceipt {
-    fn to_query_proto(&self, header: QueryHeader) -> Query_oneof_query {
+    fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error> {
         let mut query = proto::TransactionGetReceipt::TransactionGetReceiptQuery::new();
         query.set_header(header);
-        query.set_transactionID(self.transaction_id.to_proto());
+        query.set_transactionID(self.transaction_id.to_proto()?);
 
-        Query_oneof_query::transactionGetReceipt(query)
+        Ok(Query_oneof_query::transactionGetReceipt(query))
     }
 }

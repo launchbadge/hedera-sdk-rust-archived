@@ -69,7 +69,7 @@ pub extern "C" fn hedera_transaction__create_account__execute(
     debug_assert!(!tx.is_null());
 
     let tx = unsafe { Box::from_raw(tx) };
-    tx.execute()
+    tx.execute().unwrap()
 }
 
 #[doc(hidden)]
@@ -80,7 +80,7 @@ pub extern "C" fn hedera_transaction__crypto_transfer__execute(
     debug_assert!(!tx.is_null());
 
     let tx = unsafe { Box::from_raw(tx) };
-    tx.execute()
+    tx.execute().unwrap()
 }
 
 // TransactionCreateAccount
