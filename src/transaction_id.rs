@@ -71,6 +71,7 @@ impl ToProto<proto::BasicTypes::TransactionID> for TransactionId {
 mod tests {
     use super::TransactionId;
     use crate::{AccountId, Timestamp};
+    use failure::Error;
 
     #[test]
     fn test_display() {
@@ -104,6 +105,6 @@ mod tests {
             transaction_id
         );
 
-        OK(())
+        Ok(())
     }
 }

@@ -613,7 +613,7 @@ mod tests {
 
     #[bench]
     fn bench_sign(b: &mut Bencher) {
-        let key: SecretKey = KEY_SECRET_ASN1_HEX.parse()?;
+        let key: SecretKey = KEY_SECRET_ASN1_HEX.parse().unwrap();
 
         b.iter(|| {
             black_box(key.sign(MESSAGE.as_bytes()));
@@ -628,7 +628,7 @@ mod tests {
         let signature = key.sign(message);
 
         b.iter(|| {
-            black_box(public.verify(message, &signature)?);
+            black_box(public.verify(message, &signature).unwrap());
         });
     }
 }
