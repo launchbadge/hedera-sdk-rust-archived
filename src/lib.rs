@@ -1,10 +1,12 @@
-#![feature(test)]
+#![cfg_attr(test, feature(test))]
 #![allow(renamed_and_removed_lints)]
 
 #[cfg(test)]
 extern crate test;
 
+#[cfg(feature = "bridge")]
 mod bridge;
+
 mod client;
 mod duration;
 mod error;
@@ -20,8 +22,15 @@ mod transaction_create_account;
 mod transaction_crypto_transfer;
 mod transaction_id;
 
+// Ensure that we use the system allocator.
+#[cfg(feature = "bridge")]
+#[global_allocator]
+static ALLOCATOR: std::alloc::System = std::alloc::System;
+
+#[cfg(feature = "bridge")]
+pub use self::bridge::*;
+
 pub use self::{
-    bridge::*,
     client::Client,
     duration::Duration,
     error::ErrorKind,

@@ -7,7 +7,11 @@ authors = [
 ]
 
 [lib]
-crate-type = ["staticlib", "rlib"]
+crate-type = ["staticlib", "rlib", "cdylib"]
+
+[features]
+default = []
+bridge = ["mbox", "libc", "slotmap"]
 
 [dependencies]
 # nightly enables various feature toggles and is recommended for security
@@ -24,14 +28,14 @@ once_cell = { version = "0.1.6", features = [ "parking_lot" ] }
 num = "0.2.0"
 # NOTE: This must be synced with the version in [grpcio]
 protobuf = "~2.0"
-libc = "0.2.43"
-mbox = "0.5.0"
+libc = { version = "0.2.43", optional = true }
+mbox = { version = "0.5.0", optional = true }
 itertools = "0.7.8"
 grpcio = { version = "0.4.0", default-features = false, features = [ "protobuf-codec" ] }
-futures = "0.1.25"
 chrono = "0.4.6"
+futures = "0.1"
 # unstable is required to allow non-copy types in the SlotMap (the `Error` types)
-slotmap = { version = "0.3.0", features = [ "unstable" ] }
+slotmap = { version = "0.3.0", features = [ "unstable" ], optional = true }
 parking_lot = "0.6.4"
 
 [build-dependencies]
