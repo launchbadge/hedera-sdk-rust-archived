@@ -1,7 +1,5 @@
-use crate::proto::Query::Query_oneof_query;
-use crate::proto::QueryHeader::QueryHeader;
 use crate::{
-    proto::{self, ToProto},
+    proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
     query::ToQueryProto,
     AccountId, Client, ErrorKind, PreCheckCode, Query, TransactionId,
 };

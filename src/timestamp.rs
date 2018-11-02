@@ -1,10 +1,11 @@
 use chrono::Utc;
-use crate::error::ErrorKind;
-use crate::proto::{self, ToProto};
+use crate::{
+    error::ErrorKind,
+    proto::{self, ToProto},
+};
 use failure::Error;
 use itertools::Itertools;
-use std::ops::Sub;
-use std::{fmt, str::FromStr};
+use std::{fmt, ops::Sub, str::FromStr};
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 #[repr(C)]

@@ -1,5 +1,5 @@
-use crate::error::ErrorKind;
 use crate::{
+    error::ErrorKind,
     proto::{self, ToProto},
     timestamp::Timestamp,
     AccountId,

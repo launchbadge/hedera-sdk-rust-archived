@@ -1,3 +1,4 @@
+use crate::ErrorKind;
 use failure::Error;
 use libc::c_char;
 use mbox::MString;
@@ -5,7 +6,6 @@ use once_cell::{sync::Lazy, sync_lazy};
 use parking_lot::Mutex;
 use slotmap::{DefaultKey, KeyData, SlotMap};
 use std::ptr::null_mut;
-use crate::ErrorKind;
 
 pub(crate) static ERRORS: Lazy<Mutex<SlotMap<DefaultKey, Error>>> = sync_lazy! {
     Mutex::new(SlotMap::new())
@@ -16,13 +16,14 @@ macro_rules! try_ffi {
     ($expr:expr) => {
         match $expr {
             Ok(expr) => expr,
-            Err(error) =>
+            Err(error) => {
                 return slotmap::KeyData::from(
                     crate::bridge::ERRORS
                         .lock()
                         .insert(failure::Error::from(error)),
                 )
-                .as_ffi(),
+                .as_ffi()
+            }
         }
     };
 }
@@ -51,7 +52,7 @@ pub extern "C" fn hedera_error_pre_check(error: u64) -> i8 {
             if let Some(ErrorKind::PreCheck(code)) = err.downcast_ref() {
                 *code as i8
             } else {
-                return -1
+                return -1;
             }
         }
     };

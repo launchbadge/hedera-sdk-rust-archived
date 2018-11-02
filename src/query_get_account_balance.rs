@@ -1,7 +1,5 @@
-use crate::proto::Query::Query_oneof_query;
-use crate::proto::QueryHeader::QueryHeader;
 use crate::{
-    proto::{self, ToProto},
+    proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
     query::ToQueryProto,
     AccountId, Client, ErrorKind, PreCheckCode, Query,
 };
@@ -11,27 +9,19 @@ pub struct QueryGetAccountBalance {
     account: AccountId,
 }
 
-#[repr(C)]
-pub struct QueryGetAccountBalanceAnswer {
-    balance: u64,
-}
-
 impl Query<QueryGetAccountBalance> {
     pub fn get_account_balance(client: &Client, account: AccountId) -> Self {
         Self::new(client, QueryGetAccountBalance { account })
     }
 
-    pub fn answer(self) -> Result<QueryGetAccountBalanceAnswer, Error> {
+    pub fn answer(self) -> Result<u64, Error> {
         let mut response = self.send()?;
 
         let mut response = response.take_cryptogetAccountBalance();
         let header = response.take_header();
 
         match header.get_nodeTransactionPrecheckCode().into() {
-            PreCheckCode::Ok => Ok(QueryGetAccountBalanceAnswer {
-                balance: response.get_balance(),
-            }),
-
+            PreCheckCode::Ok => Ok(response.get_balance()),
             code => Err(ErrorKind::PreCheck(code))?,
         }
     }

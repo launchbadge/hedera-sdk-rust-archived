@@ -37,7 +37,7 @@ pub use self::{
     id::*,
     key::{KeyPair, PublicKey, SecretKey},
     query::Query,
-    query_get_account_balance::{QueryGetAccountBalance, QueryGetAccountBalanceAnswer},
+    query_get_account_balance::QueryGetAccountBalance,
     query_get_transaction_receipt::{QueryGetTransactionReceipt, QueryGetTransactionReceiptAnswer},
     timestamp::Timestamp,
     transaction::*,

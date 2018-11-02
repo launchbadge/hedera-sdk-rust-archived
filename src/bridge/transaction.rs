@@ -65,7 +65,10 @@ macro_rules! impl_execute {
     ($name:ident($ty:ident)) => {
         #[doc(hidden)]
         #[no_mangle]
-        pub unsafe extern "C" fn $name(tx: *mut Transaction<$ty>, out: *mut TransactionResponse) -> u64 {
+        pub unsafe extern "C" fn $name(
+            tx: *mut Transaction<$ty>,
+            out: *mut TransactionResponse,
+        ) -> u64 {
             debug_assert!(!tx.is_null());
 
             *out = try_ffi!(Box::from_raw(tx).execute());
