@@ -1,5 +1,5 @@
 use crate::{
-    AccountId, Client, Query, QueryGetAccountBalance, QueryGetAccountBalanceAnswer,
+    AccountId, Client, Query, QueryGetAccountBalance,
     QueryGetTransactionReceipt, QueryGetTransactionReceiptAnswer, TransactionId,
 };
 use std::mem;
@@ -55,7 +55,7 @@ pub unsafe extern "C" fn hedera_query__get_account_balance__new(
 
 impl_answer!(hedera_query__get_account_balance__answer(
     QueryGetAccountBalance
-) -> QueryGetAccountBalanceAnswer);
+) -> u64);
 
 impl_cost!(hedera_query__get_account_balance__cost(
     QueryGetAccountBalance
