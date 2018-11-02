@@ -2,8 +2,10 @@ use crate::{
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
     Client, ErrorKind, PreCheckCode,
 };
+use std::sync::Arc;
 use failure::Error;
-use grpcio::Channel;
+use grpc::ClientStub;
+use crate::proto::CryptoService_grpc::CryptoService;
 
 #[doc(hidden)]
 pub trait ToQueryProto {
@@ -11,7 +13,7 @@ pub trait ToQueryProto {
 }
 
 pub struct Query<T> {
-    pub(crate) channel: Channel,
+    pub(crate) client: Arc<grpc::Client>,
     kind: proto::QueryHeader::ResponseType,
     // TODO: payment: Transaction,
     inner: T,
@@ -21,7 +23,7 @@ impl<T: ToQueryProto> Query<T> {
     pub(crate) fn new(client: &Client, inner: T) -> Self {
         Self {
             kind: proto::QueryHeader::ResponseType::ANSWER_ONLY,
-            channel: client.channel.clone(),
+            client: client.inner.clone(),
             inner,
         }
     }
@@ -30,14 +32,18 @@ impl<T: ToQueryProto> Query<T> {
         use self::proto::Query::Query_oneof_query::*;
 
         let query = self.to_proto()?;
-        let client = proto::CryptoService_grpc::CryptoServiceClient::new(self.channel);
+        let client = proto::CryptoService_grpc::CryptoServiceClient::with_client(self.client);
+        let o = Default::default();
 
-        match query.query {
-            Some(cryptogetAccountBalance(_)) => Ok(client.crypto_get_balance(&query)?),
-            Some(transactionGetReceipt(_)) => Ok(client.get_transaction_receipts(&query)?),
+        let response = match query.query {
+            Some(cryptogetAccountBalance(_)) => client.crypto_get_balance(o, query),
+            Some(transactionGetReceipt(_)) => client.get_transaction_receipts(o, query),
 
             _ => unimplemented!(),
-        }
+        };
+
+        // TODO: Implement async
+        Ok(response.wait_drop_metadata()?)
     }
 
     pub fn cost(mut self) -> Result<u64, Error> {

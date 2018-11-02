@@ -2,19 +2,25 @@ use crate::{
     AccountId, Query, QueryGetAccountBalance, QueryGetTransactionReceipt, Transaction,
     TransactionCreateAccount, TransactionCryptoTransfer, TransactionId,
 };
-use grpcio::{Channel, ChannelBuilder, EnvBuilder};
 use std::sync::Arc;
+use itertools::Itertools;
 
 pub struct Client {
-    pub(crate) channel: Channel,
+    pub(crate) inner: Arc<grpc::Client>,
 }
 
 impl Client {
     pub fn new(address: impl AsRef<str>) -> Self {
-        let env = Arc::new(EnvBuilder::new().build());
-        let ch = ChannelBuilder::new(env).connect(address.as_ref());
+        // FIXME: Handle errors
+        let (host, port) = address.as_ref().split(':').next_tuple().unwrap();
+        let port = port.parse().unwrap();
+        let inner =
+            Arc::new(grpc::Client::new_plain(&host, port, Default::default()).unwrap());
 
-        Self { channel: ch }
+//        let env = Arc::new(EnvBuilder::new().build());
+//        let ch = ChannelBuilder::new(env).connect(address.as_ref());
+
+        Self { inner }
     }
 
     pub fn create_account(&self) -> Transaction<TransactionCreateAccount> {

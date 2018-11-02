@@ -7,14 +7,16 @@ fn main() {
 
     let proto_src_files = glob_simple("./proto/*.proto");
 
-    protoc_grpcio::compile_grpc_protos(
-        &proto_src_files
+    protoc_rust_grpc::run(protoc_rust_grpc::Args {
+        out_dir: dest_path.to_str().unwrap(),
+        input: &proto_src_files
             .iter()
             .map(|proto_file| proto_file.as_ref())
             .collect::<Vec<&str>>(),
-        &["./proto"],
-        &dest_path,
-    )
+        includes: &["./proto"],
+        rust_protobuf: true, // also generate protobuf messages, not just services
+        ..Default::default()
+    })
     .expect("protoc");
 
     let mod_file_content = proto_src_files

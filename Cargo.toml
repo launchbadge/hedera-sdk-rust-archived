@@ -26,20 +26,19 @@ simple_asn1 = "0.1.0"
 failure_derive = "0.1.3"
 once_cell = { version = "0.1.6", features = [ "parking_lot" ] }
 num = "0.2.0"
-# NOTE: This must be synced with the version in [grpcio]
-protobuf = "~2.0"
+protobuf = "2.1"
 libc = { version = "0.2.43", optional = true }
 mbox = { version = "0.5.0", optional = true }
 itertools = "0.7.8"
-grpcio = { version = "0.4.0", default-features = false, features = [ "protobuf-codec" ] }
 chrono = "0.4.6"
 futures = "0.1"
 # unstable is required to allow non-copy types in the SlotMap (the `Error` types)
 slotmap = { version = "0.3.0", features = [ "unstable" ], optional = true }
 parking_lot = "0.6.4"
+grpc = "0.6.0"
 
 [build-dependencies]
-protoc-grpcio = "0.3.0"
+protoc-rust-grpc = "0.6.0"
 glob = "0.2.11"
 
 [patch.crates-io]
@@ -47,7 +46,7 @@ glob = "0.2.11"
 simple_asn1 = { git = "https://github.com/acw/simple_asn1.git", rev = "daf9cf18fdea18fb42a004e05ab1f1da9d4123eb" }
 # Dependency upgrade
 # https://github.com/mtp401/protoc-grpcio/pull/12
-protoc-grpcio = { git = "https://github.com/mehcode/protoc-grpcio", rev = "7a704d72998d06b307d1632af2f79dbc235d9049" }
+# protoc-grpcio = { git = "https://github.com/mehcode/protoc-grpcio", rev = "7a704d72998d06b307d1632af2f79dbc235d9049" }
 
 [profile.release]
 lto = true

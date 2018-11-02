@@ -4,8 +4,10 @@ use crate::{
     AccountId, Client, Duration, SecretKey, TransactionId,
 };
 use failure::Error;
-use grpcio::Channel;
+use std::sync::Arc;
 use protobuf::{Message, RepeatedField};
+use grpc::ClientStub;
+use crate::proto::CryptoService_grpc::CryptoService;
 
 // Transaction Response
 // ----------------------------------------------------------------------------
@@ -65,7 +67,7 @@ pub struct TransactionResponse {
 // ----------------------------------------------------------------------------
 
 pub struct Transaction<T> {
-    channel: Channel,
+    client: Arc<grpc::Client>,
     operator: Option<AccountId>,
     node: Option<AccountId>,
     secrets: Vec<SecretKey>,
@@ -76,7 +78,7 @@ pub struct Transaction<T> {
 impl<T> Transaction<T> {
     pub(crate) fn new(client: &Client, inner: T) -> Self {
         Self {
-            channel: client.channel.clone(),
+            client: client.inner.clone(),
             operator: None,
             node: None,
             memo: None,
@@ -114,21 +116,23 @@ where
     pub fn execute(self) -> Result<TransactionResponse, Error> {
         use self::proto::Transaction::TransactionBody_oneof_data::*;
 
-        let mut tx: proto::Transaction::Transaction = self.to_proto()?;
-        let client = proto::CryptoService_grpc::CryptoServiceClient::new(self.channel);
+        let tx: proto::Transaction::Transaction = self.to_proto()?;
+        let id = tx.get_body().get_transactionID().clone().into();
+        let client = proto::CryptoService_grpc::CryptoServiceClient::with_client(self.client);
+        let o = Default::default();
 
         let response = match tx.get_body().data {
-            Some(cryptoCreateAccount(_)) => client.create_account(&tx)?,
-            Some(cryptoTransfer(_)) => client.crypto_transfer(&tx)?,
+            Some(cryptoCreateAccount(_)) => client.create_account(o, tx),
+            Some(cryptoTransfer(_)) => client.crypto_transfer(o, tx),
 
             _ => unimplemented!(),
         };
 
-        match response.get_nodeTransactionPrecheckCode().into() {
-            PreCheckCode::Ok => Ok(TransactionResponse {
-                id: tx.take_body().take_transactionID().into(),
-            }),
+        // TODO: Implement async
+        let response = response.wait_drop_metadata()?;
 
+        match response.get_nodeTransactionPrecheckCode().into() {
+            PreCheckCode::Ok => Ok(TransactionResponse { id, }),
             code => Err(ErrorKind::PreCheck(code))?,
         }
     }
