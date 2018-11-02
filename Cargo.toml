@@ -41,6 +41,9 @@ glob = "0.2.11"
 [patch.crates-io]
 # Unreleased
 simple_asn1 = { git = "https://github.com/acw/simple_asn1.git", rev = "daf9cf18fdea18fb42a004e05ab1f1da9d4123eb" }
+# Dependency upgrade
+# https://github.com/mtp401/protoc-grpcio/pull/12
+protoc-grpcio = { git = "https://github.com/mehcode/protoc-grpcio", rev = "7a704d72998d06b307d1632af2f79dbc235d9049" }
 
 [profile.release]
 lto = true
