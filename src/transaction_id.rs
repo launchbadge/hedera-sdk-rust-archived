@@ -19,7 +19,9 @@ impl TransactionId {
     pub fn new(account_id: AccountId) -> Self {
         TransactionId {
             account_id,
-            transaction_valid_start: Timestamp::new(),
+            // Allows the transaction to be accepted as long as the
+            // server is not more than 5 seconds behind us
+            transaction_valid_start: Timestamp::now() - 5,
         }
     }
 }

@@ -1,11 +1,12 @@
-use chrono::{Duration, Utc};
+use chrono::Utc;
 use crate::error::ErrorKind;
 use crate::proto::{self, ToProto};
 use failure::Error;
 use itertools::Itertools;
+use std::ops::Sub;
 use std::{fmt, str::FromStr};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 #[repr(C)]
 pub struct Timestamp {
     pub seconds: i64,
@@ -13,14 +14,24 @@ pub struct Timestamp {
 }
 
 impl Timestamp {
-    pub fn new() -> Self {
-        // Allows the transaction to be accepted as long as the
-        // server is not more than 5 seconds behind us
-        let now = Utc::now() - Duration::seconds(5);
+    pub fn now() -> Self {
+        let now = Utc::now();
 
         Timestamp {
             seconds: now.timestamp(),
             nanos: now.timestamp_subsec_nanos() as i32,
+        }
+    }
+}
+
+// Subtract seconds from this timestamp
+impl Sub<i64> for Timestamp {
+    type Output = Timestamp;
+
+    fn sub(self, rhs: i64) -> Self::Output {
+        Timestamp {
+            seconds: self.seconds - rhs,
+            nanos: self.nanos,
         }
     }
 }

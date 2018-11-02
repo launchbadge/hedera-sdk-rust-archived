@@ -1,11 +1,65 @@
 use crate::error::ErrorKind;
 use crate::{
     proto::{self, ToProto},
-    AccountId, Client, Duration, PublicKey, SecretKey, TransactionId,
+    AccountId, Client, Duration, SecretKey, TransactionId,
 };
 use failure::Error;
 use grpcio::Channel;
 use protobuf::{Message, RepeatedField};
+
+// Transaction Response
+// ----------------------------------------------------------------------------
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+#[repr(u8)]
+pub enum PreCheckCode {
+    /// The transaction passed the pre-check.
+    Ok = 0,
+
+    /// The transaction had incorrect syntax or other errors.
+    InvalidTransaction = 1,
+
+    // The operator account or node account isn't a valid account number.
+    InvalidAccount = 2,
+
+    // The transaction fee is insufficient for this type of transaction.
+    InsufficientFee = 3,
+
+    // The operator account has insufficient crypto-currency to pay the transaction fee.
+    InsufficientBalance = 4,
+
+    /// This transaction ID is a duplicate of one that was submitted to this node or reached
+    /// consensus in the last 180 seconds (receipt period).
+    Duplicate = 5,
+
+    /// Too many requests against the API
+    Busy = 6,
+
+    /// API is not supported
+    NotSupported = 7,
+}
+
+impl From<proto::TransactionResponse::NodeTransactionPrecheckCode> for PreCheckCode {
+    fn from(code: proto::TransactionResponse::NodeTransactionPrecheckCode) -> Self {
+        use self::proto::TransactionResponse::NodeTransactionPrecheckCode::*;
+
+        match code {
+            OK => PreCheckCode::Ok,
+            INVALID_TRANSACTION => PreCheckCode::InvalidTransaction,
+            INVALID_ACCOUNT => PreCheckCode::InvalidAccount,
+            INSUFFICIENT_FEE => PreCheckCode::InsufficientFee,
+            INSUFFICIENT_BALANCE => PreCheckCode::InsufficientBalance,
+            DUPLICATE => PreCheckCode::Duplicate,
+            BUSY => PreCheckCode::Busy,
+            NOT_SUPPORTED => PreCheckCode::NotSupported,
+        }
+    }
+}
+
+#[repr(C)]
+pub struct TransactionResponse {
+    pub id: TransactionId,
+}
 
 // Transaction
 // ----------------------------------------------------------------------------
@@ -16,16 +70,21 @@ pub struct Transaction<T> {
     node: Option<AccountId>,
     secrets: Vec<SecretKey>,
     memo: Option<String>,
-    inner: Box<T>,
-}
-
-#[repr(C)]
-pub struct TransactionResponse {
-    id: TransactionId,
-    precheck: u8,
+    pub(crate) inner: Box<T>,
 }
 
 impl<T> Transaction<T> {
+    pub(crate) fn new(client: &Client, inner: T) -> Self {
+        Self {
+            channel: client.channel.clone(),
+            operator: None,
+            node: None,
+            memo: None,
+            secrets: Vec::new(),
+            inner: Box::new(inner),
+        }
+    }
+
     pub fn memo(&mut self, memo: impl Into<String>) -> &mut Self {
         self.memo = Some(memo.into());
         self
@@ -50,7 +109,6 @@ impl<T> Transaction<T> {
 impl<T> Transaction<T>
 where
     Transaction<T>: ToProto<proto::Transaction::Transaction>,
-
     T: ToProto<proto::Transaction::TransactionBody_oneof_data>,
 {
     pub fn execute(self) -> Result<TransactionResponse, Error> {
@@ -60,18 +118,19 @@ where
         let client = proto::CryptoService_grpc::CryptoServiceClient::new(self.channel);
 
         let response = match tx.get_body().data {
-            Some(cryptoCreateAccount(_)) => client.create_account(&tx),
-            Some(cryptoTransfer(_)) => client.crypto_transfer(&tx),
+            Some(cryptoCreateAccount(_)) => client.create_account(&tx)?,
+            Some(cryptoTransfer(_)) => client.crypto_transfer(&tx)?,
 
             _ => unimplemented!(),
         };
 
-        let response = response?;
+        match response.get_nodeTransactionPrecheckCode().into() {
+            PreCheckCode::Ok => Ok(TransactionResponse {
+                id: tx.take_body().take_transactionID().into(),
+            }),
 
-        Ok(TransactionResponse {
-            id: tx.take_body().take_transactionID().into(),
-            precheck: response.get_nodeTransactionPrecheckCode() as u8,
-        })
+            code => Err(ErrorKind::PreCheck(code))?,
+        }
     }
 }
 
@@ -129,106 +188,5 @@ where
         });
 
         Ok(body)
-    }
-}
-
-// TransactionCreateAccount
-// ----------------------------------------------------------------------------
-
-pub struct TransactionCreateAccount {
-    key: Option<PublicKey>,
-    initial_balance: u64,
-}
-
-impl Transaction<TransactionCreateAccount> {
-    pub fn create_account(client: &Client) -> Self {
-        Self {
-            channel: client.channel.clone(),
-            operator: None,
-            node: None,
-            memo: None,
-            secrets: Vec::new(),
-            inner: Box::new(TransactionCreateAccount {
-                key: None,
-                initial_balance: 0,
-            }),
-        }
-    }
-
-    pub fn key(&mut self, key: PublicKey) -> &mut Self {
-        self.inner.key = Some(key);
-        self
-    }
-
-    pub fn initial_balance(&mut self, balance: u64) -> &mut Self {
-        self.inner.initial_balance = balance;
-        self
-    }
-}
-
-impl ToProto<proto::Transaction::TransactionBody_oneof_data> for TransactionCreateAccount {
-    fn to_proto(&self) -> Result<proto::Transaction::TransactionBody_oneof_data, Error> {
-        let mut data = proto::CryptoCreate::CryptoCreateTransactionBody::new();
-        data.set_initialBalance(self.initial_balance);
-
-        let key = match self.key.as_ref() {
-            Some(key) => key,
-            None => Err(ErrorKind::MissingField("public_key"))?,
-        };
-
-        data.set_key(key.to_proto()?);
-        data.set_autoRenewPeriod(Duration::new(2592000, 0).to_proto()?);
-
-        Ok(proto::Transaction::TransactionBody_oneof_data::cryptoCreateAccount(data))
-    }
-}
-
-// TransactionCryptoTransfer
-// ----------------------------------------------------------------------------
-
-pub struct TransactionCryptoTransfer {
-    transfers: Vec<(AccountId, i64)>,
-}
-
-impl Transaction<TransactionCryptoTransfer> {
-    pub fn crypto_transfer(client: &Client) -> Self {
-        Self {
-            channel: client.channel.clone(),
-            operator: None,
-            node: None,
-            memo: None,
-            secrets: Vec::new(),
-            inner: Box::new(TransactionCryptoTransfer {
-                transfers: Vec::new(),
-            }),
-        }
-    }
-
-    pub fn transfer(&mut self, id: AccountId, amount: i64) -> &mut Self {
-        self.inner.transfers.push((id, amount));
-        self
-    }
-}
-
-impl ToProto<proto::Transaction::TransactionBody_oneof_data> for TransactionCryptoTransfer {
-    fn to_proto(&self) -> Result<proto::Transaction::TransactionBody_oneof_data, Error> {
-        let amounts: Result<Vec<proto::CryptoTransfer::AccountAmount>, Error> = self
-            .transfers
-            .iter()
-            .map(|(id, amount)| {
-                let mut pb = proto::CryptoTransfer::AccountAmount::new();
-                pb.set_accountID(id.to_proto()?);
-                pb.set_amount(*amount);
-                Ok(pb)
-            })
-            .collect();
-
-        let mut transfers = proto::CryptoTransfer::TransferList::new();
-        transfers.set_accountAmounts(RepeatedField::from_vec(amounts?));
-
-        let mut data = proto::CryptoTransfer::CryptoTransferTransactionBody::new();
-        data.set_transfers(transfers);
-
-        Ok(proto::Transaction::TransactionBody_oneof_data::cryptoTransfer(data))
     }
 }

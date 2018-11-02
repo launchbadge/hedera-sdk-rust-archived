@@ -292,9 +292,9 @@ impl PublicKey {
             },
             subject_public_key: self.0.to_bytes().to_vec(),
         })
-            // NOTE: Not possible to fail. Only fail case the library has is if OIDs are
-            //       given incorrectly.
-            .unwrap()
+        // NOTE: Not possible to fail. Only fail case the library has is if OIDs are
+        //       given incorrectly.
+        .unwrap()
     }
 
     /// Verify a signature on a message with this `PublicKey`.
@@ -394,9 +394,9 @@ impl SecretKey {
             },
             private_key: self.0.to_bytes().to_vec(),
         })
-            // NOTE: Not possible to fail. Only fail case the library has is if OIDs are
-            //       given incorrectly.
-            .unwrap()
+        // NOTE: Not possible to fail. Only fail case the library has is if OIDs are
+        //       given incorrectly.
+        .unwrap()
     }
 
     /// Derive a `PublicKey` from this `SecretKey`.

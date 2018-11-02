@@ -1,5 +1,4 @@
 #[macro_use]
-mod macros;
 mod error;
 mod account_id;
 mod client;
@@ -10,6 +9,6 @@ mod transaction;
 mod transaction_id;
 
 pub use self::{
-    error::*,
-    account_id::*, client::*, key::*, query::*, timestamp::*, transaction::*, transaction_id::*,
+    account_id::*, client::*, error::*, key::*, query::*, timestamp::*, transaction::*,
+    transaction_id::*,
 };
