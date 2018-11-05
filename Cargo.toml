@@ -18,11 +18,10 @@ bridge = ["mbox", "libc", "slotmap"]
 # asm optimizes the sha2 crate
 ed25519-dalek = { version = "0.8.1", default-features = false, features = [ "std", "nightly", "asm", "u64_backend" ] }
 rand = "0.5.5"
-# NOTE: Blocked on updating this by https://github.com/dalek-cryptography/ed25519-dalek/issues/46
-sha2 = "0.7.0"
+sha2 = "0.8.0"
 hex = "0.3.2"
 failure = "0.1.3"
-simple_asn1 = "0.1.0"
+simple_asn1 = "0.2.0"
 failure_derive = "0.1.3"
 once_cell = { version = "0.1.6", features = [ "parking_lot" ] }
 num = "0.2.0"
@@ -35,18 +34,17 @@ futures = "0.1"
 # unstable is required to allow non-copy types in the SlotMap (the `Error` types)
 slotmap = { version = "0.3.0", features = [ "unstable" ], optional = true }
 parking_lot = "0.6.4"
-grpc = "0.6.0"
+grpc = { git = "https://github.com/mehcode/grpc-rust.git", rev = "25dd109ba6b243162cf472e39bfb83659f67d518" }
 
 [build-dependencies]
 protoc-rust-grpc = "0.6.0"
 glob = "0.2.11"
 
 [patch.crates-io]
-# Unreleased
-simple_asn1 = { git = "https://github.com/acw/simple_asn1.git", rev = "daf9cf18fdea18fb42a004e05ab1f1da9d4123eb" }
 # Dependency upgrade
-# https://github.com/mtp401/protoc-grpcio/pull/12
-# protoc-grpcio = { git = "https://github.com/mehcode/protoc-grpcio", rev = "7a704d72998d06b307d1632af2f79dbc235d9049" }
+# https://github.com/dalek-cryptography/ed25519-dalek/pull/53/commits/a1f23067335b20a11b91e51cfef95f0765dc78f9
+ed25519-dalek = { git = "https://github.com/mehcode/ed25519-dalek.git", rev = "a1f23067335b20a11b91e51cfef95f0765dc78f9" }
+curve25519-dalek = { git = "https://github.com/dalek-cryptography/curve25519-dalek", branch = "develop" }
 
 [profile.release]
 lto = true
