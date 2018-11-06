@@ -18,7 +18,6 @@ use std::{
 
 // Types used for (de-)serializing public and secret keys from ASN.1 byte
 // streams.
-//
 
 #[derive(Debug, Fail)]
 enum ASN1Error {
