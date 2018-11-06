@@ -49,3 +49,7 @@ lto = true
 codegen-units = 1
 panic = 'abort'
 incremental = false
+
+[patch.crates-io]
+# BUG: https://github.com/acw/simple_asn1/pull/6
+simple_asn1 = { git = "https://github.com/mehcode/simple_asn1.git", rev = "39793f754bffe73d8294718a9de7b8f1c9ddb2c9" }
