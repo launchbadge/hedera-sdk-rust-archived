@@ -43,8 +43,7 @@ glob = "0.2.11"
 [patch.crates-io]
 # Dependency upgrade
 # https://github.com/dalek-cryptography/ed25519-dalek/pull/53/commits/a1f23067335b20a11b91e51cfef95f0765dc78f9
-ed25519-dalek = { git = "https://github.com/mehcode/ed25519-dalek.git", rev = "a1f23067335b20a11b91e51cfef95f0765dc78f9" }
-curve25519-dalek = { git = "https://github.com/dalek-cryptography/curve25519-dalek", branch = "develop" }
+ed25519-dalek = { git = "https://github.com/mehcode/ed25519-dalek.git", rev = "ec2ca50c95c415afbd509679f1a31a19ee0e3369" }
 
 [profile.release]
 lto = true
