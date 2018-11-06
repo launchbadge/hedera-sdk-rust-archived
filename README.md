@@ -1,4 +1,6 @@
 # Hedera Rust SDK
+[![Crates.io](https://img.shields.io/crates/v/hedera.svg?style=popout-square)](https://crates.io/crates/hedera)
+[![License](https://img.shields.io/crates/l/hedera.svg?style=popout-square)](https://github.com/hashgraph/hedera-sdk-rust/blob/master/LICENSE.txt)
 > Hedera SDK for Rust
 
 ## License
