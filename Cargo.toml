@@ -1,7 +1,11 @@
 [package]
 name = "hedera"
 version = "0.1.0"
+description = "Hedera SDK for Rust"
+license = "Apache-2.0"
+repository = "https://github.com/hashgraph/hedera-sdk-rust"
 edition = "2018"
+keywords = ["hedera", "sdk"]
 authors = [
     "Ryan Leckey <ryan@launchbadge.com>"
 ]
