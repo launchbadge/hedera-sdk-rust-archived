@@ -22,11 +22,6 @@ mod transaction_create_account;
 mod transaction_crypto_transfer;
 mod transaction_id;
 
-// Ensure that we use the system allocator.
-#[cfg(feature = "bridge")]
-#[global_allocator]
-static ALLOCATOR: std::alloc::System = std::alloc::System;
-
 #[cfg(feature = "bridge")]
 pub use self::bridge::*;
 
