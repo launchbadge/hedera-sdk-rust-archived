@@ -38,7 +38,9 @@ futures = "0.1"
 # unstable is required to allow non-copy types in the SlotMap (the `Error` types)
 slotmap = { version = "0.3.0", features = [ "unstable" ], optional = true }
 parking_lot = "0.6.4"
-grpc = "0.6.0"
+# BUG: https://github.com/stepancheg/grpc-rust/pull/138
+grpc = { git = "https://github.com/mehcode/grpc-rust.git", rev = "25dd109ba6b243162cf472e39bfb83659f67d518" }
+# grpc = "0.6.0"
 
 [build-dependencies]
 protoc-rust-grpc = "0.6.0"
