@@ -273,7 +273,7 @@ dependencies = [
 
 [[package]]
 name = "hedera"
-version = "0.1.0"
+version = "0.1.1-alpha.0"
 dependencies = [
  "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "ed25519-dalek 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
