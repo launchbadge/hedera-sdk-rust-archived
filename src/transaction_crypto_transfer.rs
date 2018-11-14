@@ -1,13 +1,20 @@
 use crate::{
-    proto::{self, ToProto},
+    proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
     AccountId, Client, Transaction,
 };
 use failure::Error;
 use protobuf::RepeatedField;
+use query_interface::{interfaces, vtable_for};
+use std::any::Any;
 
 pub struct TransactionCryptoTransfer {
     transfers: Vec<(AccountId, i64)>,
 }
+
+interfaces!(
+    TransactionCryptoTransfer: Any,
+    ToProto<TransactionBody_oneof_data>
+);
 
 impl Transaction<TransactionCryptoTransfer> {
     pub fn crypto_transfer(client: &Client) -> Self {
@@ -19,14 +26,15 @@ impl Transaction<TransactionCryptoTransfer> {
         )
     }
 
+    #[inline]
     pub fn transfer(&mut self, id: AccountId, amount: i64) -> &mut Self {
-        self.inner.transfers.push((id, amount));
+        self.inner().transfers.push((id, amount));
         self
     }
 }
 
-impl ToProto<proto::Transaction::TransactionBody_oneof_data> for TransactionCryptoTransfer {
-    fn to_proto(&self) -> Result<proto::Transaction::TransactionBody_oneof_data, Error> {
+impl ToProto<TransactionBody_oneof_data> for TransactionCryptoTransfer {
+    fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
         let amounts: Result<Vec<proto::CryptoTransfer::AccountAmount>, Error> = self
             .transfers
             .iter()
@@ -44,6 +52,6 @@ impl ToProto<proto::Transaction::TransactionBody_oneof_data> for TransactionCryp
         let mut data = proto::CryptoTransfer::CryptoTransferTransactionBody::new();
         data.set_transfers(transfers);
 
-        Ok(proto::Transaction::TransactionBody_oneof_data::cryptoTransfer(data))
+        Ok(TransactionBody_oneof_data::cryptoTransfer(data))
     }
 }

@@ -1,16 +1,17 @@
 use crate::{
     error::ErrorKind,
-    proto::{self, ToProto},
+    proto::{self, CryptoService_grpc::CryptoService, ToProto},
     AccountId, Client, Duration, SecretKey, TransactionId,
 };
 use failure::Error;
-use std::sync::Arc;
-use protobuf::{Message, RepeatedField};
 use grpc::ClientStub;
-use crate::proto::CryptoService_grpc::CryptoService;
+use protobuf::{Message, RepeatedField};
+use query_interface::Object;
+use std::{any::Any, marker::PhantomData, sync::Arc};
 
+//
 // Transaction Response
-// ----------------------------------------------------------------------------
+//
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[repr(u8)]
@@ -63,8 +64,9 @@ pub struct TransactionResponse {
     pub id: TransactionId,
 }
 
+//
 // Transaction
-// ----------------------------------------------------------------------------
+//
 
 pub struct Transaction<T> {
     client: Arc<grpc::Client>,
@@ -72,18 +74,24 @@ pub struct Transaction<T> {
     node: Option<AccountId>,
     secrets: Vec<SecretKey>,
     memo: Option<String>,
-    pub(crate) inner: Box<T>,
+    pub(crate) inner: Box<dyn Object>,
+    phantom: PhantomData<T>,
 }
 
-impl<T> Transaction<T> {
-    pub(crate) fn new(client: &Client, inner: T) -> Self {
+impl<T: 'static> Transaction<T> {
+    pub(crate) fn new(client: &Client, inner: T) -> Self
+    where
+        T: Object + ToProto<proto::Transaction::TransactionBody_oneof_data> + 'static,
+    {
+        let inner = Box::<T>::new(inner);
         Self {
             client: client.inner.clone(),
             operator: None,
             node: None,
             memo: None,
             secrets: Vec::new(),
-            inner: Box::new(inner),
+            inner: inner as Box<dyn Object>,
+            phantom: PhantomData,
         }
     }
 
@@ -106,13 +114,7 @@ impl<T> Transaction<T> {
         self.secrets.push(secret);
         self
     }
-}
 
-impl<T> Transaction<T>
-where
-    Transaction<T>: ToProto<proto::Transaction::Transaction>,
-    T: ToProto<proto::Transaction::TransactionBody_oneof_data>,
-{
     pub fn execute(self) -> Result<TransactionResponse, Error> {
         use self::proto::Transaction::TransactionBody_oneof_data::*;
 
@@ -132,17 +134,28 @@ where
         let response = response.wait_drop_metadata()?;
 
         match response.get_nodeTransactionPrecheckCode().into() {
-            PreCheckCode::Ok => Ok(TransactionResponse { id, }),
+            PreCheckCode::Ok => Ok(TransactionResponse { id }),
             code => Err(ErrorKind::PreCheck(code))?,
+        }
+    }
+
+    /// Return a mutable reference to the underlying type of the inner builder
+    #[inline]
+    pub(crate) fn inner(&mut self) -> &mut T {
+        match self
+            .inner
+            .query_mut::<Any>()
+            .and_then(|inner| inner.downcast_mut())
+        {
+            Some(inner) => inner,
+
+            // Not possible in safe rust to get here
+            _ => unreachable!(),
         }
     }
 }
 
-impl<T> ToProto<proto::Transaction::Transaction> for Transaction<T>
-where
-    Transaction<T>: ToProto<proto::Transaction::TransactionBody>,
-    T: ToProto<proto::Transaction::TransactionBody_oneof_data>,
-{
+impl<T> ToProto<proto::Transaction::Transaction> for Transaction<T> {
     fn to_proto(&self) -> Result<proto::Transaction::Transaction, Error> {
         let body = ToProto::<proto::Transaction::TransactionBody>::to_proto(self)?;
 
@@ -166,14 +179,21 @@ where
     }
 }
 
-impl<T> ToProto<proto::Transaction::TransactionBody> for Transaction<T>
-where
-    T: ToProto<proto::Transaction::TransactionBody_oneof_data>,
-{
+impl<T> ToProto<proto::Transaction::TransactionBody> for Transaction<T> {
     fn to_proto(&self) -> Result<proto::Transaction::TransactionBody, Error> {
+        // Get a reference to the trait implementation for ToProto for the inner builder
+        let inner: &dyn ToProto<proto::Transaction::TransactionBody_oneof_data> =
+            match self.inner.query_ref() {
+                Some(inner) => inner,
+
+                // Not possible in safe rust to get here
+                _ => unreachable!(),
+            };
+
         let account_id = self
             .operator
             .ok_or_else(|| ErrorKind::MissingField("account_id"))?;
+
         let tx_id = TransactionId::new(account_id);
         let mut body = proto::Transaction::TransactionBody::new();
         let node = self.node.ok_or_else(|| ErrorKind::MissingField("node"))?;
@@ -184,7 +204,7 @@ where
         body.set_transactionFee(10);
         body.set_generateRecord(false);
         body.set_transactionID(tx_id.to_proto()?);
-        body.data = Some(self.inner.to_proto()?);
+        body.data = Some(inner.to_proto()?);
         body.set_memo(if let Some(memo) = &self.memo {
             memo.to_owned()
         } else {

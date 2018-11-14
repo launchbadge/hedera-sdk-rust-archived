@@ -1,14 +1,18 @@
 use crate::{
-    proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
+    proto::{
+        self, CryptoService_grpc::CryptoService, Query::Query_oneof_query,
+        QueryHeader::QueryHeader, ToProto,
+    },
     Client, ErrorKind, PreCheckCode,
 };
-use std::sync::Arc;
 use failure::Error;
 use grpc::ClientStub;
-use crate::proto::CryptoService_grpc::CryptoService;
+use std::sync::Arc;
 
 #[doc(hidden)]
-pub trait ToQueryProto {
+pub trait QueryInner {
+    type Answer;
+    fn answer(&self, response: proto::Response::Response) -> Result<Self::Answer, Error>;
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error>;
 }
 
@@ -16,23 +20,24 @@ pub struct Query<T> {
     pub(crate) client: Arc<grpc::Client>,
     kind: proto::QueryHeader::ResponseType,
     // TODO: payment: Transaction,
-    inner: T,
+    inner: Box<dyn QueryInner<Answer = T>>,
 }
 
-impl<T: ToQueryProto> Query<T> {
-    pub(crate) fn new(client: &Client, inner: T) -> Self {
+impl<T> Query<T> {
+    pub(crate) fn new<U: QueryInner<Answer = T> + 'static>(client: &Client, inner: U) -> Self {
         Self {
             kind: proto::QueryHeader::ResponseType::ANSWER_ONLY,
             client: client.inner.clone(),
-            inner,
+            inner: Box::new(inner),
         }
     }
 
-    pub(crate) fn send(self) -> Result<proto::Response::Response, Error> {
+    pub(crate) fn send(&self) -> Result<proto::Response::Response, Error> {
         use self::proto::Query::Query_oneof_query::*;
 
         let query = self.to_proto()?;
-        let client = proto::CryptoService_grpc::CryptoServiceClient::with_client(self.client);
+        let client =
+            proto::CryptoService_grpc::CryptoServiceClient::with_client(self.client.clone());
         let o = Default::default();
 
         let response = match query.query {
@@ -44,6 +49,10 @@ impl<T: ToQueryProto> Query<T> {
 
         // TODO: Implement async
         Ok(response.wait_drop_metadata()?)
+    }
+
+    pub fn answer(self) -> Result<T, Error> {
+        self.inner.answer(self.send()?)
     }
 
     pub fn cost(mut self) -> Result<u64, Error> {
@@ -70,7 +79,7 @@ impl<T: ToQueryProto> Query<T> {
     }
 }
 
-impl<T: ToQueryProto> ToProto<proto::Query::Query> for Query<T> {
+impl<T> ToProto<proto::Query::Query> for Query<T> {
     fn to_proto(&self) -> Result<proto::Query::Query, Error> {
         let mut header = proto::QueryHeader::QueryHeader::new();
         header.set_responseType(self.kind);

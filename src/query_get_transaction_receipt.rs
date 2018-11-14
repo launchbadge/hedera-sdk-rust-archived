@@ -1,6 +1,6 @@
 use crate::{
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
-    query::ToQueryProto,
+    query::QueryInner,
     AccountId, Client, ErrorKind, PreCheckCode, Query, TransactionId,
 };
 use failure::Error;
@@ -17,14 +17,16 @@ pub struct QueryGetTransactionReceiptAnswer {
     // unsupported: file_id: Option<Box<FileId>>,
 }
 
-impl Query<QueryGetTransactionReceipt> {
+impl Query<QueryGetTransactionReceiptAnswer> {
     pub fn get_transaction_receipt(client: &Client, transaction_id: TransactionId) -> Self {
         Self::new(client, QueryGetTransactionReceipt { transaction_id })
     }
+}
 
-    pub fn answer(self) -> Result<QueryGetTransactionReceiptAnswer, Error> {
-        let mut response = self.send()?;
+impl QueryInner for QueryGetTransactionReceipt {
+    type Answer = QueryGetTransactionReceiptAnswer;
 
+    fn answer(&self, mut response: proto::Response::Response) -> Result<Self::Answer, Error> {
         let mut response = response.take_transactionGetReceipt();
         let header = response.take_header();
         let mut receipt = response.take_receipt();
@@ -44,9 +46,7 @@ impl Query<QueryGetTransactionReceipt> {
             code => Err(ErrorKind::PreCheck(code))?,
         }
     }
-}
 
-impl ToQueryProto for QueryGetTransactionReceipt {
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error> {
         let mut query = proto::TransactionGetReceipt::TransactionGetReceiptQuery::new();
         query.set_header(header);

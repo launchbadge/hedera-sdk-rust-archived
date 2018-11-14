@@ -1,9 +1,9 @@
 use crate::{
-    AccountId, Query, QueryGetAccountBalance, QueryGetTransactionReceipt, Transaction,
+    AccountId, Query, QueryGetAccountBalanceAnswer, QueryGetTransactionReceiptAnswer, Transaction,
     TransactionCreateAccount, TransactionCryptoTransfer, TransactionId,
 };
-use std::sync::Arc;
 use itertools::Itertools;
+use std::sync::Arc;
 
 pub struct Client {
     pub(crate) inner: Arc<grpc::Client>,
@@ -14,11 +14,7 @@ impl Client {
         // FIXME: Handle errors
         let (host, port) = address.as_ref().split(':').next_tuple().unwrap();
         let port = port.parse().unwrap();
-        let inner =
-            Arc::new(grpc::Client::new_plain(&host, port, Default::default()).unwrap());
-
-//        let env = Arc::new(EnvBuilder::new().build());
-//        let ch = ChannelBuilder::new(env).connect(address.as_ref());
+        let inner = Arc::new(grpc::Client::new_plain(&host, port, Default::default()).unwrap());
 
         Self { inner }
     }
@@ -31,14 +27,14 @@ impl Client {
         Transaction::crypto_transfer(self)
     }
 
-    pub fn get_account_balance(&self, account: AccountId) -> Query<QueryGetAccountBalance> {
+    pub fn get_account_balance(&self, account: AccountId) -> Query<QueryGetAccountBalanceAnswer> {
         Query::get_account_balance(self, account)
     }
 
     pub fn get_transaction_receipt(
         &self,
         transaction: TransactionId,
-    ) -> Query<QueryGetTransactionReceipt> {
+    ) -> Query<QueryGetTransactionReceiptAnswer> {
         Query::get_transaction_receipt(self, transaction)
     }
 }

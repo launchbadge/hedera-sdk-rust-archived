@@ -1,22 +1,26 @@
 use crate::{
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
-    query::ToQueryProto,
+    query::QueryInner,
     AccountId, Client, ErrorKind, PreCheckCode, Query,
 };
 use failure::Error;
+
+pub type QueryGetAccountBalanceAnswer = u64;
 
 pub struct QueryGetAccountBalance {
     account: AccountId,
 }
 
-impl Query<QueryGetAccountBalance> {
+impl Query<u64> {
     pub fn get_account_balance(client: &Client, account: AccountId) -> Self {
         Self::new(client, QueryGetAccountBalance { account })
     }
+}
 
-    pub fn answer(self) -> Result<u64, Error> {
-        let mut response = self.send()?;
+impl QueryInner for QueryGetAccountBalance {
+    type Answer = QueryGetAccountBalanceAnswer;
 
+    fn answer(&self, mut response: proto::Response::Response) -> Result<Self::Answer, Error> {
         let mut response = response.take_cryptogetAccountBalance();
         let header = response.take_header();
 
@@ -25,9 +29,7 @@ impl Query<QueryGetAccountBalance> {
             code => Err(ErrorKind::PreCheck(code))?,
         }
     }
-}
 
-impl ToQueryProto for QueryGetAccountBalance {
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error> {
         let mut query = proto::CryptoGetAccountBalance::CryptoGetAccountBalanceQuery::new();
         query.set_header(header);

@@ -61,21 +61,17 @@ pub unsafe extern "C" fn hedera_transaction_sign(tx: *mut Transaction<()>, secre
     mem::forget(tx);
 }
 
-macro_rules! impl_execute {
-    ($name:ident($ty:ident)) => {
-        #[doc(hidden)]
-        #[no_mangle]
-        pub unsafe extern "C" fn $name(
-            tx: *mut Transaction<$ty>,
-            out: *mut TransactionResponse,
-        ) -> u64 {
-            debug_assert!(!tx.is_null());
+#[doc(hidden)]
+#[no_mangle]
+pub unsafe extern "C" fn hedera_transaction_execute(
+    tx: *mut Transaction<()>,
+    out: *mut TransactionResponse,
+) -> u64 {
+    debug_assert!(!tx.is_null());
 
-            *out = try_ffi!(Box::from_raw(tx).execute());
+    *out = try_ffi!(Box::from_raw(tx).execute());
 
-            0
-        }
-    };
+    0
 }
 
 // TransactionCreateAccount
@@ -126,10 +122,6 @@ pub unsafe extern "C" fn hedera_transaction__create_account__set_initial_balance
     mem::forget(tx);
 }
 
-impl_execute!(hedera_transaction__create_account__execute(
-    TransactionCreateAccount
-));
-
 // TransactionCryptoTransfer
 // ----------------------------------------------------------------------------
 
@@ -164,7 +156,3 @@ pub unsafe extern "C" fn hedera_transaction__crypto_transfer__add_transfer(
 
     mem::forget(tx);
 }
-
-impl_execute!(hedera_transaction__crypto_transfer__execute(
-    TransactionCryptoTransfer
-));

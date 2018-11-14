@@ -3,8 +3,9 @@ use libc::c_char;
 use mbox::MString;
 use std::ffi::CStr;
 
+//
 // Secret Key
-// ----------------------------------------------------------------------------
+//
 
 #[doc(hidden)]
 #[no_mangle]
@@ -36,8 +37,9 @@ pub unsafe extern "C" fn hedera_secret_key_from_str(s: *const c_char, out: *mut 
     0
 }
 
+//
 // Public Key
-// ----------------------------------------------------------------------------
+//
 
 #[doc(hidden)]
 #[no_mangle]

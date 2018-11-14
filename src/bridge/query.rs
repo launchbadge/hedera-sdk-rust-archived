@@ -1,35 +1,33 @@
 use crate::{
-    AccountId, Client, Query, QueryGetAccountBalance,
-    QueryGetTransactionReceipt, QueryGetTransactionReceiptAnswer, TransactionId,
+    AccountId, Client, Query, QueryGetAccountBalanceAnswer, QueryGetTransactionReceiptAnswer,
+    TransactionId,
 };
 use std::mem;
 
-macro_rules! impl_cost {
+macro_rules! impl_answer {
     ($name:ident($ty:ident)) => {
         #[doc(hidden)]
         #[no_mangle]
-        pub unsafe extern "C" fn $name(query: *mut Query<$ty>, out: *mut u64) -> u64 {
+        pub unsafe extern "C" fn $name(query: *mut Query<$ty>, out: *mut $ty) -> u64 {
             debug_assert!(!query.is_null());
-
-            *out = try_ffi!(Box::from_raw(query).cost());
-
-            0
-        }
-    };
-}
-
-macro_rules! impl_answer {
-    ($name:ident($ty:ident) -> $rty:ident) => {
-        #[doc(hidden)]
-        #[no_mangle]
-        pub unsafe extern "C" fn $name(query: *mut Query<$ty>, out: *mut $rty) -> u64 {
-            debug_assert!(!query.is_null());
+            debug_assert!(!out.is_null());
 
             *out = try_ffi!(Box::from_raw(query).answer());
 
             0
         }
     };
+}
+
+#[doc(hidden)]
+#[no_mangle]
+pub unsafe extern "C" fn hedera_query_cost(query: *mut Query<()>, out: *mut u64) -> u64 {
+    debug_assert!(!query.is_null());
+    debug_assert!(!out.is_null());
+
+    *out = try_ffi!(Box::from_raw(query).cost());
+
+    0
 }
 
 // QueryGetAccountBalance
@@ -40,7 +38,7 @@ macro_rules! impl_answer {
 pub unsafe extern "C" fn hedera_query__get_account_balance__new(
     client: *mut Client,
     account: AccountId,
-) -> *mut Query<QueryGetAccountBalance> {
+) -> *mut Query<QueryGetAccountBalanceAnswer> {
     debug_assert!(!client.is_null());
 
     let client = Box::from_raw(client);
@@ -54,11 +52,7 @@ pub unsafe extern "C" fn hedera_query__get_account_balance__new(
 }
 
 impl_answer!(hedera_query__get_account_balance__answer(
-    QueryGetAccountBalance
-) -> u64);
-
-impl_cost!(hedera_query__get_account_balance__cost(
-    QueryGetAccountBalance
+    QueryGetTransactionReceiptAnswer
 ));
 
 // QueryGetTransactionReceipt
@@ -69,7 +63,7 @@ impl_cost!(hedera_query__get_account_balance__cost(
 pub unsafe extern "C" fn hedera_query__get_transaction_receipt__new(
     client: *mut Client,
     transaction_id: TransactionId,
-) -> *mut Query<QueryGetTransactionReceipt> {
+) -> *mut Query<QueryGetTransactionReceiptAnswer> {
     debug_assert!(!client.is_null());
 
     let client = Box::from_raw(client);
@@ -83,9 +77,5 @@ pub unsafe extern "C" fn hedera_query__get_transaction_receipt__new(
 }
 
 impl_answer!(hedera_query__get_transaction_receipt__answer(
-    QueryGetTransactionReceipt
-) -> QueryGetTransactionReceiptAnswer);
-
-impl_cost!(hedera_query__get_transaction_receipt__cost(
-    QueryGetTransactionReceipt
+    QueryGetTransactionReceiptAnswer
 ));
