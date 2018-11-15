@@ -304,7 +304,7 @@ dependencies = [
  "query_interface 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sha2 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "simple_asn1 0.2.0 (git+https://github.com/mehcode/simple_asn1.git?rev=39793f754bffe73d8294718a9de7b8f1c9ddb2c9)",
+ "simple_asn1 0.2.0 (git+https://github.com/mehcode/simple_asn1.git?rev=9f22f1dde04e7cc327ff4ff929aa6a4858524d36)",
  "slotmap 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -821,7 +821,7 @@ dependencies = [
 [[package]]
 name = "simple_asn1"
 version = "0.2.0"
-source = "git+https://github.com/mehcode/simple_asn1.git?rev=39793f754bffe73d8294718a9de7b8f1c9ddb2c9#39793f754bffe73d8294718a9de7b8f1c9ddb2c9"
+source = "git+https://github.com/mehcode/simple_asn1.git?rev=9f22f1dde04e7cc327ff4ff929aa6a4858524d36#9f22f1dde04e7cc327ff4ff929aa6a4858524d36"
 dependencies = [
  "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "num 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1289,7 +1289,7 @@ dependencies = [
 "checksum semver-parser 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 "checksum sha2 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "7b4d8bfd0e469f417657573d8451fb33d16cfe0989359b93baf3a1ffc639543d"
 "checksum sha2-asm 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)" = "1d5add4f4908ba4c2358ce596a5de8e52a7699fb84bd60551f1133205516dc4f"
-"checksum simple_asn1 0.2.0 (git+https://github.com/mehcode/simple_asn1.git?rev=39793f754bffe73d8294718a9de7b8f1c9ddb2c9)" = "<none>"
+"checksum simple_asn1 0.2.0 (git+https://github.com/mehcode/simple_asn1.git?rev=9f22f1dde04e7cc327ff4ff929aa6a4858524d36)" = "<none>"
 "checksum slab 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "17b4fcaed89ab08ef143da37bc52adbcc04d4a69014f4c1208d6b51f0c47bc23"
 "checksum slab 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)" = "5f9776d6b986f77b35c6cf846c11ad986ff128fe0b2b63a3628e3755e8d3102d"
 "checksum slotmap 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "759fd553261805f128e2900bf69ab3d034260bc338caf7f0ee54dbf035c85acd"
