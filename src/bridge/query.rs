@@ -52,7 +52,7 @@ pub unsafe extern "C" fn hedera_query__get_account_balance__new(
 }
 
 impl_answer!(hedera_query__get_account_balance__answer(
-    QueryGetTransactionReceiptAnswer
+    QueryGetAccountBalanceAnswer
 ));
 
 // QueryGetTransactionReceipt
