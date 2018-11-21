@@ -4,7 +4,7 @@
 #[cfg(test)]
 extern crate test;
 
-#[cfg(feature = "bridge:c")]
+#[cfg(feature = "bridge-c")]
 mod bridge;
 
 mod client;
@@ -22,7 +22,7 @@ mod transaction_create_account;
 mod transaction_crypto_transfer;
 mod transaction_id;
 
-#[cfg(feature = "bridge:c")]
+#[cfg(feature = "bridge-c")]
 pub use self::bridge::*;
 
 pub use self::{

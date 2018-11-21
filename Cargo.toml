@@ -15,7 +15,7 @@ crate-type = ["staticlib", "rlib", "cdylib"]
 
 [features]
 default = []
-'bridge:c' = ["mbox", "libc", "slotmap"]
+bridge-c = ["mbox", "libc", "slotmap"]
 
 [dependencies]
 # nightly enables various feature toggles and is recommended for security
