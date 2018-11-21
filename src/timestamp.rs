@@ -1,8 +1,8 @@
-use chrono::Utc;
 use crate::{
     error::ErrorKind,
     proto::{self, ToProto},
 };
+use chrono::Utc;
 use failure::Error;
 use itertools::Itertools;
 use std::{fmt, ops::Sub, str::FromStr};
