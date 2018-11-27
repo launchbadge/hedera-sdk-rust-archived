@@ -24,6 +24,7 @@ impl TransactionId {
             transaction_valid_start: Timestamp::now() - 5,
         }
     }
+
 }
 
 impl fmt::Display for TransactionId {
@@ -36,15 +37,22 @@ impl FromStr for TransactionId {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (account_id, timestamp) = s
-            .split('@')
-            .next_tuple()
-            .ok_or_else(|| ErrorKind::Parse("{realm}:{shard}:{account}@{seconds}.{nanos}"))?;
 
-        Ok(Self {
-            account_id: account_id.parse()?,
-            transaction_valid_start: timestamp.parse()?,
-        })
+        let id = match s.split('@').next_tuple() {
+            Some((account_id, timestamp)) => Self {
+                account_id: account_id.parse()?,
+                transaction_valid_start: timestamp.parse()?,
+            },
+            None => {
+                let b = hex::decode(s)?;
+                let pb_id: crate::proto::BasicTypes::TransactionID = protobuf::parse_from_bytes(b.as_slice())
+                    .map_err(|_| ErrorKind::Parse("{realm}:{shard}:{account}@{seconds}.{nanos}"))?;
+
+                Self::from(pb_id)
+            }
+        };
+
+        Ok(id)
     }
 }
 
@@ -106,5 +114,26 @@ mod tests {
         );
 
         Ok(())
+    }
+
+    #[test]
+    fn test_parse_encoded() -> Result<(), Error> {
+        let account_id = AccountId::new(0, 0, 2);
+        let transaction_valid_start = Timestamp {
+            seconds: 1539387985,
+            nanos: 758025699,
+        };
+        let transaction_id = TransactionId {
+            account_id,
+            transaction_valid_start,
+        };
+
+        assert_eq!(
+            "0a0c08d1e484de0510e39bbae90212021802".parse::<TransactionId>()?,
+            transaction_id
+        );
+
+        Ok(())
+
     }
 }
