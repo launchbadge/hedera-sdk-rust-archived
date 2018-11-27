@@ -21,7 +21,10 @@ pub unsafe extern "C" fn hedera_transaction_id_to_str(p: *mut TransactionId) -> 
 
 #[doc(hidden)]
 #[no_mangle]
-pub unsafe extern "C" fn hedera_transaction_id_from_str(s: *const c_char, out: *mut TransactionId) -> u64 {
+pub unsafe extern "C" fn hedera_transaction_id_from_str(
+    s: *const c_char,
+    out: *mut TransactionId,
+) -> u64 {
     debug_assert!(!s.is_null());
     debug_assert!(!out.is_null());
 

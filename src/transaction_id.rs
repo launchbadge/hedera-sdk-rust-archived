@@ -24,7 +24,6 @@ impl TransactionId {
             transaction_valid_start: Timestamp::now() - 5,
         }
     }
-
 }
 
 impl fmt::Display for TransactionId {
@@ -37,7 +36,6 @@ impl FromStr for TransactionId {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-
         let id = match s.split('@').next_tuple() {
             Some((account_id, timestamp)) => Self {
                 account_id: account_id.parse()?,
@@ -45,8 +43,10 @@ impl FromStr for TransactionId {
             },
             None => {
                 let b = hex::decode(s)?;
-                let pb_id: crate::proto::BasicTypes::TransactionID = protobuf::parse_from_bytes(b.as_slice())
-                    .map_err(|_| ErrorKind::Parse("{realm}:{shard}:{account}@{seconds}.{nanos}"))?;
+                let pb_id: crate::proto::BasicTypes::TransactionID =
+                    protobuf::parse_from_bytes(b.as_slice()).map_err(|_| {
+                        ErrorKind::Parse("{realm}:{shard}:{account}@{seconds}.{nanos}")
+                    })?;
 
                 Self::from(pb_id)
             }
@@ -134,6 +134,5 @@ mod tests {
         );
 
         Ok(())
-
     }
 }
