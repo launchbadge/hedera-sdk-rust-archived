@@ -1,7 +1,8 @@
-use crate::{PublicKey, SecretKey};
+use crate::{PublicKey, SecretKey, key::Signature};
 use libc::c_char;
 use mbox::MString;
-use std::ffi::CStr;
+use std::ffi::{CStr, c_void};
+use std::slice;
 
 //
 // Secret Key
@@ -33,6 +34,21 @@ pub unsafe extern "C" fn hedera_secret_key_from_str(s: *const c_char, out: *mut 
     let s = s.to_string_lossy();
 
     *out = try_ffi!(s.parse());
+
+    0
+}
+
+#[doc(hidden)]
+#[no_mangle]
+pub unsafe extern "C" fn hedera_secret_key_sign(p: *mut SecretKey, message: *const c_void, message_len: usize, out: *mut Signature) -> u64 {
+    debug_assert!(!message.is_null());
+    debug_assert!(!p.is_null());
+    debug_assert!(!out.is_null());
+
+    let message = message as *const u8;
+
+    let message = slice::from_raw_parts(message, message_len);
+    *out = (*p).sign(message);
 
     0
 }
@@ -72,3 +88,20 @@ pub unsafe extern "C" fn hedera_public_key_from_str(s: *const c_char, out: *mut 
 
     0
 }
+
+#[doc(hidden)]
+#[no_mangle]
+pub unsafe extern "C" fn hedera_public_key_verify(p: *mut PublicKey, s: *mut Signature, message: *const c_void, message_len: usize) -> i8 {
+    debug_assert!(!s.is_null());
+    debug_assert!(!message.is_null());
+    debug_assert!(!p.is_null());
+
+    let message = message as *const u8;
+    let message = slice::from_raw_parts(message, message_len);
+
+    match (*p).verify(message, &(*s)) {
+        Ok(b) => if b { 1 } else { 0 },
+        Err(_) => 0
+    }
+}
+
