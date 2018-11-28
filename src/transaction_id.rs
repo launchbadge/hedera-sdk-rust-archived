@@ -20,8 +20,8 @@ impl TransactionId {
         TransactionId {
             account_id,
             // Allows the transaction to be accepted as long as the
-            // server is not more than 5 seconds behind us
-            transaction_valid_start: Timestamp::now() - 5,
+            // server is not more than 10 seconds behind us
+            transaction_valid_start: Timestamp::now() - 10,
         }
     }
 }
