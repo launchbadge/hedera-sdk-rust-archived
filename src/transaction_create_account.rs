@@ -44,6 +44,8 @@ impl ToProto<TransactionBody_oneof_data> for TransactionCreateAccount {
     fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
         let mut data = proto::CryptoCreate::CryptoCreateTransactionBody::new();
         data.set_initialBalance(self.initial_balance);
+        data.set_sendRecordThreshold(i64::max_value());
+        data.set_receiveRecordThreshold(i64::max_value());
 
         let key = match self.key.as_ref() {
             Some(key) => key,
