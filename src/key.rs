@@ -479,12 +479,6 @@ impl Signature {
             bytes.as_ref(),
         )?))
     }
-
-    /// Format a `Signature` as a vec of bytes.
-    pub fn to_bytes(&self) -> Vec<u8> {
-        self.0.to_bytes().to_vec()
-    }
-
 }
 
 /// Construct a `Signature` from a hex representation of the signature.
