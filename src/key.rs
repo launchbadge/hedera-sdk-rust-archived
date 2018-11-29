@@ -506,6 +506,8 @@ impl ToProto<proto::BasicTypes::Signature> for Signature {
     }
 }
 
+
+
 #[cfg(test)]
 mod tests {
     use super::{KeyPair, PublicKey, SecretKey, Signature};
