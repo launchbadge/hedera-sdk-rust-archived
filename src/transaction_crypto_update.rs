@@ -5,18 +5,20 @@ use query_interface::{interfaces, vtable_for};
 
 use crate::{
     proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
-    AccountId, Client, Duration, ErrorKind, PublicKey, Timestamp, Transaction,
+    AccountId, Client, PublicKey, Transaction,
 };
+use chrono::{DateTime, Utc};
+use std::time::Duration;
 
 pub struct TransactionCryptoUpdate {
-    account_id_to_update: Option<AccountId>,
+    account_id_to_update: AccountId,
     key: Option<PublicKey>,
-    proxy_account_id: Option<AccountId>,
+    proxy_account: Option<AccountId>,
     proxy_fraction: Option<i32>,
     send_record_threshold: Option<u64>,
     receive_record_threshold: Option<u64>,
     auto_renew_period: Option<Duration>,
-    expiration_time: Option<Timestamp>,
+    expiration_time: Option<DateTime<Utc>>,
 }
 
 interfaces!(
@@ -25,13 +27,13 @@ interfaces!(
 );
 
 impl Transaction<TransactionCryptoUpdate> {
-    pub fn crypto_update(client: &Client) -> Self {
+    pub fn crypto_update(client: &Client, id: AccountId) -> Self {
         Self::new(
             client,
             TransactionCryptoUpdate {
-                account_id_to_update: None,
+                account_id_to_update: id,
                 key: None,
-                proxy_account_id: None,
+                proxy_account: None,
                 proxy_fraction: None,
                 send_record_threshold: None,
                 receive_record_threshold: None,
@@ -42,20 +44,14 @@ impl Transaction<TransactionCryptoUpdate> {
     }
 
     #[inline]
-    pub fn account_id_to_update(&mut self, account_id: AccountId) -> &mut Self {
-        self.inner().account_id_to_update = Some(account_id);
-        self
-    }
-
-    #[inline]
     pub fn key(&mut self, key: PublicKey) -> &mut Self {
         self.inner().key = Some(key);
         self
     }
 
     #[inline]
-    pub fn proxy_account_id(&mut self, proxy_account_id: AccountId) -> &mut Self {
-        self.inner().proxy_account_id = Some(proxy_account_id);
+    pub fn proxy_account(&mut self, proxy_account: AccountId) -> &mut Self {
+        self.inner().proxy_account = Some(proxy_account);
         self
     }
 
@@ -84,7 +80,7 @@ impl Transaction<TransactionCryptoUpdate> {
     }
 
     #[inline]
-    pub fn expiration_time(&mut self, expiration_time: Timestamp) -> &mut Self {
+    pub fn expiration_time(&mut self, expiration_time: chrono::DateTime<Utc>) -> &mut Self {
         self.inner().expiration_time = Some(expiration_time);
         self
     }
@@ -94,19 +90,14 @@ impl ToProto<TransactionBody_oneof_data> for TransactionCryptoUpdate {
     fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
         let mut data = proto::CryptoUpdate::CryptoUpdateTransactionBody::new();
 
-        let account_id = match self.account_id_to_update.as_ref() {
-            Some(account_id) => account_id,
-            None => Err(ErrorKind::MissingField("account_id_to_update"))?,
-        };
-
-        data.set_accountIDToUpdate(account_id.to_proto()?);
+        data.set_accountIDToUpdate(self.account_id_to_update.to_proto()?);
 
         if let Some(key) = self.key.as_ref() {
             data.set_key(key.to_proto()?);
         }
 
-        if let Some(proxy_account_id) = self.proxy_account_id.as_ref() {
-            data.set_proxyAccountID(proxy_account_id.to_proto()?);
+        if let Some(proxy_account) = self.proxy_account.as_ref() {
+            data.set_proxyAccountID(proxy_account.to_proto()?);
         }
 
         if let Some(proxy_fraction) = self.proxy_fraction.as_ref() {

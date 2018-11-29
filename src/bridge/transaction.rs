@@ -1,10 +1,12 @@
-use super::CTransactionId;
-use crate::{
-    AccountId, Client, PublicKey, SecretKey, Transaction, TransactionCreateAccount,
-    TransactionCryptoTransfer, TransactionCryptoUpdate, TransactionResponse,
-};
 use libc::c_char;
 use std::{ffi::CStr, mem};
+
+use crate::{
+    duration::Duration, timestamp::Timestamp, AccountId, Client, PublicKey, SecretKey, Transaction,
+    TransactionCreateAccount, TransactionCryptoTransfer, TransactionCryptoUpdate,
+};
+
+use super::CTransactionId;
 
 // Transaction
 // ----------------------------------------------------------------------------
@@ -165,31 +167,18 @@ pub unsafe extern "C" fn hedera_transaction__crypto_transfer__add_transfer(
 #[no_mangle]
 pub unsafe extern "C" fn hedera_transaction__crypto_update__new(
     client: *mut Client,
+    id: AccountId,
 ) -> *mut Transaction<TransactionCryptoUpdate> {
     debug_assert!(!client.is_null());
 
     let client = Box::from_raw(client);
 
-    let tx = Transaction::crypto_update(&client);
+    let tx = Transaction::crypto_update(&client, id);
     let tx = Box::new(tx);
 
     mem::forget(client);
 
     Box::into_raw(tx)
-}
-
-#[doc(hidden)]
-#[no_mangle]
-pub unsafe extern "C" fn hedera_transaction__crypto_update__set_account_id_to_update(
-    tx: *mut Transaction<TransactionCryptoUpdate>,
-    id: AccountId,
-) {
-    debug_assert!(!tx.is_null());
-
-    let mut tx = Box::from_raw(tx);
-    tx.account_id_to_update(id);
-
-    mem::forget(tx);
 }
 
 #[doc(hidden)]
@@ -215,7 +204,7 @@ pub unsafe extern "C" fn hedera_transaction__crypto_update__set_proxy_account_id
     debug_assert!(!tx.is_null());
 
     let mut tx = Box::from_raw(tx);
-    tx.proxy_account_id(proxy);
+    tx.proxy_account(proxy);
 
     mem::forget(tx);
 }
@@ -271,7 +260,7 @@ pub unsafe extern "C" fn hedera_transaction__crypto_update__set_auto_renew_perio
     debug_assert!(!tx.is_null());
 
     let mut tx = Box::from_raw(tx);
-    tx.auto_renew_period(duration);
+    tx.auto_renew_period(duration.into());
 
     mem::forget(tx);
 }
@@ -285,7 +274,7 @@ pub unsafe extern "C" fn hedera_transaction__crypto_update__set_expiration_time(
     debug_assert!(!tx.is_null());
 
     let mut tx = Box::from_raw(tx);
-    tx.expiration_time(time);
+    tx.expiration_time(time.into());
 
     mem::forget(tx);
 }
