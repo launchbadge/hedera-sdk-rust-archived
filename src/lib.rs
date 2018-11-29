@@ -20,6 +20,7 @@ mod query_get_account_balance;
 mod query_get_transaction_receipt;
 mod timestamp;
 mod transaction;
+mod transaction_admin_delete;
 mod transaction_create_account;
 mod transaction_crypto_transfer;
 mod transaction_crypto_update;
@@ -37,6 +38,7 @@ pub use self::{
     query_get_account_balance::*,
     query_get_transaction_receipt::*,
     transaction::*,
+    transaction_admin_delete::*,
     transaction_create_account::TransactionCreateAccount,
     transaction_crypto_transfer::TransactionCryptoTransfer,
     transaction_crypto_update::TransactionCryptoUpdate,

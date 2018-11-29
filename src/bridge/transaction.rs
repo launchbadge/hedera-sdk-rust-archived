@@ -1,9 +1,11 @@
+use chrono::{NaiveDateTime, TimeZone, Utc};
 use libc::c_char;
 use std::{ffi::CStr, mem};
 
 use crate::{
     duration::Duration, timestamp::Timestamp, AccountId, Client, PublicKey, SecretKey, Transaction,
-    TransactionCreateAccount, TransactionCryptoTransfer, TransactionCryptoUpdate,
+    TransactionAdminDelete, TransactionCreateAccount, TransactionCryptoTransfer,
+    TransactionCryptoUpdate,
 };
 
 use super::CTransactionId;
@@ -275,6 +277,43 @@ pub unsafe extern "C" fn hedera_transaction__crypto_update__set_expiration_time(
 
     let mut tx = Box::from_raw(tx);
     tx.expiration_time(time.into());
+
+    mem::forget(tx);
+}
+
+// TransactionAdminDelete
+// ----------------------------------------------------------------------------
+
+#[doc(hidden)]
+#[no_mangle]
+pub unsafe extern "C" fn hedera_transaction__admin_delete__new(
+    client: *mut Client,
+    id: crate::TransactionAdminDeleteId,
+) -> *mut Transaction<TransactionAdminDelete> {
+    debug_assert!(!client.is_null());
+
+    let client = Box::from_raw(client);
+
+    let tx = Transaction::admin_delete(&client, id);
+    let tx = Box::new(tx);
+
+    mem::forget(client);
+
+    Box::into_raw(tx)
+}
+
+#[doc(hidden)]
+#[no_mangle]
+pub unsafe extern "C" fn hedera_transaction__admin_delete__expiration(
+    tx: *mut Transaction<TransactionAdminDelete>,
+    time: i64,
+) {
+    debug_assert!(!tx.is_null());
+
+    let time = Utc.from_utc_datetime(&NaiveDateTime::from_timestamp(time, 0));
+
+    let mut tx = Box::from_raw(tx);
+    tx.expiration(time);
 
     mem::forget(tx);
 }
