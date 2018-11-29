@@ -1,7 +1,8 @@
 use crate::{
+    duration::Duration,
     error::ErrorKind,
     proto::{self, CryptoService_grpc::CryptoService, ToProto},
-    AccountId, Client, Duration, SecretKey, TransactionId,
+    AccountId, Client, SecretKey, TransactionId,
 };
 use failure::Error;
 use grpc::ClientStub;
@@ -69,8 +70,8 @@ pub struct TransactionResponse {
 //
 
 pub struct Transaction<T> {
+    id: Option<TransactionId>,
     client: Arc<grpc::Client>,
-    operator: Option<AccountId>,
     node: Option<AccountId>,
     secrets: Vec<SecretKey>,
     memo: Option<String>,
@@ -86,7 +87,7 @@ impl<T: 'static> Transaction<T> {
         let inner = Box::<T>::new(inner);
         Self {
             client: client.inner.clone(),
-            operator: None,
+            id: None,
             node: None,
             memo: None,
             secrets: Vec::new(),
@@ -101,7 +102,7 @@ impl<T: 'static> Transaction<T> {
     }
 
     pub fn operator(&mut self, id: AccountId) -> &mut Self {
-        self.operator = Some(id);
+        self.id = Some(TransactionId::new(id));
         self
     }
 
@@ -118,8 +119,13 @@ impl<T: 'static> Transaction<T> {
     pub fn execute(self) -> Result<TransactionResponse, Error> {
         use self::proto::Transaction::TransactionBody_oneof_data::*;
 
+        let id = self
+            .id
+            .as_ref()
+            .ok_or_else(|| ErrorKind::MissingField("operator"))?
+            .clone();
+
         let tx: proto::Transaction::Transaction = self.to_proto()?;
-        let id = tx.get_body().get_transactionID().clone().into();
         let client = proto::CryptoService_grpc::CryptoServiceClient::with_client(self.client);
         let o = Default::default();
 
@@ -190,11 +196,11 @@ impl<T> ToProto<proto::Transaction::TransactionBody> for Transaction<T> {
                 _ => unreachable!(),
             };
 
-        let account_id = self
-            .operator
-            .ok_or_else(|| ErrorKind::MissingField("account_id"))?;
+        let tx_id = self
+            .id
+            .as_ref()
+            .ok_or_else(|| ErrorKind::MissingField("operator"))?;
 
-        let tx_id = TransactionId::new(account_id);
         let mut body = proto::Transaction::TransactionBody::new();
         let node = self.node.ok_or_else(|| ErrorKind::MissingField("node"))?;
 

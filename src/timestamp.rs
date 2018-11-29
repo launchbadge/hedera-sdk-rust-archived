@@ -2,44 +2,40 @@ use crate::{
     error::ErrorKind,
     proto::{self, ToProto},
 };
-use chrono::Utc;
+use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
 use failure::Error;
 use itertools::Itertools;
-use std::{fmt, ops::Sub, str::FromStr};
+use std::str::FromStr;
 
-#[derive(Debug, PartialEq, Copy, Clone)]
 #[repr(C)]
-pub struct Timestamp {
-    pub seconds: i64,
-    pub nanos: i32,
-}
+#[derive(Debug)]
+pub struct Timestamp(pub(crate) i64, pub(crate) i32);
 
-impl Timestamp {
-    pub fn now() -> Self {
-        let now = Utc::now();
-
-        Timestamp {
-            seconds: now.timestamp(),
-            nanos: now.timestamp_subsec_nanos() as i32,
-        }
+impl From<Timestamp> for DateTime<Utc> {
+    fn from(Timestamp(seconds, nanos): Timestamp) -> Self {
+        Utc.from_utc_datetime(&NaiveDateTime::from_timestamp(seconds, nanos as u32))
     }
 }
 
-// Subtract seconds from this timestamp
-impl Sub<i64> for Timestamp {
-    type Output = Timestamp;
-
-    fn sub(self, rhs: i64) -> Self::Output {
-        Timestamp {
-            seconds: self.seconds - rhs,
-            nanos: self.nanos,
-        }
+impl From<DateTime<Utc>> for Timestamp {
+    fn from(dt: DateTime<Utc>) -> Self {
+        Timestamp(dt.timestamp(), dt.timestamp_subsec_nanos() as i32)
     }
 }
 
-impl fmt::Display for Timestamp {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "{}.{}", self.seconds, self.nanos)
+impl From<proto::Timestamp::Timestamp> for DateTime<Utc> {
+    fn from(dt: proto::Timestamp::Timestamp) -> Self {
+        Timestamp(dt.get_seconds(), dt.get_nanos()).into()
+    }
+}
+
+impl ToProto<proto::Timestamp::Timestamp> for DateTime<Utc> {
+    fn to_proto(&self) -> Result<proto::Timestamp::Timestamp, Error> {
+        let mut timestamp = proto::Timestamp::Timestamp::new();
+        timestamp.set_seconds(self.timestamp());
+        timestamp.set_nanos(self.timestamp_subsec_nanos() as i32);
+
+        Ok(timestamp)
     }
 }
 
@@ -52,56 +48,6 @@ impl FromStr for Timestamp {
             .next_tuple()
             .ok_or_else(|| ErrorKind::Parse("{seconds}.{nanos}"))?;
 
-        Ok(Self {
-            seconds: seconds.parse()?,
-            nanos: nanos.parse()?,
-        })
-    }
-}
-
-impl From<crate::proto::Timestamp::Timestamp> for Timestamp {
-    fn from(pb: crate::proto::Timestamp::Timestamp) -> Self {
-        Self {
-            seconds: pb.get_seconds(),
-            nanos: pb.get_nanos(),
-        }
-    }
-}
-
-impl ToProto<proto::Timestamp::Timestamp> for Timestamp {
-    fn to_proto(&self) -> Result<proto::Timestamp::Timestamp, Error> {
-        let mut timestamp = proto::Timestamp::Timestamp::new();
-        timestamp.set_seconds(self.seconds);
-        timestamp.set_nanos(self.nanos);
-
-        Ok(timestamp)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Timestamp;
-    use failure::Error;
-
-    #[test]
-    fn test_display() {
-        let timestamp = Timestamp {
-            seconds: 1234567,
-            nanos: 10001,
-        };
-
-        assert_eq!(format!("{}", timestamp), "1234567.10001");
-    }
-
-    #[test]
-    fn test_parse() -> Result<(), Error> {
-        let timestamp = Timestamp {
-            seconds: 1234567,
-            nanos: 10001,
-        };
-
-        assert_eq!("1234567.10001".parse::<Timestamp>()?, timestamp);
-
-        Ok(())
+        Ok(Timestamp(seconds.parse()?, nanos.parse()?))
     }
 }

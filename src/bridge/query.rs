@@ -1,3 +1,4 @@
+use super::CTransactionId;
 use crate::{
     AccountId, Client, Query, QueryGetAccountBalanceAnswer, QueryGetTransactionReceiptAnswer,
     TransactionId,
@@ -62,13 +63,13 @@ impl_answer!(hedera_query__get_account_balance__answer(
 #[no_mangle]
 pub unsafe extern "C" fn hedera_query__get_transaction_receipt__new(
     client: *mut Client,
-    transaction_id: TransactionId,
+    transaction_id: CTransactionId,
 ) -> *mut Query<QueryGetTransactionReceiptAnswer> {
     debug_assert!(!client.is_null());
 
     let client = Box::from_raw(client);
 
-    let query = Query::get_transaction_receipt(&*client, transaction_id);
+    let query = Query::get_transaction_receipt(&*client, transaction_id.into());
     let query = Box::new(query);
 
     mem::forget(client);

@@ -1,3 +1,4 @@
+use super::CTransactionId;
 use crate::{
     AccountId, Client, PublicKey, SecretKey, Transaction, TransactionCreateAccount,
     TransactionCryptoTransfer, TransactionResponse,
@@ -65,11 +66,11 @@ pub unsafe extern "C" fn hedera_transaction_sign(tx: *mut Transaction<()>, secre
 #[no_mangle]
 pub unsafe extern "C" fn hedera_transaction_execute(
     tx: *mut Transaction<()>,
-    out: *mut TransactionResponse,
+    out: *mut CTransactionId,
 ) -> u64 {
     debug_assert!(!tx.is_null());
 
-    *out = try_ffi!(Box::from_raw(tx).execute());
+    *out = try_ffi!(Box::from_raw(tx).execute()).id.into();
 
     0
 }

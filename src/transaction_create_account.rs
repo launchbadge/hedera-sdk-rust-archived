@@ -1,6 +1,7 @@
 use crate::{
+    duration::Duration,
     proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
-    Client, Duration, ErrorKind, PublicKey, Transaction,
+    AccountId, Client, ErrorKind, PublicKey, Transaction,
 };
 use failure::Error;
 use query_interface::{interfaces, vtable_for};
@@ -11,6 +12,10 @@ pub struct TransactionCreateAccount {
     initial_balance: u64,
     send_record_threshold: i64,
     receive_record_threshold: i64,
+    receiver_signature_required: bool,
+    proxy_account: Option<AccountId>,
+    proxy_fraction: Option<i32>,
+    max_receive_proxy_fraction: Option<i32>,
 }
 
 interfaces!(
@@ -27,6 +32,10 @@ impl Transaction<TransactionCreateAccount> {
                 initial_balance: 0,
                 send_record_threshold: i64::max_value(),
                 receive_record_threshold: i64::max_value(),
+                receiver_signature_required: false,
+                proxy_account: None,
+                proxy_fraction: None,
+                max_receive_proxy_fraction: None,
             },
         )
     }
@@ -40,6 +49,24 @@ impl Transaction<TransactionCreateAccount> {
     #[inline]
     pub fn initial_balance(&mut self, balance: u64) -> &mut Self {
         self.inner().initial_balance = balance;
+        self
+    }
+
+    #[inline]
+    pub fn proxy_account(&mut self, account: AccountId) -> &mut Self {
+        self.inner().proxy_account = Some(account);
+        self
+    }
+
+    #[inline]
+    pub fn proxy_fraction(&mut self, fraction: i32) -> &mut Self {
+        self.inner().proxy_fraction = Some(fraction);
+        self
+    }
+
+    #[inline]
+    pub fn max_receive_proxy_fraction(&mut self, fraction: i32) -> &mut Self {
+        self.inner().max_receive_proxy_fraction = Some(fraction);
         self
     }
 
@@ -60,6 +87,15 @@ impl Transaction<TransactionCreateAccount> {
         self.inner().receive_record_threshold = threshold;
         self
     }
+
+    /// If true, this account's key must sign any transaction depositing into this
+    /// account (in addition to all withdrawals). This field is immutable; it cannot be
+    /// changed by a CryptoUpdate transaction.
+    #[inline]
+    pub fn receiver_signature_required(&mut self, required: bool) -> &mut Self {
+        self.inner().receiver_signature_required = required;
+        self
+    }
 }
 
 impl ToProto<TransactionBody_oneof_data> for TransactionCreateAccount {
@@ -68,6 +104,19 @@ impl ToProto<TransactionBody_oneof_data> for TransactionCreateAccount {
         data.set_initialBalance(self.initial_balance);
         data.set_sendRecordThreshold(self.send_record_threshold as u64);
         data.set_receiveRecordThreshold(self.receive_record_threshold as u64);
+        data.set_receiverSigRequired(self.receiver_signature_required);
+
+        if let Some(account) = self.proxy_account {
+            data.set_proxyAccountID(account.to_proto()?);
+        }
+
+        if let Some(fraction) = self.proxy_fraction {
+            data.set_proxyFraction(fraction);
+        }
+
+        if let Some(fraction) = self.max_receive_proxy_fraction {
+            data.set_maxReceiveProxyFraction(fraction);
+        }
 
         let key = match self.key.as_ref() {
             Some(key) => key,

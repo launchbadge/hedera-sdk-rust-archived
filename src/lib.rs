@@ -27,14 +27,12 @@ pub use self::bridge::*;
 
 pub use self::{
     client::Client,
-    duration::Duration,
     error::ErrorKind,
     id::*,
     key::{KeyPair, PublicKey, SecretKey},
     query::Query,
     query_get_account_balance::*,
     query_get_transaction_receipt::*,
-    timestamp::Timestamp,
     transaction::*,
     transaction_create_account::TransactionCreateAccount,
     transaction_crypto_transfer::TransactionCryptoTransfer,

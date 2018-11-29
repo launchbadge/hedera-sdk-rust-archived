@@ -1,18 +1,17 @@
 use crate::{
     error::ErrorKind,
     proto::{self, ToProto},
-    timestamp::Timestamp,
     AccountId,
 };
+use chrono::{DateTime, Duration, Utc};
 use failure::Error;
 use itertools::Itertools;
 use std::{fmt, str::FromStr};
 
-#[derive(Debug, PartialEq)]
-#[repr(C)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TransactionId {
     pub account_id: AccountId,
-    pub transaction_valid_start: Timestamp,
+    pub transaction_valid_start: DateTime<Utc>,
 }
 
 impl TransactionId {
@@ -21,14 +20,20 @@ impl TransactionId {
             account_id,
             // Allows the transaction to be accepted as long as the
             // server is not more than 10 seconds behind us
-            transaction_valid_start: Timestamp::now() - 10,
+            transaction_valid_start: Utc::now() - Duration::seconds(10),
         }
     }
 }
 
 impl fmt::Display for TransactionId {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "{}@{}", self.account_id, self.transaction_valid_start)
+        write!(
+            f,
+            "{}@{}.{}",
+            self.account_id,
+            self.transaction_valid_start.timestamp(),
+            self.transaction_valid_start.timestamp_subsec_nanos()
+        )
     }
 }
 
@@ -36,32 +41,29 @@ impl FromStr for TransactionId {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        use crate::timestamp::Timestamp;
+
         let id = match s.split('@').next_tuple() {
             Some((account_id, timestamp)) => Self {
                 account_id: account_id.parse()?,
-                transaction_valid_start: timestamp.parse()?,
+                transaction_valid_start: Timestamp::from_str(timestamp)?.into(),
             },
             None => {
                 let b = hex::decode(s)?;
-                let pb_id: crate::proto::BasicTypes::TransactionID =
+
+                let mut pb: crate::proto::BasicTypes::TransactionID =
                     protobuf::parse_from_bytes(b.as_slice()).map_err(|_| {
                         ErrorKind::Parse("{realm}:{shard}:{account}@{seconds}.{nanos}")
                     })?;
 
-                Self::from(pb_id)
+                Self {
+                    account_id: pb.take_accountID().into(),
+                    transaction_valid_start: pb.take_transactionValidStart().into(),
+                }
             }
         };
 
         Ok(id)
-    }
-}
-
-impl From<crate::proto::BasicTypes::TransactionID> for TransactionId {
-    fn from(mut pb: crate::proto::BasicTypes::TransactionID) -> Self {
-        Self {
-            account_id: pb.take_accountID().into(),
-            transaction_valid_start: pb.take_transactionValidStart().into(),
-        }
     }
 }
 
@@ -78,16 +80,13 @@ impl ToProto<proto::BasicTypes::TransactionID> for TransactionId {
 #[cfg(test)]
 mod tests {
     use super::TransactionId;
-    use crate::{AccountId, Timestamp};
+    use crate::{timestamp::Timestamp, AccountId};
     use failure::Error;
 
     #[test]
     fn test_display() {
         let account_id = AccountId::new(7, 5, 1001);
-        let transaction_valid_start = Timestamp {
-            seconds: 1234567,
-            nanos: 10001,
-        };
+        let transaction_valid_start = Timestamp(1234567, 10001).into();
         let transaction_id = TransactionId {
             account_id,
             transaction_valid_start,
@@ -99,10 +98,7 @@ mod tests {
     #[test]
     fn test_parse() -> Result<(), Error> {
         let account_id = AccountId::new(7, 5, 1001);
-        let transaction_valid_start = Timestamp {
-            seconds: 1234567,
-            nanos: 10001,
-        };
+        let transaction_valid_start = Timestamp(1234567, 10001).into();
         let transaction_id = TransactionId {
             account_id,
             transaction_valid_start,
@@ -119,10 +115,7 @@ mod tests {
     #[test]
     fn test_parse_encoded() -> Result<(), Error> {
         let account_id = AccountId::new(0, 0, 2);
-        let transaction_valid_start = Timestamp {
-            seconds: 1539387985,
-            nanos: 758025699,
-        };
+        let transaction_valid_start = Timestamp(1539387985, 758025699).into();
         let transaction_id = TransactionId {
             account_id,
             transaction_valid_start,
