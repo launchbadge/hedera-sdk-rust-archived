@@ -1,10 +1,12 @@
-use super::CTransactionId;
-use crate::{
-    AccountId, Client, PublicKey, SecretKey, Transaction, TransactionCreateAccount,
-    TransactionCryptoTransfer,
-};
 use libc::c_char;
 use std::{ffi::CStr, mem};
+
+use crate::{
+    duration::Duration, timestamp::Timestamp, AccountId, Client, PublicKey, SecretKey, Transaction,
+    TransactionCreateAccount, TransactionCryptoTransfer, TransactionCryptoUpdate,
+};
+
+use super::CTransactionId;
 
 // Transaction
 // ----------------------------------------------------------------------------
@@ -154,6 +156,125 @@ pub unsafe extern "C" fn hedera_transaction__crypto_transfer__add_transfer(
 
     let mut tx = Box::from_raw(tx);
     tx.transfer(id, amount);
+
+    mem::forget(tx);
+}
+
+// TransactionCryptoUpdate
+// ----------------------------------------------------------------------------
+
+#[doc(hidden)]
+#[no_mangle]
+pub unsafe extern "C" fn hedera_transaction__crypto_update__new(
+    client: *mut Client,
+    id: AccountId,
+) -> *mut Transaction<TransactionCryptoUpdate> {
+    debug_assert!(!client.is_null());
+
+    let client = Box::from_raw(client);
+
+    let tx = Transaction::crypto_update(&client, id);
+    let tx = Box::new(tx);
+
+    mem::forget(client);
+
+    Box::into_raw(tx)
+}
+
+#[doc(hidden)]
+#[no_mangle]
+pub unsafe extern "C" fn hedera_transaction__crypto_update__set_key(
+    tx: *mut Transaction<TransactionCryptoUpdate>,
+    public: PublicKey,
+) {
+    debug_assert!(!tx.is_null());
+
+    let mut tx = Box::from_raw(tx);
+    tx.key(public);
+
+    mem::forget(tx);
+}
+
+#[doc(hidden)]
+#[no_mangle]
+pub unsafe extern "C" fn hedera_transaction__crypto_update__set_proxy_account_id(
+    tx: *mut Transaction<TransactionCryptoUpdate>,
+    proxy: AccountId,
+) {
+    debug_assert!(!tx.is_null());
+
+    let mut tx = Box::from_raw(tx);
+    tx.proxy_account(proxy);
+
+    mem::forget(tx);
+}
+
+#[doc(hidden)]
+#[no_mangle]
+pub unsafe extern "C" fn hedera_transaction__crypto_update__set_proxy_fraction(
+    tx: *mut Transaction<TransactionCryptoUpdate>,
+    fraction: i32,
+) {
+    debug_assert!(!tx.is_null());
+
+    let mut tx = Box::from_raw(tx);
+    tx.proxy_fraction(fraction);
+
+    mem::forget(tx);
+}
+
+#[doc(hidden)]
+#[no_mangle]
+pub unsafe extern "C" fn hedera_transaction__crypto_update__set_send_record_threshold(
+    tx: *mut Transaction<TransactionCryptoUpdate>,
+    threshold: u64,
+) {
+    debug_assert!(!tx.is_null());
+
+    let mut tx = Box::from_raw(tx);
+    tx.send_record_threshold(threshold);
+
+    mem::forget(tx);
+}
+
+#[doc(hidden)]
+#[no_mangle]
+pub unsafe extern "C" fn hedera_transaction__crypto_update__set_receive_record_threshold(
+    tx: *mut Transaction<TransactionCryptoUpdate>,
+    threshold: u64,
+) {
+    debug_assert!(!tx.is_null());
+
+    let mut tx = Box::from_raw(tx);
+    tx.receive_record_threshold(threshold);
+
+    mem::forget(tx);
+}
+
+#[doc(hidden)]
+#[no_mangle]
+pub unsafe extern "C" fn hedera_transaction__crypto_update__set_auto_renew_period(
+    tx: *mut Transaction<TransactionCryptoUpdate>,
+    duration: Duration,
+) {
+    debug_assert!(!tx.is_null());
+
+    let mut tx = Box::from_raw(tx);
+    tx.auto_renew_period(duration.into());
+
+    mem::forget(tx);
+}
+
+#[doc(hidden)]
+#[no_mangle]
+pub unsafe extern "C" fn hedera_transaction__crypto_update__set_expiration_time(
+    tx: *mut Transaction<TransactionCryptoUpdate>,
+    time: Timestamp,
+) {
+    debug_assert!(!tx.is_null());
+
+    let mut tx = Box::from_raw(tx);
+    tx.expiration_time(time.into());
 
     mem::forget(tx);
 }
