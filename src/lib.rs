@@ -1,5 +1,7 @@
+#![feature(try_from)]
 #![cfg_attr(test, feature(test))]
-#![allow(renamed_and_removed_lints)]
+#![warn(clippy::pedantic)]
+#![allow(clippy::stutter)]
 
 #[cfg(test)]
 extern crate test;

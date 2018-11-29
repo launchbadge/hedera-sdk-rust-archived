@@ -1,7 +1,6 @@
 use super::CTransactionId;
 use crate::{
     AccountId, Client, Query, QueryGetAccountBalanceAnswer, QueryGetTransactionReceiptAnswer,
-    TransactionId,
 };
 use std::mem;
 

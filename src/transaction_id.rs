@@ -1,12 +1,14 @@
+use std::{fmt, str::FromStr};
+
+use chrono::{DateTime, Duration, Utc};
+use failure::Error;
+use itertools::Itertools;
+
 use crate::{
     error::ErrorKind,
     proto::{self, ToProto},
     AccountId,
 };
-use chrono::{DateTime, Duration, Utc};
-use failure::Error;
-use itertools::Itertools;
-use std::{fmt, str::FromStr};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TransactionId {
@@ -16,7 +18,7 @@ pub struct TransactionId {
 
 impl TransactionId {
     pub fn new(account_id: AccountId) -> Self {
-        TransactionId {
+        Self {
             account_id,
             // Allows the transaction to be accepted as long as the
             // server is not more than 10 seconds behind us
@@ -43,27 +45,23 @@ impl FromStr for TransactionId {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         use crate::timestamp::Timestamp;
 
-        let id = match s.split('@').next_tuple() {
-            Some((account_id, timestamp)) => Self {
+        if let Some((account_id, timestamp)) = s.split('@').next_tuple() {
+            Ok(Self {
                 account_id: account_id.parse()?,
                 transaction_valid_start: Timestamp::from_str(timestamp)?.into(),
-            },
-            None => {
-                let b = hex::decode(s)?;
+            })
+        } else {
+            let b = hex::decode(s)?;
 
-                let mut pb: crate::proto::BasicTypes::TransactionID =
-                    protobuf::parse_from_bytes(b.as_slice()).map_err(|_| {
-                        ErrorKind::Parse("{realm}:{shard}:{account}@{seconds}.{nanos}")
-                    })?;
+            let mut pb: crate::proto::BasicTypes::TransactionID =
+                protobuf::parse_from_bytes(b.as_slice())
+                    .map_err(|_| ErrorKind::Parse("{realm}:{shard}:{account}@{seconds}.{nanos}"))?;
 
-                Self {
-                    account_id: pb.take_accountID().into(),
-                    transaction_valid_start: pb.take_transactionValidStart().into(),
-                }
-            }
-        };
-
-        Ok(id)
+            Ok(Self {
+                account_id: pb.take_accountID().into(),
+                transaction_valid_start: pb.take_transactionValidStart().into(),
+            })
+        }
     }
 }
 
@@ -79,9 +77,11 @@ impl ToProto<proto::BasicTypes::TransactionID> for TransactionId {
 
 #[cfg(test)]
 mod tests {
-    use super::TransactionId;
-    use crate::{timestamp::Timestamp, AccountId};
     use failure::Error;
+
+    use crate::{timestamp::Timestamp, AccountId};
+
+    use super::TransactionId;
 
     #[test]
     fn test_display() {

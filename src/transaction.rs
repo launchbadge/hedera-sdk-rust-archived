@@ -1,5 +1,4 @@
 use crate::{
-    duration::Duration,
     error::ErrorKind,
     proto::{self, CryptoService_grpc::CryptoService, ToProto},
     AccountId, Client, SecretKey, TransactionId,
@@ -8,7 +7,7 @@ use failure::Error;
 use grpc::ClientStub;
 use protobuf::{Message, RepeatedField};
 use query_interface::Object;
-use std::{any::Any, marker::PhantomData, sync::Arc};
+use std::{any::Any, marker::PhantomData, sync::Arc, time::Duration};
 
 //
 // Transaction Response
@@ -127,7 +126,7 @@ impl<T: 'static> Transaction<T> {
 
         let tx: proto::Transaction::Transaction = self.to_proto()?;
         let client = proto::CryptoService_grpc::CryptoServiceClient::with_client(self.client);
-        let o = Default::default();
+        let o = grpc::RequestOptions::default();
 
         let response = match tx.get_body().data {
             Some(cryptoCreateAccount(_)) => client.create_account(o, tx),
@@ -205,7 +204,7 @@ impl<T> ToProto<proto::Transaction::TransactionBody> for Transaction<T> {
         let node = self.node.ok_or_else(|| ErrorKind::MissingField("node"))?;
 
         body.set_nodeAccountID(node.to_proto()?);
-        body.set_transactionValidDuration(Duration::new(120, 0).to_proto()?);
+        body.set_transactionValidDuration(Duration::from_secs(120).to_proto()?);
         // TODO: Figure out a good way to do fees
         body.set_transactionFee(10);
         body.set_generateRecord(false);

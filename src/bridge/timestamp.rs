@@ -1,5 +1,5 @@
 use crate::timestamp::Timestamp;
-use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
+use chrono::Utc;
 
 #[doc(hidden)]
 #[no_mangle]

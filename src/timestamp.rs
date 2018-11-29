@@ -5,7 +5,7 @@ use crate::{
 use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
 use failure::Error;
 use itertools::Itertools;
-use std::str::FromStr;
+use std::{convert::TryInto, str::FromStr};
 
 #[repr(C)]
 #[derive(Debug)]
@@ -13,13 +13,19 @@ pub struct Timestamp(pub(crate) i64, pub(crate) i32);
 
 impl From<Timestamp> for DateTime<Utc> {
     fn from(Timestamp(seconds, nanos): Timestamp) -> Self {
-        Utc.from_utc_datetime(&NaiveDateTime::from_timestamp(seconds, nanos as u32))
+        Utc.from_utc_datetime(&NaiveDateTime::from_timestamp(
+            seconds,
+            nanos.try_into().unwrap(),
+        ))
     }
 }
 
 impl From<DateTime<Utc>> for Timestamp {
     fn from(dt: DateTime<Utc>) -> Self {
-        Timestamp(dt.timestamp(), dt.timestamp_subsec_nanos() as i32)
+        Timestamp(
+            dt.timestamp(),
+            dt.timestamp_subsec_nanos().try_into().unwrap(),
+        )
     }
 }
 
@@ -33,7 +39,7 @@ impl ToProto<proto::Timestamp::Timestamp> for DateTime<Utc> {
     fn to_proto(&self) -> Result<proto::Timestamp::Timestamp, Error> {
         let mut timestamp = proto::Timestamp::Timestamp::new();
         timestamp.set_seconds(self.timestamp());
-        timestamp.set_nanos(self.timestamp_subsec_nanos() as i32);
+        timestamp.set_nanos(self.timestamp_subsec_nanos().try_into()?);
 
         Ok(timestamp)
     }

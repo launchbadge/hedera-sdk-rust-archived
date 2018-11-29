@@ -1,11 +1,10 @@
 use crate::{
-    duration::Duration,
     proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
     AccountId, Client, ErrorKind, PublicKey, Transaction,
 };
 use failure::Error;
 use query_interface::{interfaces, vtable_for};
-use std::any::Any;
+use std::{any::Any, convert::TryInto, time::Duration};
 
 pub struct TransactionCreateAccount {
     key: Option<PublicKey>,
@@ -102,8 +101,8 @@ impl ToProto<TransactionBody_oneof_data> for TransactionCreateAccount {
     fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
         let mut data = proto::CryptoCreate::CryptoCreateTransactionBody::new();
         data.set_initialBalance(self.initial_balance);
-        data.set_sendRecordThreshold(self.send_record_threshold as u64);
-        data.set_receiveRecordThreshold(self.receive_record_threshold as u64);
+        data.set_sendRecordThreshold(self.send_record_threshold.try_into()?);
+        data.set_receiveRecordThreshold(self.receive_record_threshold.try_into()?);
         data.set_receiverSigRequired(self.receiver_signature_required);
 
         if let Some(account) = self.proxy_account {
@@ -124,7 +123,7 @@ impl ToProto<TransactionBody_oneof_data> for TransactionCreateAccount {
         };
 
         data.set_key(key.to_proto()?);
-        data.set_autoRenewPeriod(Duration::new(2_592_000, 0).to_proto()?);
+        data.set_autoRenewPeriod(Duration::from_secs(2_592_000).to_proto()?);
 
         Ok(TransactionBody_oneof_data::cryptoCreateAccount(data))
     }

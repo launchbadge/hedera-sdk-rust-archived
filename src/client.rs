@@ -26,7 +26,7 @@ impl Client {
                 http: httpbis::ClientConf {
                     no_delay: Some(true),
                     connection_timeout: Some(Duration::from_secs(5)),
-                    ..Default::default()
+                    ..httpbis::ClientConf::default()
                 },
             },
         )?);

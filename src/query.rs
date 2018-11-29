@@ -38,7 +38,7 @@ impl<T> Query<T> {
         let query = self.to_proto()?;
         let client =
             proto::CryptoService_grpc::CryptoServiceClient::with_client(self.client.clone());
-        let o = Default::default();
+        let o = grpc::RequestOptions::default();
 
         let response = match query.query {
             Some(cryptogetAccountBalance(_)) => client.crypto_get_balance(o, query),
