@@ -115,7 +115,7 @@ impl<T: 'static> Transaction<T> {
         self
     }
 
-    pub fn execute(self) -> Result<TransactionResponse, Error> {
+    pub fn execute(&mut self) -> Result<TransactionResponse, Error> {
         use self::proto::Transaction::TransactionBody_oneof_data::*;
 
         let id = self
@@ -125,7 +125,9 @@ impl<T: 'static> Transaction<T> {
             .clone();
 
         let tx: proto::Transaction::Transaction = self.to_proto()?;
-        let client = proto::CryptoService_grpc::CryptoServiceClient::with_client(self.client);
+        let client =
+            proto::CryptoService_grpc::CryptoServiceClient::with_client(Arc::clone(&self.client));
+
         let o = grpc::RequestOptions::default();
 
         let response = match tx.get_body().data {

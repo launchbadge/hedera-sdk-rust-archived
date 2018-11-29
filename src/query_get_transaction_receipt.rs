@@ -11,8 +11,8 @@ pub struct QueryGetTransactionReceipt {
 
 #[repr(C)]
 pub struct QueryGetTransactionReceiptAnswer {
-    status: u8,
-    account_id: Option<Box<AccountId>>,
+    pub status: u8,
+    pub account_id: Option<Box<AccountId>>,
     // unsupported: contract_id: Option<Box<ContractId>>,
     // unsupported: file_id: Option<Box<FileId>>,
 }
