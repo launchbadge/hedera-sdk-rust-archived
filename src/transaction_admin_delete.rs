@@ -5,12 +5,13 @@ use std::any::Any;
 
 use crate::{
     proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
-    Client, ContractId, FileId, Transaction,
+    transaction::Transaction,
+    Client, ContractId, FileId,
 };
 
 /// Delete a file. Requires the operator to be the Hedera administrator.
 /// File will be permanently deleted in 1 minute (by default). Before then, it can be recovered
-/// with [TransactionAdminFileRecover].
+/// with [TransactionAdminFileRecover](struct.TransactionAdminFileRecover.html).
 pub struct TransactionAdminFileDelete {
     id: FileId,
     exp: DateTime<Utc>,
@@ -52,7 +53,7 @@ impl ToProto<TransactionBody_oneof_data> for TransactionAdminFileDelete {
 
 /// Delete a contract. Requires the operator to be the Hedera administrator.
 /// Contract will be permanently deleted in 1 minute (by default). Before then, it can be recovered
-/// with [TransactionAdminFileRecover].
+/// with [TransactionAdminContractRecover](struct.TransactionAdminContractRecover.html).
 pub struct TransactionAdminContractDelete {
     id: ContractId,
     exp: DateTime<Utc>,

@@ -4,8 +4,10 @@ use failure::Error;
 use query_interface::{interfaces, vtable_for};
 
 use crate::{
+    crypto::PublicKey,
     proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
-    AccountId, Client, PublicKey, Transaction,
+    transaction::Transaction,
+    AccountId, Client,
 };
 use chrono::{DateTime, Utc};
 use std::time::Duration;

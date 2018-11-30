@@ -1,3 +1,8 @@
+use std::sync::Arc;
+
+use failure::Error;
+use grpc::ClientStub;
+
 use crate::{
     proto::{
         self, CryptoService_grpc::CryptoService, Query::Query_oneof_query,
@@ -5,9 +10,9 @@ use crate::{
     },
     Client, ErrorKind, PreCheckCode,
 };
-use failure::Error;
-use grpc::ClientStub;
-use std::sync::Arc;
+
+// Re-export query-like things under the query namespace
+pub use crate::{query_get_account_balance::*, query_get_transaction_receipt::*};
 
 #[doc(hidden)]
 pub trait QueryInner {

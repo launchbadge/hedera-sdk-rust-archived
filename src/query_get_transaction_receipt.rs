@@ -1,7 +1,7 @@
 use crate::{
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
-    query::QueryInner,
-    AccountId, Client, ErrorKind, PreCheckCode, Query, TransactionId,
+    query::{Query, QueryInner},
+    AccountId, Client, ErrorKind, PreCheckCode, TransactionId,
 };
 use failure::Error;
 

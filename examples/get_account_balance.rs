@@ -1,5 +1,5 @@
 use failure::Error;
-use hedera::{Client, QueryGetAccountBalance};
+use hedera::{Client, query::QueryGetAccountBalance};
 use std::{thread::sleep, time::Duration};
 
 fn main() -> Result<(), Error> {

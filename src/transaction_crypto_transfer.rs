@@ -1,6 +1,7 @@
 use crate::{
     proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
-    AccountId, Client, Transaction,
+    transaction::Transaction,
+    AccountId, Client,
 };
 use failure::Error;
 use protobuf::RepeatedField;

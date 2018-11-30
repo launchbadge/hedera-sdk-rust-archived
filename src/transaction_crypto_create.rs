@@ -1,6 +1,8 @@
 use crate::{
+    crypto::PublicKey,
     proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
-    AccountId, Client, ErrorKind, PublicKey, Transaction,
+    transaction::Transaction,
+    AccountId, Client, ErrorKind,
 };
 use failure::Error;
 use query_interface::{interfaces, vtable_for};

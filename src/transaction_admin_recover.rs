@@ -5,7 +5,8 @@ use query_interface::{interfaces, vtable_for};
 
 use crate::{
     proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
-    Client, ContractId, FileId, Transaction,
+    transaction::Transaction,
+    Client, ContractId, FileId,
 };
 
 /// Recover a file. Requires the operator to be the Hedera administrator.

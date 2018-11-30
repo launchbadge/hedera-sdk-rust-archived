@@ -1,5 +1,5 @@
 use failure::{format_err, Error};
-use hedera::{Client, QueryGetTransactionReceipt, SecretKey, TransactionCryptoCreate};
+use hedera::{Client, query::QueryGetTransactionReceipt, crypto::SecretKey, transaction::TransactionCryptoCreate};
 use std::{env, thread::sleep, time::Duration};
 
 fn main() -> Result<(), Error> {

@@ -10,16 +10,16 @@ extern crate test;
 mod bridge;
 
 mod client;
+pub mod crypto;
 mod duration;
 mod error;
 mod id;
-mod key;
 mod proto;
-mod query;
+pub mod query;
 mod query_get_account_balance;
 mod query_get_transaction_receipt;
 mod timestamp;
-mod transaction;
+pub mod transaction;
 mod transaction_admin_delete;
 mod transaction_admin_recover;
 mod transaction_crypto_create;
@@ -28,25 +28,12 @@ mod transaction_crypto_delete_claim;
 mod transaction_crypto_transfer;
 mod transaction_crypto_update;
 mod transaction_id;
+mod transaction_response;
 
 #[cfg(feature = "bridge-c")]
 pub use self::bridge::*;
 
 pub use self::{
-    client::Client,
-    error::ErrorKind,
-    id::*,
-    key::{KeyPair, PublicKey, SecretKey},
-    query::Query,
-    query_get_account_balance::*,
-    query_get_transaction_receipt::*,
-    transaction::*,
-    transaction_admin_delete::{TransactionAdminContractDelete, TransactionAdminFileDelete},
-    transaction_admin_recover::{TransactionAdminContractRecover, TransactionAdminFileRecover},
-    transaction_crypto_create::TransactionCryptoCreate,
-    transaction_crypto_delete::TransactionCryptoDelete,
-    transaction_crypto_delete_claim::TransactionCryptoDeleteClaim,
-    transaction_crypto_transfer::TransactionCryptoTransfer,
-    transaction_crypto_update::TransactionCryptoUpdate,
-    transaction_id::TransactionId,
+    client::Client, error::ErrorKind, id::*, transaction_id::TransactionId,
+    transaction_response::PreCheckCode,
 };
