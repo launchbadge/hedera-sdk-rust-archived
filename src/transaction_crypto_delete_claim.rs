@@ -35,7 +35,7 @@ impl Transaction<TransactionCryptoDeleteClaim> {
 
 impl ToProto<TransactionBody_oneof_data> for TransactionCryptoDeleteClaim {
     fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
-        let mut data = proto::CryptoDeleteClaim::CryptoDeleteClaimTransactionBody::new();
+        let mut data = proto::CryptoDeleteClaim::CryptoDeleteClaimTransactionBody::default();
 
         data.set_accountIDToDeleteFrom(self.account_id_to_delete_from.to_proto()?);
 
