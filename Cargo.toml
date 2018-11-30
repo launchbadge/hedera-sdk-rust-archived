@@ -35,7 +35,6 @@ mbox = { version = "0.5.0", optional = true }
 itertools = "0.7.11"
 chrono = "0.4.6"
 futures = "0.1.25"
-bytes = "0.4.11"
 # unstable is required to allow non-copy types in the SlotMap (the `Error` types)
 slotmap = { version = "0.3.0", features = [ "unstable" ], optional = true }
 parking_lot = "0.7.0"

@@ -5,11 +5,11 @@ use crate::{
 use failure::Error;
 use query_interface::{interfaces, vtable_for};
 use std::any::Any;
-use bytes::Bytes;
+use std::vec::Vec;
 
 pub struct TransactionCryptoDeleteClaim {
     accountIDToDeleteFrom: AccountId,
-    hashToDelete: Option<Bytes>,
+    hashToDelete: Option<Vec<u8>>,
 }
 
 interfaces!(
@@ -28,7 +28,7 @@ impl Transaction<TransactionCryptoDeleteClaim> {
         )
     }
 
-    pub fn hashToDelete(&mut self, hash: Bytes) -> Self {
+    pub fn hashToDelete(&mut self, hash: Vec<u8>) -> &mut Self {
         self.inner().hashToDelete = Some(hash);
         self
     }
@@ -38,11 +38,13 @@ impl ToProto<TransactionBody_oneof_data> for TransactionCryptoDeleteClaim {
     fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
         let mut data = proto::CryptoDeleteClaim::CryptoDeleteClaimTransactionBody::new();
 
-        dat.set_accountIDToDeleteFrom(self.accountIDToDeleteFrom.to_proto()?);
+        data.set_accountIDToDeleteFrom(self.accountIDToDeleteFrom.to_proto()?);
 
           match self.hashToDelete {
-            Some(hash) => data.set_deleteAccountID(hash.to_proto()?),
+            Some(hash) => data.set_hashToDelete(hash),
             None => Err(ErrorKind::MissingField("hashToDelete"))?,
-        }
+        };
+
+        Ok(TransactionBody_oneof_data::cryptoDeleteClaim(data))
     }
 }
