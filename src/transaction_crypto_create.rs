@@ -15,6 +15,7 @@ pub struct TransactionCryptoCreate {
     proxy_account: Option<AccountId>,
     proxy_fraction: Option<i32>,
     max_receive_proxy_fraction: Option<i32>,
+    auto_renew_period: Duration,
 }
 
 interfaces!(
@@ -35,6 +36,7 @@ impl TransactionCryptoCreate {
                 proxy_account: None,
                 proxy_fraction: None,
                 max_receive_proxy_fraction: None,
+                auto_renew_period: Duration::from_secs(2_592_000),
             },
         )
     }
@@ -68,6 +70,17 @@ impl Transaction<TransactionCryptoCreate> {
     #[inline]
     pub fn max_receive_proxy_fraction(&mut self, fraction: i32) -> &mut Self {
         self.inner().max_receive_proxy_fraction = Some(fraction);
+        self
+    }
+
+    /// The account is charged to extend its expiration date every this many seconds.
+    /// If it doesn't have enough, it extends as long as possible.
+    /// If it is empty when it expires, then it is deleted.
+    ///
+    /// Defaults to `2_592_000` seconds.
+    #[inline]
+    pub fn auto_renew_period(&mut self, period: Duration) -> &mut Self {
+        self.inner().auto_renew_period = period;
         self
     }
 
