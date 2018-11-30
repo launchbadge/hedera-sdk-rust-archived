@@ -45,6 +45,14 @@ impl ToProto<proto::Timestamp::Timestamp> for DateTime<Utc> {
     }
 }
 
+impl ToProto<proto::Timestamp::TimestampSeconds> for DateTime<Utc> {
+    fn to_proto(&self) -> Result<proto::Timestamp::TimestampSeconds, Error> {
+        let mut timestamp = proto::Timestamp::TimestampSeconds::new();
+        timestamp.set_seconds(self.timestamp());
+        Ok(timestamp)
+    }
+}
+
 impl FromStr for Timestamp {
     type Err = Error;
 
