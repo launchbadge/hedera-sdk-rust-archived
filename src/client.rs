@@ -13,10 +13,7 @@ use crate::{
         TransactionCryptoDeleteClaim, TransactionCryptoUpdate, TransactionFileAppend,
         TransactionFileCreate,
     },
-    transaction_contract_call::TransactionContractCall,
-    transaction_contract_create::TransactionContractCreate,
-    transaction_file_delete::TransactionFileDelete,
-    AccountId, ContractId, FileId, TransactionId,
+    AccountId, TransactionId,
 };
 
 pub struct Client {

@@ -27,3 +27,12 @@ impl ToProto<proto::Duration::Duration> for std::time::Duration {
         Ok(duration)
     }
 }
+
+impl From<proto::Duration::Duration> for std::time::Duration {
+    fn from(duration: proto::Duration::Duration) -> Self {
+        Self::new(
+            duration.get_seconds().try_into().unwrap(),
+            duration.get_nanos().try_into().unwrap(),
+        )
+    }
+}
