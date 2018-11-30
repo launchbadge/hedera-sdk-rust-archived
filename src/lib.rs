@@ -9,7 +9,7 @@ extern crate test;
 #[cfg(feature = "bridge-c")]
 mod bridge;
 
-mod client;
+pub mod client;
 pub mod crypto;
 mod duration;
 mod error;

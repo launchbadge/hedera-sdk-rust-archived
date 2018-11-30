@@ -10,7 +10,7 @@ pub struct QueryGetTransactionReceipt {
 }
 
 #[repr(C)]
-pub struct QueryGetTransactionReceiptAnswer {
+pub struct QueryGetTransactionReceiptResponse {
     pub status: u8,
     pub account_id: Option<Box<AccountId>>,
     // unsupported: contract_id: Option<Box<ContractId>>,
@@ -21,15 +21,15 @@ impl QueryGetTransactionReceipt {
     pub fn new(
         client: &Client,
         transaction_id: TransactionId,
-    ) -> Query<QueryGetTransactionReceiptAnswer> {
+    ) -> Query<QueryGetTransactionReceiptResponse> {
         Query::new(client, Self { transaction_id })
     }
 }
 
 impl QueryInner for QueryGetTransactionReceipt {
-    type Answer = QueryGetTransactionReceiptAnswer;
+    type Response = QueryGetTransactionReceiptResponse;
 
-    fn answer(&self, mut response: proto::Response::Response) -> Result<Self::Answer, Error> {
+    fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
         let mut response = response.take_transactionGetReceipt();
         let header = response.take_header();
         let mut receipt = response.take_receipt();
@@ -41,7 +41,7 @@ impl QueryInner for QueryGetTransactionReceipt {
         };
 
         match header.get_nodeTransactionPrecheckCode().into() {
-            PreCheckCode::Ok => Ok(QueryGetTransactionReceiptAnswer {
+            PreCheckCode::Ok => Ok(QueryGetTransactionReceiptResponse {
                 status: receipt.get_status() as u8,
                 account_id,
             }),

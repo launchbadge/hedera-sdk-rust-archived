@@ -1,10 +1,10 @@
 use super::CTransactionId;
 use crate::{
-    AccountId, Client, Query, QueryGetAccountBalanceAnswer, QueryGetTransactionReceiptAnswer,
+    AccountId, Client, Query, QueryGetAccountBalanceResponse, QueryGetTransactionReceiptResponse,
 };
 use std::mem;
 
-macro_rules! impl_answer {
+macro_rules! impl_get {
     ($name:ident($ty:ident)) => {
         #[doc(hidden)]
         #[no_mangle]
@@ -12,7 +12,7 @@ macro_rules! impl_answer {
             debug_assert!(!query.is_null());
             debug_assert!(!out.is_null());
 
-            *out = try_ffi!(Box::from_raw(query).answer());
+            *out = try_ffi!(Box::from_raw(query).get());
 
             0
         }
@@ -38,7 +38,7 @@ pub unsafe extern "C" fn hedera_query_cost(query: *mut Query<()>, out: *mut u64)
 pub unsafe extern "C" fn hedera_query__get_account_balance__new(
     client: *mut Client,
     account: AccountId,
-) -> *mut Query<QueryGetAccountBalanceAnswer> {
+) -> *mut Query<QueryGetAccountBalanceResponse> {
     debug_assert!(!client.is_null());
 
     let client = Box::from_raw(client);
@@ -51,8 +51,8 @@ pub unsafe extern "C" fn hedera_query__get_account_balance__new(
     Box::into_raw(query)
 }
 
-impl_answer!(hedera_query__get_account_balance__answer(
-    QueryGetAccountBalanceAnswer
+impl_get!(hedera_query__get_account_balance__get(
+    QueryGetAccountBalanceResponse
 ));
 
 // QueryGetTransactionReceipt
@@ -63,7 +63,7 @@ impl_answer!(hedera_query__get_account_balance__answer(
 pub unsafe extern "C" fn hedera_query__get_transaction_receipt__new(
     client: *mut Client,
     transaction_id: CTransactionId,
-) -> *mut Query<QueryGetTransactionReceiptAnswer> {
+) -> *mut Query<QueryGetTransactionReceiptResponse> {
     debug_assert!(!client.is_null());
 
     let client = Box::from_raw(client);
@@ -76,6 +76,6 @@ pub unsafe extern "C" fn hedera_query__get_transaction_receipt__new(
     Box::into_raw(query)
 }
 
-impl_answer!(hedera_query__get_transaction_receipt__answer(
-    QueryGetTransactionReceiptAnswer
+impl_get!(hedera_query__get_transaction_receipt__get(
+    QueryGetTransactionReceiptResponse
 ));

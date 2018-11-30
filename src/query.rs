@@ -16,8 +16,8 @@ pub use crate::{query_get_account_balance::*, query_get_transaction_receipt::*};
 
 #[doc(hidden)]
 pub trait QueryInner {
-    type Answer;
-    fn answer(&self, response: proto::Response::Response) -> Result<Self::Answer, Error>;
+    type Response;
+    fn get(&self, response: proto::Response::Response) -> Result<Self::Response, Error>;
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error>;
 }
 
@@ -25,11 +25,11 @@ pub struct Query<T> {
     pub(crate) client: Arc<grpc::Client>,
     kind: proto::QueryHeader::ResponseType,
     // TODO: payment: Transaction,
-    inner: Box<dyn QueryInner<Answer = T>>,
+    inner: Box<dyn QueryInner<Response = T>>,
 }
 
 impl<T> Query<T> {
-    pub(crate) fn new<U: QueryInner<Answer = T> + 'static>(client: &Client, inner: U) -> Self {
+    pub(crate) fn new<U: QueryInner<Response = T> + 'static>(client: &Client, inner: U) -> Self {
         Self {
             kind: proto::QueryHeader::ResponseType::ANSWER_ONLY,
             client: client.inner.clone(),
@@ -56,8 +56,8 @@ impl<T> Query<T> {
         Ok(response.wait_drop_metadata()?)
     }
 
-    pub fn answer(self) -> Result<T, Error> {
-        self.inner.answer(self.send()?)
+    pub fn get(self) -> Result<T, Error> {
+        self.inner.get(self.send()?)
     }
 
     pub fn cost(mut self) -> Result<u64, Error> {
