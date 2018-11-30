@@ -1,7 +1,7 @@
 use crate::{
     AccountId, Query, QueryGetAccountBalanceAnswer, QueryGetTransactionReceiptAnswer, Transaction,
-    TransactionCreateAccount, TransactionCryptoDelete, TransactionCryptoTransfer, TransactionId,
-    TransactionCryptoDeleteClaim,
+    TransactionCreateAccount, TransactionCryptoDelete, TransactionCryptoDeleteClaim,
+    TransactionCryptoTransfer, TransactionId,
 };
 use failure::{format_err, Error};
 use itertools::Itertools;
