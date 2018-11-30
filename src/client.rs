@@ -1,6 +1,6 @@
 use crate::{
     AccountId, Query, QueryGetAccountBalanceAnswer, QueryGetTransactionReceiptAnswer, Transaction,
-    TransactionCreateAccount, TransactionCryptoTransfer, TransactionId,
+    TransactionCreateAccount, TransactionCryptoTransfer, TransactionId, TransactionCryptoDelete
 };
 use failure::{format_err, Error};
 use itertools::Itertools;
@@ -40,6 +40,10 @@ impl Client {
 
     pub fn crypto_transfer(&self) -> Transaction<TransactionCryptoTransfer> {
         Transaction::crypto_transfer(self)
+    }
+
+    pub fn crypto_delete(&self) -> Transaction<TransactionCryptoDelete> {
+        Transaction::crypto_delete(self)
     }
 
     pub fn get_account_balance(&self, account: AccountId) -> Query<QueryGetAccountBalanceAnswer> {
