@@ -133,6 +133,7 @@ impl<T: 'static> Transaction<T> {
         let response = match tx.get_body().data {
             Some(cryptoCreateAccount(_)) => client.create_account(o, tx),
             Some(cryptoTransfer(_)) => client.crypto_transfer(o, tx),
+            Some(cryptoDeleteClaim(_)) => client.delete_claim(o, tx),
 
             _ => unimplemented!(),
         };
