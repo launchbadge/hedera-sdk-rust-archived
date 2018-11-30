@@ -124,17 +124,24 @@ impl<T: 'static> Transaction<T> {
             .ok_or_else(|| ErrorKind::MissingField("operator"))?
             .clone();
 
-        let tx: proto::Transaction::Transaction = self.to_proto()?;
+        let mut tx: proto::Transaction::Transaction = self.to_proto()?;
         let client =
             proto::CryptoService_grpc::CryptoServiceClient::with_client(Arc::clone(&self.client));
 
         let o = grpc::RequestOptions::default();
 
-        let response = match tx.get_body().data {
+        let response = match tx.mut_body().data {
             Some(cryptoCreateAccount(_)) => client.create_account(o, tx),
             Some(cryptoTransfer(_)) => client.crypto_transfer(o, tx),
             Some(cryptoDeleteClaim(_)) => client.delete_claim(o, tx),
-            Some(cryptoDelete(_)) => client.crypto_delete(o, tx),
+            Some(cryptoDelete(ref mut data)) => {
+                if !data.has_transferAccountID() {
+                    // default the transfer account ID to the operator of the transaction
+                    data.set_transferAccountID(id.account_id.to_proto()?);
+                }
+
+                client.crypto_delete(o, tx)
+            }
 
             _ => unimplemented!(),
         };

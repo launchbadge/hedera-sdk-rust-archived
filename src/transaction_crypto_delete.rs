@@ -1,14 +1,16 @@
 use crate::{
     proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
-    AccountId, Client, ErrorKind, Transaction,
+    AccountId, Client, Transaction,
 };
 use failure::Error;
 use query_interface::{interfaces, vtable_for};
 use std::any::Any;
 
+/// Mark an account as deleted, moving all its current hbars to another account.
+/// It will remain in the ledger, marked as deleted, until it expires.
 pub struct TransactionCryptoDelete {
-    transfer_account_id: Option<AccountId>,
-    delete_account_id: Option<AccountId>,
+    id: AccountId,
+    transfer_to: Option<AccountId>,
 }
 
 interfaces!(
@@ -16,38 +18,32 @@ interfaces!(
     ToProto<TransactionBody_oneof_data>
 );
 
-impl Transaction<TransactionCryptoDelete> {
-    pub fn crypto_delete(client: &Client) -> Self {
-        Self::new(
+impl TransactionCryptoDelete {
+    pub fn new(client: &Client, id: AccountId) -> Transaction<Self> {
+        Transaction::new(
             client,
-            TransactionCryptoDelete {
-                transfer_account_id: None,
-                delete_account_id: None,
+            Self {
+                transfer_to: None,
+                id,
             },
         )
     }
+}
 
-    pub fn transfer_account_id(&mut self, id: AccountId) {
-        self.inner().transfer_account_id = Some(id);
-    }
-
-    pub fn delete_account_id(&mut self, id: AccountId) {
-        self.inner().delete_account_id = Some(id);
+impl Transaction<TransactionCryptoDelete> {
+    pub fn transfer_to(&mut self, id: AccountId) {
+        self.inner().transfer_to = Some(id);
     }
 }
 
 impl ToProto<TransactionBody_oneof_data> for TransactionCryptoDelete {
     fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
-        let mut data = proto::CryptoDelete::CryptoDeleteTransactionBody::default();
+        let mut data = proto::CryptoDelete::CryptoDeleteTransactionBody::new();
+        data.set_deleteAccountID(self.id.to_proto()?);
 
-        match self.transfer_account_id {
-            Some(id) => data.set_transferAccountID(id.to_proto()?),
-            None => Err(ErrorKind::MissingField("transferAccountID"))?,
-        }
-
-        match self.delete_account_id {
-            Some(id) => data.set_deleteAccountID(id.to_proto()?),
-            None => Err(ErrorKind::MissingField("deleteAccountID"))?,
+        if let Some(id) = self.transfer_to {
+            // note: this is defaulted to the operator from inside [Transaction]
+            data.set_transferAccountID(id.to_proto()?);
         }
 
         Ok(TransactionBody_oneof_data::cryptoDelete(data))
