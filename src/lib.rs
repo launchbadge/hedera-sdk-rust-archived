@@ -20,6 +20,7 @@ mod query_get_account_balance;
 mod query_get_transaction_receipt;
 mod timestamp;
 pub mod transaction;
+mod transaction_file_create;
 mod transaction_admin_delete;
 mod transaction_admin_recover;
 mod transaction_crypto_create;
