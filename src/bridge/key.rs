@@ -1,8 +1,7 @@
-use crate::{PublicKey, SecretKey, key::Signature};
+use crate::{key::Signature, PublicKey, SecretKey};
 use libc::c_char;
 use mbox::MString;
-use std::ffi::CStr;
-use std::slice;
+use std::{ffi::CStr, slice};
 
 //
 // Signature
@@ -68,7 +67,12 @@ pub unsafe extern "C" fn hedera_secret_key_from_str(s: *const c_char, out: *mut 
 
 #[doc(hidden)]
 #[no_mangle]
-pub unsafe extern "C" fn hedera_secret_key_sign(p: *mut SecretKey, message: *const u8, message_len: usize, out: *mut Signature) -> u64 {
+pub unsafe extern "C" fn hedera_secret_key_sign(
+    p: *mut SecretKey,
+    message: *const u8,
+    message_len: usize,
+    out: *mut Signature,
+) -> u64 {
     debug_assert!(!message.is_null());
     debug_assert!(!p.is_null());
     debug_assert!(!out.is_null());
@@ -117,7 +121,12 @@ pub unsafe extern "C" fn hedera_public_key_from_str(s: *const c_char, out: *mut 
 
 #[doc(hidden)]
 #[no_mangle]
-pub unsafe extern "C" fn hedera_public_key_verify(p: *mut PublicKey, s: *mut Signature, message: *const u8, message_len: usize) -> i8 {
+pub unsafe extern "C" fn hedera_public_key_verify(
+    p: *mut PublicKey,
+    s: *mut Signature,
+    message: *const u8,
+    message_len: usize,
+) -> i8 {
     debug_assert!(!s.is_null());
     debug_assert!(!message.is_null());
     debug_assert!(!p.is_null());
@@ -125,8 +134,13 @@ pub unsafe extern "C" fn hedera_public_key_verify(p: *mut PublicKey, s: *mut Sig
     let message = slice::from_raw_parts(message, message_len);
 
     match (*p).verify(message, &(*s)) {
-        Ok(b) => if b { 1 } else { 0 },
-        Err(_) => 0
+        Ok(b) => {
+            if b {
+                1
+            } else {
+                0
+            }
+        }
+        Err(_) => 0,
     }
 }
-

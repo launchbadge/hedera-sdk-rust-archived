@@ -1,10 +1,10 @@
-use std::any::Any;
 use crate::{
     proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
-    AccountId, Client, Transaction, ErrorKind
+    AccountId, Client, ErrorKind, Transaction,
 };
 use failure::Error;
 use query_interface::{interfaces, vtable_for};
+use std::any::Any;
 
 pub struct TransactionCryptoDelete {
     transfer_account_id: Option<AccountId>,
@@ -23,14 +23,14 @@ impl Transaction<TransactionCryptoDelete> {
             TransactionCryptoDelete {
                 transfer_account_id: None,
                 delete_account_id: None,
-            }
+            },
         )
     }
-    
+
     pub fn transfer_account_id(&mut self, id: AccountId) {
         self.inner().transfer_account_id = Some(id);
     }
-        
+
     pub fn delete_account_id(&mut self, id: AccountId) {
         self.inner().delete_account_id = Some(id);
     }
