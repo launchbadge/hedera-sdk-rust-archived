@@ -1,8 +1,5 @@
 use failure::{format_err, Error};
-use hedera::{
-    crypto::SecretKey,
-    Client,
-};
+use hedera::{crypto::SecretKey, Client};
 use std::{env, thread::sleep, time::Duration};
 
 fn main() -> Result<(), Error> {
@@ -26,7 +23,8 @@ fn main() -> Result<(), Error> {
     let client = Client::new("testnet.hedera.com:50001")?;
 
     // Create our account
-    let res = client.create_account()
+    let res = client
+        .create_account()
         .key(public)
         .initial_balance(10)
         .operator(operator)

@@ -4,13 +4,15 @@ use failure::{format_err, Error};
 use itertools::Itertools;
 
 use crate::{
-    TransactionId,
-    query::{Query, QueryGetAccountBalance, QueryGetAccountBalanceResponse, QueryGetTransactionReceipt, QueryGetTransactionReceiptResponse},
+    query::{
+        Query, QueryGetAccountBalance, QueryGetAccountBalanceResponse, QueryGetTransactionReceipt,
+        QueryGetTransactionReceiptResponse,
+    },
     transaction::{
         Transaction, TransactionCryptoCreate, TransactionCryptoDelete,
         TransactionCryptoDeleteClaim, TransactionCryptoUpdate,
     },
-    AccountId,
+    AccountId, TransactionId,
 };
 
 pub struct Client {
