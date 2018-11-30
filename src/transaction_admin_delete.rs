@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use failure::Error;
 use query_interface::{interfaces, vtable_for};
 use std::any::Any;
@@ -8,60 +8,85 @@ use crate::{
     Client, ContractId, FileId, Transaction,
 };
 
-pub enum TransactionAdminDeleteId {
-    File(FileId),
-    Contract(ContractId),
-}
-
-pub struct TransactionAdminDelete {
-    id: TransactionAdminDeleteId,
-    expiration_time: DateTime<Utc>,
+/// Delete a file. Requires the operator to be the Hedera administrator.
+/// File will be permanently deleted in 1 minute (by default). Before then, it can be recovered
+/// with [TransactionAdminFileRecover].
+pub struct TransactionAdminFileDelete {
+    id: FileId,
+    exp: DateTime<Utc>,
 }
 
 interfaces!(
-    TransactionAdminDelete: Any,
+    TransactionAdminFileDelete: Any,
     ToProto<TransactionBody_oneof_data>
 );
 
-impl Transaction<TransactionAdminDelete> {
-    pub fn admin_file_delete(client: &Client, id: FileId) -> Self {
-        Self::admin_delete(client, TransactionAdminDeleteId::File(id))
-    }
-
-    pub fn admin_contract_delete(client: &Client, id: ContractId) -> Self {
-        Self::admin_delete(client, TransactionAdminDeleteId::Contract(id))
-    }
-
-    fn admin_delete(client: &Client, id: TransactionAdminDeleteId) -> Self {
-        let future = Utc::now()
-            .checked_add_signed(chrono::Duration::minutes(1))
-            .unwrap();
-
-        Self::new(
+impl TransactionAdminFileDelete {
+    pub fn new(client: &Client, id: FileId) -> Transaction<Self> {
+        Transaction::new(
             client,
-            TransactionAdminDelete {
+            Self {
                 id,
-                expiration_time: future,
+                exp: Utc::now() + Duration::minutes(1),
             },
         )
     }
+}
 
-    pub fn expiration(&mut self, time: DateTime<Utc>) -> &mut Self {
-        self.inner().expiration_time = time;
+impl Transaction<TransactionAdminFileDelete> {
+    pub fn expire_at(&mut self, time: DateTime<Utc>) -> &mut Self {
+        self.inner().exp = time;
         self
     }
 }
 
-impl ToProto<TransactionBody_oneof_data> for TransactionAdminDelete {
+impl ToProto<TransactionBody_oneof_data> for TransactionAdminFileDelete {
     fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
         let mut data = proto::AdminDelete::AdminDeleteTransactionBody::new();
+        data.set_fileID(self.id.to_proto()?);
+        data.set_expirationTime(self.exp.to_proto()?);
 
-        match self.id {
-            TransactionAdminDeleteId::File(id) => data.set_fileID(id.to_proto()?),
-            TransactionAdminDeleteId::Contract(id) => data.set_contractID(id.to_proto()?),
-        }
+        Ok(TransactionBody_oneof_data::adminDelete(data))
+    }
+}
 
-        data.set_expirationTime(self.expiration_time.to_proto()?);
+/// Delete a contract. Requires the operator to be the Hedera administrator.
+/// Contract will be permanently deleted in 1 minute (by default). Before then, it can be recovered
+/// with [TransactionAdminFileRecover].
+pub struct TransactionAdminContractDelete {
+    id: ContractId,
+    exp: DateTime<Utc>,
+}
+
+interfaces!(
+    TransactionAdminContractDelete: Any,
+    ToProto<TransactionBody_oneof_data>
+);
+
+impl TransactionAdminContractDelete {
+    pub fn new(client: &Client, id: ContractId) -> Transaction<Self> {
+        Transaction::new(
+            client,
+            Self {
+                id,
+                exp: Utc::now() + Duration::minutes(1),
+            },
+        )
+    }
+}
+
+impl Transaction<TransactionAdminContractDelete> {
+    pub fn expire_at(&mut self, time: DateTime<Utc>) -> &mut Self {
+        self.inner().exp = time;
+        self
+    }
+}
+
+impl ToProto<TransactionBody_oneof_data> for TransactionAdminContractDelete {
+    fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
+        let mut data = proto::AdminDelete::AdminDeleteTransactionBody::new();
+        data.set_contractID(self.id.to_proto()?);
+        data.set_expirationTime(self.exp.to_proto()?);
 
         Ok(TransactionBody_oneof_data::adminDelete(data))
     }

@@ -11,9 +11,9 @@ pub struct QueryGetAccountBalance {
     account: AccountId,
 }
 
-impl Query<u64> {
-    pub fn get_account_balance(client: &Client, account: AccountId) -> Self {
-        Self::new(client, QueryGetAccountBalance { account })
+impl QueryGetAccountBalance {
+    pub fn new(client: &Client, account: AccountId) -> Query<QueryGetAccountBalanceAnswer> {
+        Query::new(client, Self { account })
     }
 }
 

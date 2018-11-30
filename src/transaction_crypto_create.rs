@@ -6,7 +6,7 @@ use failure::Error;
 use query_interface::{interfaces, vtable_for};
 use std::{any::Any, convert::TryInto, time::Duration};
 
-pub struct TransactionCreateAccount {
+pub struct TransactionCryptoCreate {
     key: Option<PublicKey>,
     initial_balance: u64,
     send_record_threshold: i64,
@@ -18,15 +18,15 @@ pub struct TransactionCreateAccount {
 }
 
 interfaces!(
-    TransactionCreateAccount: Any,
+    TransactionCryptoCreate: Any,
     ToProto<TransactionBody_oneof_data>
 );
 
-impl Transaction<TransactionCreateAccount> {
-    pub fn create_account(client: &Client) -> Self {
-        Self::new(
+impl TransactionCryptoCreate {
+    pub fn new(client: &Client) -> Transaction<Self> {
+        Transaction::new(
             client,
-            TransactionCreateAccount {
+            Self {
                 key: None,
                 initial_balance: 0,
                 send_record_threshold: i64::max_value(),
@@ -38,7 +38,9 @@ impl Transaction<TransactionCreateAccount> {
             },
         )
     }
+}
 
+impl Transaction<TransactionCryptoCreate> {
     #[inline]
     pub fn key(&mut self, key: PublicKey) -> &mut Self {
         self.inner().key = Some(key);
@@ -97,7 +99,7 @@ impl Transaction<TransactionCreateAccount> {
     }
 }
 
-impl ToProto<TransactionBody_oneof_data> for TransactionCreateAccount {
+impl ToProto<TransactionBody_oneof_data> for TransactionCryptoCreate {
     fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
         let mut data = proto::CryptoCreate::CryptoCreateTransactionBody::new();
         data.set_initialBalance(self.initial_balance);

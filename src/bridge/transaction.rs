@@ -4,7 +4,7 @@ use std::{ffi::CStr, mem};
 
 use crate::{
     duration::Duration, timestamp::Timestamp, AccountId, Client, ContractId, FileId, PublicKey,
-    SecretKey, Transaction, TransactionAdminDelete, TransactionCreateAccount,
+    SecretKey, Transaction, TransactionAdminDelete, TransactionCryptoCreate,
     TransactionCryptoTransfer, TransactionCryptoUpdate,
 };
 
@@ -86,7 +86,7 @@ pub unsafe extern "C" fn hedera_transaction_execute(
 #[no_mangle]
 pub unsafe extern "C" fn hedera_transaction__create_account__new(
     client: *mut Client,
-) -> *mut Transaction<TransactionCreateAccount> {
+) -> *mut Transaction<TransactionCryptoCreate> {
     debug_assert!(!client.is_null());
 
     let client = Box::from_raw(client);
@@ -102,7 +102,7 @@ pub unsafe extern "C" fn hedera_transaction__create_account__new(
 #[doc(hidden)]
 #[no_mangle]
 pub unsafe extern "C" fn hedera_transaction__create_account__set_key(
-    tx: *mut Transaction<TransactionCreateAccount>,
+    tx: *mut Transaction<TransactionCryptoCreate>,
     public: PublicKey,
 ) {
     debug_assert!(!tx.is_null());
@@ -116,7 +116,7 @@ pub unsafe extern "C" fn hedera_transaction__create_account__set_key(
 #[doc(hidden)]
 #[no_mangle]
 pub unsafe extern "C" fn hedera_transaction__create_account__set_initial_balance(
-    tx: *mut Transaction<TransactionCreateAccount>,
+    tx: *mut Transaction<TransactionCryptoCreate>,
     balance: u64,
 ) {
     debug_assert!(!tx.is_null());

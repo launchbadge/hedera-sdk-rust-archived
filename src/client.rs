@@ -1,9 +1,3 @@
-use crate::{
-    AccountId, ContractId, FileId, Query, QueryGetAccountBalanceAnswer,
-    QueryGetTransactionReceiptAnswer, Transaction, TransactionAdminDelete,
-    TransactionCreateAccount, TransactionCryptoTransfer, TransactionId, TransactionCryptoDeleteClaim,
-    TransactionCryptoDelete,
-};
 use failure::{format_err, Error};
 use itertools::Itertools;
 use std::{sync::Arc, time::Duration};
@@ -34,40 +28,5 @@ impl Client {
         )?);
 
         Ok(Self { inner })
-    }
-
-    pub fn admin_file_delete(&self, id: FileId) -> Transaction<TransactionAdminDelete> {
-        Transaction::admin_file_delete(&self, id)
-    }
-
-    pub fn admin_contract_delete(&self, id: ContractId) -> Transaction<TransactionAdminDelete> {
-        Transaction::admin_contract_delete(&self, id)
-    }
-
-    pub fn create_account(&self) -> Transaction<TransactionCreateAccount> {
-        Transaction::create_account(self)
-    }
-
-    pub fn crypto_transfer(&self) -> Transaction<TransactionCryptoTransfer> {
-        Transaction::crypto_transfer(self)
-    }
-
-    pub fn crypto_delete_claim(&self, id: AccountId) -> Transaction<TransactionCryptoDeleteClaim> {
-        Transaction::crypto_delete_claim(self, id)
-    }
-
-    pub fn crypto_delete(&self) -> Transaction<TransactionCryptoDelete> {
-        Transaction::crypto_delete(self)
-    }
-
-    pub fn get_account_balance(&self, account: AccountId) -> Query<QueryGetAccountBalanceAnswer> {
-        Query::get_account_balance(self, account)
-    }
-
-    pub fn get_transaction_receipt(
-        &self,
-        transaction: TransactionId,
-    ) -> Query<QueryGetTransactionReceiptAnswer> {
-        Query::get_transaction_receipt(self, transaction)
     }
 }

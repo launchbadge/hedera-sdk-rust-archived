@@ -1,5 +1,5 @@
 use failure::{format_err, Error};
-use hedera::{Client, SecretKey};
+use hedera::{Client, QueryGetTransactionReceipt, SecretKey, TransactionCryptoCreate};
 use std::{env, thread::sleep, time::Duration};
 
 fn main() -> Result<(), Error> {
@@ -23,8 +23,7 @@ fn main() -> Result<(), Error> {
     let client = Client::new("testnet.hedera.com:50001")?;
 
     // Create our account
-    let res = client
-        .create_account()
+    let res = TransactionCryptoCreate::new(&client)
         .key(public)
         .initial_balance(10)
         .operator(operator)
@@ -42,7 +41,7 @@ fn main() -> Result<(), Error> {
     sleep(Duration::from_secs(2));
 
     // Get the receipt and check the status to prove it was successful
-    let receipt = client.get_transaction_receipt(res.id).answer()?;
+    let receipt = QueryGetTransactionReceipt::new(&client, res.id).answer()?;
 
     // fixme: need an enum here instead of [u8]
     if receipt.status != 1 {

@@ -17,9 +17,12 @@ pub struct QueryGetTransactionReceiptAnswer {
     // unsupported: file_id: Option<Box<FileId>>,
 }
 
-impl Query<QueryGetTransactionReceiptAnswer> {
-    pub fn get_transaction_receipt(client: &Client, transaction_id: TransactionId) -> Self {
-        Self::new(client, QueryGetTransactionReceipt { transaction_id })
+impl QueryGetTransactionReceipt {
+    pub fn new(
+        client: &Client,
+        transaction_id: TransactionId,
+    ) -> Query<QueryGetTransactionReceiptAnswer> {
+        Query::new(client, Self { transaction_id })
     }
 }
 

@@ -1,5 +1,5 @@
 use failure::Error;
-use hedera::Client;
+use hedera::{Client, QueryGetAccountBalance};
 use std::{thread::sleep, time::Duration};
 
 fn main() -> Result<(), Error> {
@@ -7,13 +7,13 @@ fn main() -> Result<(), Error> {
     let target = "0:0:2".parse()?;
 
     // Get the _cost_ or transaction fee for the query of getting the account balance
-    let cost = client.get_account_balance(target).cost()?;
+    let cost = QueryGetAccountBalance::new(&client, target).cost()?;
 
     // Wait 1s between queries (limitation of test networks)
     sleep(Duration::from_secs(1));
 
     // Get the _answer_ for the query of getting the account balance (which is the actual balance)
-    let balance = client.get_account_balance(target).answer()?;
+    let balance = QueryGetAccountBalance::new(&client, target).answer()?;
 
     println!("cost    = {} tinybars", cost);
     println!("balance = {} tinybars", balance);
