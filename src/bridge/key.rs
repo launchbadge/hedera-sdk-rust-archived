@@ -126,21 +126,16 @@ pub unsafe extern "C" fn hedera_public_key_verify(
     s: *mut Signature,
     message: *const u8,
     message_len: usize,
-) -> i8 {
+    out: *mut i8,
+) -> u64 {
     debug_assert!(!s.is_null());
     debug_assert!(!message.is_null());
     debug_assert!(!p.is_null());
+    debug_assert!(!out.is_null());
 
     let message = slice::from_raw_parts(message, message_len);
 
-    match (*p).verify(message, &(*s)) {
-        Ok(b) => {
-            if b {
-                1
-            } else {
-                0
-            }
-        }
-        Err(_) => 0,
-    }
+    *out = try_ffi!((*p).verify(message, &(*s))) as i8;
+
+    0
 }
