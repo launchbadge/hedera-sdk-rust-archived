@@ -8,7 +8,6 @@ use crate::{
     Client, ContractId, FileId, Transaction,
 };
 
-#[repr(C)]
 pub enum TransactionAdminDeleteId {
     File(FileId),
     Contract(ContractId),
@@ -25,8 +24,15 @@ interfaces!(
 );
 
 impl Transaction<TransactionAdminDelete> {
-    pub fn admin_delete(client: &Client, id: TransactionAdminDeleteId) -> Self {
-        // NOTE: This should never fail
+    pub fn admin_file_delete(client: &Client, id: FileId) -> Self {
+        Self::admin_delete(client, TransactionAdminDeleteId::File(id))
+    }
+
+    pub fn admin_contract_delete(client: &Client, id: ContractId) -> Self {
+        Self::admin_delete(client, TransactionAdminDeleteId::Contract(id))
+    }
+
+    fn admin_delete(client: &Client, id: TransactionAdminDeleteId) -> Self {
         let future = Utc::now()
             .checked_add_signed(chrono::Duration::minutes(1))
             .unwrap();

@@ -3,9 +3,9 @@ use libc::c_char;
 use std::{ffi::CStr, mem};
 
 use crate::{
-    duration::Duration, timestamp::Timestamp, AccountId, Client, PublicKey, SecretKey, Transaction,
-    TransactionAdminDelete, TransactionCreateAccount, TransactionCryptoTransfer,
-    TransactionCryptoUpdate,
+    duration::Duration, timestamp::Timestamp, AccountId, Client, ContractId, FileId, PublicKey,
+    SecretKey, Transaction, TransactionAdminDelete, TransactionCreateAccount,
+    TransactionCryptoTransfer, TransactionCryptoUpdate,
 };
 
 use super::CTransactionId;
@@ -286,15 +286,33 @@ pub unsafe extern "C" fn hedera_transaction__crypto_update__set_expiration_time(
 
 #[doc(hidden)]
 #[no_mangle]
-pub unsafe extern "C" fn hedera_transaction__admin_delete__new(
+pub unsafe extern "C" fn hedera_transaction__admin_file_delete__new(
     client: *mut Client,
-    id: crate::TransactionAdminDeleteId,
+    id: FileId,
 ) -> *mut Transaction<TransactionAdminDelete> {
     debug_assert!(!client.is_null());
 
     let client = Box::from_raw(client);
 
-    let tx = Transaction::admin_delete(&client, id);
+    let tx = Transaction::admin_file_delete(&client, id);
+    let tx = Box::new(tx);
+
+    mem::forget(client);
+
+    Box::into_raw(tx)
+}
+
+#[doc(hidden)]
+#[no_mangle]
+pub unsafe extern "C" fn hedera_transaction__admin_contract_delete__new(
+    client: *mut Client,
+    id: ContractId,
+) -> *mut Transaction<TransactionAdminDelete> {
+    debug_assert!(!client.is_null());
+
+    let client = Box::from_raw(client);
+
+    let tx = Transaction::admin_contract_delete(&client, id);
     let tx = Box::new(tx);
 
     mem::forget(client);

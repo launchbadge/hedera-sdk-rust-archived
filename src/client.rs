@@ -1,5 +1,6 @@
 use crate::{
-    AccountId, Query, QueryGetAccountBalanceAnswer, QueryGetTransactionReceiptAnswer, Transaction,
+    AccountId, ContractId, FileId, Query, QueryGetAccountBalanceAnswer,
+    QueryGetTransactionReceiptAnswer, Transaction, TransactionAdminDelete,
     TransactionCreateAccount, TransactionCryptoTransfer, TransactionId,
 };
 use failure::{format_err, Error};
@@ -32,6 +33,14 @@ impl Client {
         )?);
 
         Ok(Self { inner })
+    }
+
+    pub fn admin_file_delete(&self, id: FileId) -> Transaction<TransactionAdminDelete> {
+        Transaction::admin_file_delete(&self, id)
+    }
+
+    pub fn admin_contract_delete(&self, id: ContractId) -> Transaction<TransactionAdminDelete> {
+        Transaction::admin_contract_delete(&self, id)
     }
 
     pub fn create_account(&self) -> Transaction<TransactionCreateAccount> {
