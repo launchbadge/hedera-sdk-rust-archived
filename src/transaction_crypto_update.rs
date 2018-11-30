@@ -11,7 +11,7 @@ use chrono::{DateTime, Utc};
 use std::time::Duration;
 
 pub struct TransactionCryptoUpdate {
-    account_id_to_update: AccountId,
+    account: AccountId,
     key: Option<PublicKey>,
     proxy_account: Option<AccountId>,
     proxy_fraction: Option<i32>,
@@ -26,12 +26,12 @@ interfaces!(
     ToProto<TransactionBody_oneof_data>
 );
 
-impl Transaction<TransactionCryptoUpdate> {
-    pub fn crypto_update(client: &Client, id: AccountId) -> Self {
-        Self::new(
+impl TransactionCryptoUpdate {
+    pub fn new(client: &Client, id: AccountId) -> Transaction<Self> {
+        Transaction::new(
             client,
-            TransactionCryptoUpdate {
-                account_id_to_update: id,
+            Self {
+                account: id,
                 key: None,
                 proxy_account: None,
                 proxy_fraction: None,
@@ -42,7 +42,9 @@ impl Transaction<TransactionCryptoUpdate> {
             },
         )
     }
+}
 
+impl Transaction<TransactionCryptoUpdate> {
     #[inline]
     pub fn key(&mut self, key: PublicKey) -> &mut Self {
         self.inner().key = Some(key);
@@ -89,8 +91,7 @@ impl Transaction<TransactionCryptoUpdate> {
 impl ToProto<TransactionBody_oneof_data> for TransactionCryptoUpdate {
     fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
         let mut data = proto::CryptoUpdate::CryptoUpdateTransactionBody::new();
-
-        data.set_accountIDToUpdate(self.account_id_to_update.to_proto()?);
+        data.set_accountIDToUpdate(self.account.to_proto()?);
 
         if let Some(key) = self.key.as_ref() {
             data.set_key(key.to_proto()?);
