@@ -38,7 +38,7 @@ impl Transaction<TransactionCryptoDelete> {
 
 impl ToProto<TransactionBody_oneof_data> for TransactionCryptoDelete {
     fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
-        let mut data = proto::CryptoDelete::CryptoDeleteTransactionBody::new();
+        let mut data = proto::CryptoDelete::CryptoDeleteTransactionBody::default();
 
         match self.transfer_account_id {
             Some(id) => data.set_transferAccountID(id.to_proto()?),
