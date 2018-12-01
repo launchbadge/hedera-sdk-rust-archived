@@ -31,6 +31,7 @@ mod transaction_file_append;
 mod transaction_file_create;
 mod transaction_file_delete;
 mod transaction_id;
+mod transaction_contract_create;
 mod transaction_receipt;
 mod transaction_response;
 
