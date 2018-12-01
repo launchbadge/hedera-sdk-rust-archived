@@ -4,14 +4,15 @@ use failure::{format_err, Error};
 use itertools::Itertools;
 
 use crate::{
+    id::{ContractId, FileId},
     query::{
         Query, QueryGetAccountBalance, QueryGetAccountBalanceResponse, QueryGetTransactionReceipt,
         QueryGetTransactionReceiptResponse,
     },
     transaction::{
-        Transaction, TransactionCryptoCreate, TransactionCryptoDelete,
-        TransactionCryptoDeleteClaim, TransactionCryptoUpdate, TransactionFileAppend,
-        TransactionFileCreate,
+        Transaction, TransactionContractCall, TransactionContractCreate, TransactionCryptoCreate,
+        TransactionCryptoDelete, TransactionCryptoDeleteClaim, TransactionCryptoUpdate,
+        TransactionFileAppend, TransactionFileCreate, TransactionFileDelete,
     },
     AccountId, TransactionId,
 };

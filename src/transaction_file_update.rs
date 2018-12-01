@@ -1,17 +1,14 @@
 use crate::{
-    proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
     crypto::PublicKey,
+    proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
     transaction::Transaction,
-    Client,
-    FileId
+    Client, FileId,
 };
+use chrono::{DateTime, Utc};
 use failure::Error;
+use protobuf::RepeatedField;
 use query_interface::{interfaces, vtable_for};
 use std::any::Any;
-use chrono::DateTime;
-use chrono::Utc;
-use protobuf::RepeatedField;
-
 
 pub struct TransactionFileUpdate {
     id: FileId,
@@ -70,9 +67,12 @@ impl ToProto<TransactionBody_oneof_data> for TransactionFileUpdate {
         }
 
         let mut key_list = proto::BasicTypes::KeyList::new();
-        key_list.set_keys(RepeatedField::from_vec(self.keys.iter()
-            .map(ToProto::to_proto)
-            .collect::<Result<Vec<_>, _>>()?));
+        key_list.set_keys(RepeatedField::from_vec(
+            self.keys
+                .iter()
+                .map(ToProto::to_proto)
+                .collect::<Result<Vec<_>, _>>()?,
+        ));
 
         data.set_keys(key_list);
 

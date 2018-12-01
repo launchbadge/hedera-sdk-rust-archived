@@ -1,6 +1,6 @@
 use crate::proto::{self, ToProto};
 use ed25519_dalek;
-use failure::{bail, Error};
+use failure::{bail, err_msg, Error};
 use failure_derive::Fail;
 use hex;
 use num::BigUint;
@@ -345,7 +345,7 @@ impl TryFrom<proto::BasicTypes::Key> for PublicKey {
         if key.has_ed25519() {
             Self::from_bytes(key.take_ed25519())
         } else {
-            unimplemented!()
+            Err(err_msg("Only ed25519 public keys are currently supported"))
         }
     }
 }
