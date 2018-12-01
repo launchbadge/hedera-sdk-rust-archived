@@ -24,6 +24,8 @@ pub struct Transaction<T> {
     node: Option<AccountId>,
     secrets: Vec<SecretKey>,
     memo: Option<String>,
+    generate_record: bool,
+    fee: u64,
     pub(crate) inner: Box<dyn Object>,
     phantom: PhantomData<T>,
 }
@@ -42,6 +44,9 @@ impl<T: 'static> Transaction<T> {
             secrets: Vec::new(),
             inner: inner as Box<dyn Object>,
             phantom: PhantomData,
+            // fixme: determine a good default for this or some nice way of determining what it should be
+            fee: 10,
+            generate_record: false,
         }
     }
 
@@ -57,6 +62,19 @@ impl<T: 'static> Transaction<T> {
 
     pub fn node(&mut self, id: AccountId) -> &mut Self {
         self.node = Some(id);
+        self
+    }
+
+    /// The fee the client pays, which is split between the network and the node.
+    pub fn fee(&mut self, fee: u64) -> &mut Self {
+        self.fee = fee;
+        self
+    }
+
+    /// Should a record of this transaction be generated?
+    /// A receipt is always generated, but the record is optional.
+    pub fn generate_record(&mut self, generate: bool) -> &mut Self {
+        self.generate_record = generate;
         self
     }
 
@@ -167,8 +185,8 @@ impl<T> ToProto<proto::Transaction::TransactionBody> for Transaction<T> {
         body.set_nodeAccountID(node.to_proto()?);
         body.set_transactionValidDuration(Duration::from_secs(120).to_proto()?);
         // TODO: Figure out a good way to do fees
-        body.set_transactionFee(10);
-        body.set_generateRecord(false);
+        body.set_transactionFee(self.fee);
+        body.set_generateRecord(self.generate_record);
         body.set_transactionID(tx_id.to_proto()?);
         body.data = Some(inner.to_proto()?);
         body.set_memo(if let Some(memo) = &self.memo {
