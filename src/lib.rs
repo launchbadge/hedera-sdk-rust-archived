@@ -28,6 +28,7 @@ mod transaction_crypto_delete_claim;
 mod transaction_crypto_transfer;
 mod transaction_crypto_update;
 mod transaction_id;
+mod transaction_receipt;
 mod transaction_response;
 
 #[cfg(feature = "bridge-c")]
@@ -35,5 +36,5 @@ pub use self::bridge::*;
 
 pub use self::{
     client::Client, error::ErrorKind, id::*, transaction_id::TransactionId,
-    transaction_response::PreCheckCode,
+    transaction_receipt::TransactionStatus, transaction_response::PreCheckCode,
 };

@@ -1,7 +1,8 @@
 use crate::{
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
     query::{Query, QueryInner},
-    AccountId, Client, ErrorKind, PreCheckCode, TransactionId,
+    transaction_receipt::TransactionReceipt,
+    Client, ErrorKind, PreCheckCode, TransactionId,
 };
 use failure::Error;
 
@@ -9,13 +10,7 @@ pub struct QueryGetTransactionReceipt {
     transaction_id: TransactionId,
 }
 
-#[repr(C)]
-pub struct QueryGetTransactionReceiptResponse {
-    pub status: u8,
-    pub account_id: Option<Box<AccountId>>,
-    // unsupported: contract_id: Option<Box<ContractId>>,
-    // unsupported: file_id: Option<Box<FileId>>,
-}
+pub type QueryGetTransactionReceiptResponse = TransactionReceipt;
 
 impl QueryGetTransactionReceipt {
     pub fn new(
@@ -40,10 +35,24 @@ impl QueryInner for QueryGetTransactionReceipt {
             None
         };
 
+        let file_id = if receipt.has_fileID() {
+            Some(Box::new(receipt.take_fileID().into()))
+        } else {
+            None
+        };
+
+        let contract_id = if receipt.has_contractID() {
+            Some(Box::new(receipt.take_contractID().into()))
+        } else {
+            None
+        };
+
         match header.get_nodeTransactionPrecheckCode().into() {
             PreCheckCode::Ok => Ok(QueryGetTransactionReceiptResponse {
-                status: receipt.get_status() as u8,
+                status: receipt.get_status().into(),
                 account_id,
+                contract_id,
+                file_id,
             }),
 
             code => Err(ErrorKind::PreCheck(code))?,

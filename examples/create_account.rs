@@ -1,5 +1,5 @@
 use failure::{format_err, Error};
-use hedera::{crypto::SecretKey, Client};
+use hedera::{crypto::SecretKey, Client, TransactionStatus};
 use std::{env, thread::sleep, time::Duration};
 
 fn main() -> Result<(), Error> {
@@ -43,16 +43,14 @@ fn main() -> Result<(), Error> {
 
     // Get the receipt and check the status to prove it was successful
     let receipt = client.transaction(res.id).receipt().get()?;
-
-    // fixme: need an enum here instead of [u8]
-    if receipt.status != 1 {
+    if receipt.status != TransactionStatus::Success {
         Err(format_err!(
-            "transaction has a non-successful status: {}",
+            "transaction has a non-successful status: {:?}",
             receipt.status
         ))?;
     }
 
-    // note: account can be [None] here
+    // note: account can be [None] if the receipt wasn't for creating an account
     println!("account = {}", receipt.account_id.unwrap());
 
     Ok(())
