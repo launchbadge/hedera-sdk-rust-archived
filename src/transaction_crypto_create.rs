@@ -140,7 +140,7 @@ impl ToProto<TransactionBody_oneof_data> for TransactionCryptoCreate {
         };
 
         data.set_key(key.to_proto()?);
-        data.set_autoRenewPeriod(Duration::from_secs(2_592_000).to_proto()?);
+        data.set_autoRenewPeriod(self.auto_renew_period.to_proto()?);
 
         Ok(TransactionBody_oneof_data::cryptoCreateAccount(data))
     }

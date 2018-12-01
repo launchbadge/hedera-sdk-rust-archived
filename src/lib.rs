@@ -28,6 +28,7 @@ mod transaction_crypto_delete_claim;
 mod transaction_crypto_transfer;
 mod transaction_crypto_update;
 mod transaction_id;
+mod transaction_contract_create;
 mod transaction_receipt;
 mod transaction_response;
 
