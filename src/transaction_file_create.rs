@@ -10,7 +10,6 @@ use std::any::Any;
 use chrono::DateTime;
 use chrono::Utc;
 use protobuf::RepeatedField;
-use std::prelude::v1::Vec;
 
 pub struct TransactionFileCreate {
     expiration_time: Option<DateTime<Utc>>,
