@@ -58,6 +58,14 @@ impl ToProto<TransactionBody_oneof_data> for TransactionFileCreate {
     fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
         let mut data = proto::FileCreate::FileCreateTransactionBody::new();
 
+        let mut shard = proto::BasicTypes::ShardID::new();
+        shard.set_shardNum(0);
+        data.set_shardID(shard);
+
+        let mut realm = proto::BasicTypes::RealmID::new();
+        realm.set_realmNum(0);
+        data.set_realmID(realm);
+
         if let Some(expiration_time) = &self.expiration_time.as_ref() {
             data.set_expirationTime(expiration_time.to_proto()?);
         }

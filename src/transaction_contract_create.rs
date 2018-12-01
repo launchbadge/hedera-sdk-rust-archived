@@ -97,6 +97,14 @@ impl ToProto<TransactionBody_oneof_data> for TransactionContractCreate {
     fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
         let mut data = proto::ContractCreate::ContractCreateTransactionBody::new();
 
+        let mut shard = proto::BasicTypes::ShardID::new();
+        shard.set_shardNum(0);
+        data.set_shardID(shard);
+
+        let mut realm = proto::BasicTypes::RealmID::new();
+        realm.set_realmNum(0);
+        data.set_realmID(realm);
+
         data.set_initialBalance(self.initial_balance);
 
         if let Some(account) = self.proxy_account {

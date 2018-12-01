@@ -117,6 +117,15 @@ impl Transaction<TransactionCryptoCreate> {
 impl ToProto<TransactionBody_oneof_data> for TransactionCryptoCreate {
     fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
         let mut data = proto::CryptoCreate::CryptoCreateTransactionBody::new();
+
+        let mut shard = proto::BasicTypes::ShardID::new();
+        shard.set_shardNum(0);
+        data.set_shardID(shard);
+
+        let mut realm = proto::BasicTypes::RealmID::new();
+        realm.set_realmNum(0);
+        data.set_realmID(realm);
+
         data.set_initialBalance(self.initial_balance);
         data.set_sendRecordThreshold(self.send_record_threshold.try_into()?);
         data.set_receiveRecordThreshold(self.receive_record_threshold.try_into()?);
