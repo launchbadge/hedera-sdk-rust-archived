@@ -10,9 +10,13 @@ use crate::{
     },
     transaction::{
         Transaction, TransactionCryptoCreate, TransactionCryptoDelete,
-        TransactionCryptoDeleteClaim, TransactionCryptoUpdate,
+        TransactionCryptoDeleteClaim, TransactionCryptoUpdate, TransactionFileAppend,
+        TransactionFileCreate,
     },
-    AccountId, TransactionId,
+    transaction_contract_call::TransactionContractCall,
+    transaction_contract_create::TransactionContractCreate,
+    transaction_file_delete::TransactionFileDelete,
+    AccountId, ContractId, FileId, TransactionId,
 };
 
 pub struct Client {
@@ -54,6 +58,28 @@ impl Client {
     #[inline]
     pub fn account(&self, id: AccountId) -> PartialAccountMessage {
         PartialAccountMessage(self, id)
+    }
+
+    /// Start a new smart contract instance.
+    #[inline]
+    pub fn create_contract(&self) -> Transaction<TransactionContractCreate> {
+        TransactionContractCreate::new(self)
+    }
+
+    #[inline]
+    pub fn contract(&self, id: ContractId) -> PartialContractMessage {
+        PartialContractMessage(self, id)
+    }
+
+    /// Create a new file.
+    #[inline]
+    pub fn create_file(&self) -> Transaction<TransactionFileCreate> {
+        TransactionFileCreate::new(self)
+    }
+
+    #[inline]
+    pub fn file(&self, id: FileId) -> PartialFileMessage {
+        PartialFileMessage(self, id)
     }
 
     #[inline]
@@ -99,6 +125,29 @@ impl<'a> PartialAccountClaimMessage<'a> {
     #[inline]
     pub fn delete(self) -> Transaction<TransactionCryptoDeleteClaim> {
         TransactionCryptoDeleteClaim::new((self.0).0, (self.0).1, self.1)
+    }
+}
+
+pub struct PartialFileMessage<'a>(&'a Client, FileId);
+
+impl<'a> PartialFileMessage<'a> {
+    #[inline]
+    pub fn append(self, contents: Vec<u8>) -> Transaction<TransactionFileAppend> {
+        TransactionFileAppend::new(self.0, self.1, contents)
+    }
+
+    #[inline]
+    pub fn delete(self) -> Transaction<TransactionFileDelete> {
+        TransactionFileDelete::new(self.0, self.1)
+    }
+}
+
+pub struct PartialContractMessage<'a>(&'a Client, ContractId);
+
+impl<'a> PartialContractMessage<'a> {
+    #[inline]
+    pub fn call(self) -> Transaction<TransactionContractCall> {
+        TransactionContractCall::new(self.0, self.1)
     }
 }
 

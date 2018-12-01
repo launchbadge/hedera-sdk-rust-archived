@@ -9,7 +9,7 @@ use std::any::Any;
 
 pub struct TransactionFileAppend {
     id: FileId,
-    bytes: Vec<u8>,
+    contents: Vec<u8>,
 }
 
 interfaces!(
@@ -18,21 +18,8 @@ interfaces!(
 );
 
 impl TransactionFileAppend {
-    pub fn new(client: &Client, id: FileId) -> Transaction<Self> {
-        Transaction::new(
-            client,
-            Self {
-                id,
-                bytes: Vec::new(),
-            },
-        )
-    }
-}
-
-impl Transaction<TransactionFileAppend> {
-    pub fn contents(&mut self, bytes: Vec<u8>) -> &mut Self {
-        self.inner().bytes = bytes;
-        self
+    pub fn new(client: &Client, id: FileId, contents: Vec<u8>) -> Transaction<Self> {
+        Transaction::new(client, Self { id, contents })
     }
 }
 
@@ -41,7 +28,7 @@ impl ToProto<TransactionBody_oneof_data> for TransactionFileAppend {
         let mut data = proto::FileAppend::FileAppendTransactionBody::new();
 
         data.set_fileID(self.id.to_proto()?);
-        data.set_contents(self.bytes.clone());
+        data.set_contents(self.contents.clone());
 
         Ok(TransactionBody_oneof_data::fileAppend(data))
     }
