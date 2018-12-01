@@ -8,7 +8,7 @@ fn main() -> Result<(), Error> {
     let operator_secret: SecretKey = env::var("OPERATOR_SECRET")?.parse()?;
     let node = "0:0:3".parse()?;
 
-    let client = Client::new("testnet.hedera.com:50002")?;
+    let client = Client::new("testnet.hedera.com:50001")?;
 
     let res = client
         .create_file()

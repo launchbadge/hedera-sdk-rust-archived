@@ -6,8 +6,8 @@ use itertools::Itertools;
 use crate::{
     id::{ContractId, FileId},
     query::{
-        Query, QueryGetAccountBalance, QueryGetAccountBalanceResponse, QueryGetTransactionReceipt,
-        QueryGetTransactionReceiptResponse,
+        Query, QueryCryptoGetAccountBalance, QueryCryptoGetAccountBalanceResponse, QueryGetTransactionReceipt,
+        QueryGetTransactionReceiptResponse, QueryCryptoGetInfo, QueryCryptoGetInfoResponse
     },
     transaction::{
         Transaction, TransactionContractCall, TransactionContractCreate, TransactionCryptoCreate,
@@ -91,8 +91,14 @@ pub struct PartialAccountMessage<'a>(&'a Client, AccountId);
 impl<'a> PartialAccountMessage<'a> {
     /// Get the balance of a crypto-currency account.
     #[inline]
-    pub fn balance(self) -> Query<QueryGetAccountBalanceResponse> {
-        QueryGetAccountBalance::new(self.0, self.1)
+    pub fn balance(self) -> Query<QueryCryptoGetAccountBalanceResponse> {
+        QueryCryptoGetAccountBalance::new(self.0, self.1)
+    }
+
+    /// Get all the information about an account, including the balance.
+    #[inline]
+    pub fn info(self) -> Query<QueryCryptoGetInfoResponse> {
+        QueryCryptoGetInfo::new(self.0, self.1)
     }
 
     /// Change properties for the given account. Any missing field is ignored (left unchanged).

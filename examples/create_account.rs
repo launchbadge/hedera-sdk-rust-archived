@@ -51,7 +51,16 @@ fn main() -> Result<(), Error> {
     }
 
     // note: account can be [None] if the receipt wasn't for creating an account
-    println!("account = {}", receipt.account_id.unwrap());
+    let account = receipt.account_id.unwrap();
+    println!("account = {}", account);
+
+    println!("wait for 2s... ");
+    sleep(Duration::from_secs(2));
+
+    // todo: this fails for some reason
+//    // Get the account info
+//    let info = client.account(*account).info().get()?;
+//    println!("info = {:#?}", info);
 
     Ok(())
 }

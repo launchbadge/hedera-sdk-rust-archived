@@ -1,6 +1,6 @@
 use super::CTransactionId;
 use crate::{
-    AccountId, Client, Query, QueryGetAccountBalanceResponse, QueryGetTransactionReceiptResponse,
+    AccountId, Client, Query, QueryCryptoGetAccountBalanceResponse, QueryGetTransactionReceiptResponse,
 };
 use std::mem;
 
@@ -30,7 +30,7 @@ pub unsafe extern "C" fn hedera_query_cost(query: *mut Query<()>, out: *mut u64)
     0
 }
 
-// QueryGetAccountBalance
+// QueryCryptoGetAccountBalance
 // ----------------------------------------------------------------------------
 
 #[doc(hidden)]
@@ -38,7 +38,7 @@ pub unsafe extern "C" fn hedera_query_cost(query: *mut Query<()>, out: *mut u64)
 pub unsafe extern "C" fn hedera_query__get_account_balance__new(
     client: *mut Client,
     account: AccountId,
-) -> *mut Query<QueryGetAccountBalanceResponse> {
+) -> *mut Query<QueryCryptoGetAccountBalanceResponse> {
     debug_assert!(!client.is_null());
 
     let client = Box::from_raw(client);
@@ -52,7 +52,7 @@ pub unsafe extern "C" fn hedera_query__get_account_balance__new(
 }
 
 impl_get!(hedera_query__get_account_balance__get(
-    QueryGetAccountBalanceResponse
+    QueryCryptoGetAccountBalanceResponse
 ));
 
 // QueryGetTransactionReceipt

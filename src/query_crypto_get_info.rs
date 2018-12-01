@@ -11,6 +11,7 @@ use std::{
     time::Duration,
 };
 
+#[derive(Debug)]
 pub struct Claim {
     pub account_id: AccountId,
     pub hash: Vec<u8>,
@@ -34,6 +35,7 @@ impl TryFrom<proto::CryptoAddClaim::Claim> for Claim {
     }
 }
 
+#[derive(Debug)]
 pub struct QueryCryptoGetInfoResponse {
     pub account_id: AccountId,
     pub contract_account_id: String,

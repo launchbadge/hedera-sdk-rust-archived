@@ -12,7 +12,7 @@ use crate::{
 };
 
 // Re-export query-like things under the query namespace
-pub use crate::{query_get_account_balance::*, query_get_transaction_receipt::*, query_get_account_info::*};
+pub use crate::{query_crypto_get_account_balance::*, query_get_transaction_receipt::*, query_crypto_get_info::*};
 
 #[doc(hidden)]
 pub trait QueryInner {
@@ -48,6 +48,7 @@ impl<T> Query<T> {
         let response = match query.query {
             Some(cryptogetAccountBalance(_)) => client.crypto_get_balance(o, query),
             Some(transactionGetReceipt(_)) => client.get_transaction_receipts(o, query),
+            Some(cryptoGetInfo(_)) => client.get_account_info(o, query),
 
             _ => unimplemented!(),
         };
@@ -73,6 +74,7 @@ impl<T> Query<T> {
         let header = match response.response {
             Some(cryptogetAccountBalance(mut res)) => res.take_header(),
             Some(transactionGetReceipt(mut res)) => res.take_header(),
+            Some(cryptoGetInfo(mut res)) => res.take_header(),
 
             _ => unreachable!(),
         };
