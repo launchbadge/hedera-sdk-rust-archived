@@ -14,7 +14,7 @@ use std::prelude::v1::Vec;
 
 pub struct TransactionFileCreate {
     expiration_time: Option<DateTime<Utc>>,
-    key_list: Vec<PublicKey>,
+    keys: Vec<PublicKey>,
     bytes: Vec<u8>,
 }
 
@@ -23,33 +23,33 @@ interfaces!(
     ToProto<TransactionBody_oneof_data>
 );
 
-impl Transaction<TransactionFileCreate> {
-    pub fn create_file(client: &Client) -> Self {
-        Self::new(
+impl TransactionFileCreate {
+    pub fn new(client: &Client) -> Transaction<Self> {
+        Transaction::new(
             client,
-            TransactionFileCreate {
+            Self {
                 expiration_time: None,
-                key_list: Vec::new(),
+                keys: Vec::new(),
                 bytes: Vec::new(),
             },
         )
     }
 
     #[inline]
-    pub fn expiration_time(&mut self, expiration: DateTime<Utc>) -> &mut Self {
-        self.inner().expiration_time = Some(expiration);
+    pub fn expires_at(&mut self, expiration: DateTime<Utc>) -> &mut Self {
+        self.expiration_time = Some(expiration);
         self
     }
 
     #[inline]
     pub fn key(&mut self, key: PublicKey) -> &mut Self {
-        self.inner().key_list.push(key);
+        self.keys.push(key);
         self
     }
 
     #[inline]
     pub fn file(&mut self, bytes: Vec<u8>) -> &mut Self {
-        self.inner().bytes = bytes;
+        self.bytes = bytes;
         self
     }
 }
@@ -63,7 +63,7 @@ impl ToProto<TransactionBody_oneof_data> for TransactionFileCreate {
         }
 
         let mut key_list = proto::BasicTypes::KeyList::new();
-        key_list.set_keys(RepeatedField::from_vec(self.key_list.iter()
+        key_list.set_keys(RepeatedField::from_vec(self.keys.iter()
             .map(ToProto::to_proto)
             .collect::<Result<Vec<_>, _>>()?));
 
