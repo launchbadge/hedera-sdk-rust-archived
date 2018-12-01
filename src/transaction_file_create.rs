@@ -34,22 +34,24 @@ impl TransactionFileCreate {
             },
         )
     }
+}
 
+impl Transaction<TransactionFileCreate> {
     #[inline]
     pub fn expires_at(&mut self, expiration: DateTime<Utc>) -> &mut Self {
-        self.expiration_time = Some(expiration);
+        self.inner().expiration_time = Some(expiration);
         self
     }
 
     #[inline]
     pub fn key(&mut self, key: PublicKey) -> &mut Self {
-        self.keys.push(key);
+        self.inner().keys.push(key);
         self
     }
 
     #[inline]
     pub fn file(&mut self, bytes: Vec<u8>) -> &mut Self {
-        self.bytes = bytes;
+        self.inner().bytes = bytes;
         self
     }
 }
