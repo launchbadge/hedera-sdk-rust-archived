@@ -1,8 +1,7 @@
 use crate::{
     proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
     transaction::Transaction,
-    Client,
-    FileId,
+    Client, FileId,
 };
 use failure::Error;
 use query_interface::{interfaces, vtable_for};

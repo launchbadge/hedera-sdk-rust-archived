@@ -1,13 +1,13 @@
 use crate::{
+    crypto::PublicKey,
     proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
-    FileId, AccountId, crypto::PublicKey
+    AccountId, FileId,
 };
 
-use std::{ time::Duration, any::Any};
-use crate::transaction::Transaction;
-use crate::Client;
+use crate::{transaction::Transaction, Client};
 use failure::Error;
 use query_interface::{interfaces, vtable_for};
+use std::{any::Any, time::Duration};
 
 pub struct TransactionContractCreate {
     file_id: Option<FileId>,
@@ -25,7 +25,6 @@ interfaces!(
     ToProto<TransactionBody_oneof_data>
 );
 
-
 impl TransactionContractCreate {
     pub fn new(client: &Client) -> Transaction<Self> {
         Transaction::new(
@@ -38,8 +37,8 @@ impl TransactionContractCreate {
                 proxy_account: None,
                 proxy_fraction: None,
                 auto_renew_period: Duration::from_secs(2_592_000),
-                constructor_parameters:None,
-            }
+                constructor_parameters: None,
+            },
         )
     }
 }
@@ -125,6 +124,5 @@ impl ToProto<TransactionBody_oneof_data> for TransactionContractCreate {
         }
 
         Ok(TransactionBody_oneof_data::contractCreateInstance(data))
-
     }
 }

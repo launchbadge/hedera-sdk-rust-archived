@@ -12,10 +12,12 @@ use std::{any::Any, marker::PhantomData, sync::Arc, time::Duration};
 
 // Re-export transaction like things under the transaction namespace
 pub use crate::{
-    transaction_admin_delete::*, transaction_admin_recover::*, transaction_crypto_create::*,
-    transaction_crypto_delete::*, transaction_crypto_delete_claim::*,
-    transaction_crypto_transfer::*, transaction_crypto_update::*,
-    transaction_receipt::TransactionReceipt, transaction_response::TransactionResponse,
+    transaction_admin_delete::*, transaction_admin_recover::*, transaction_contract_call::*,
+    transaction_contract_create::*, transaction_crypto_create::*, transaction_crypto_delete::*,
+    transaction_crypto_delete_claim::*, transaction_crypto_transfer::*,
+    transaction_crypto_update::*, transaction_file_append::*, transaction_file_create::*,
+    transaction_file_delete::*, transaction_receipt::TransactionReceipt,
+    transaction_response::TransactionResponse,
 };
 
 pub struct Transaction<T> {

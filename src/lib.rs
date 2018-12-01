@@ -22,6 +22,8 @@ mod timestamp;
 pub mod transaction;
 mod transaction_admin_delete;
 mod transaction_admin_recover;
+mod transaction_contract_call;
+mod transaction_contract_create;
 mod transaction_crypto_create;
 mod transaction_crypto_delete;
 mod transaction_crypto_delete_claim;
@@ -31,7 +33,6 @@ mod transaction_file_append;
 mod transaction_file_create;
 mod transaction_file_delete;
 mod transaction_id;
-mod transaction_contract_create;
 mod transaction_receipt;
 mod transaction_response;
 

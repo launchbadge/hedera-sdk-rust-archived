@@ -1,8 +1,7 @@
 use crate::{
     proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
     transaction::Transaction,
-    Client,
-    FileId,
+    Client, FileId,
 };
 use failure::Error;
 use query_interface::{interfaces, vtable_for};
@@ -20,12 +19,7 @@ interfaces!(
 
 impl TransactionFileDelete {
     pub fn new(client: &Client, id: FileId) -> Transaction<Self> {
-        Transaction::new(
-            client,
-            Self {
-                id,
-            },
-        )
+        Transaction::new(client, Self { id })
     }
 }
 
