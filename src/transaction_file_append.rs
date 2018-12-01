@@ -8,7 +8,6 @@ use failure::Error;
 use query_interface::{interfaces, vtable_for};
 use std::any::Any;
 
-// Delete the given file. After deletion, it will be marked as deleted and will have no contents.
 pub struct TransactionFileAppend {
     id: FileId,
     bytes: Vec<u8>,
