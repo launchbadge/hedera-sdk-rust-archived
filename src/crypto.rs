@@ -250,7 +250,7 @@ impl FromASN1 for PrivateKeyInfo {
 // Public Key
 //
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct PublicKey(ed25519_dalek::PublicKey);
 
 impl PublicKey {
@@ -412,6 +412,12 @@ impl SecretKey {
                 .expand::<Sha512>()
                 .sign::<Sha512>(message.as_ref(), &self.public().0),
         )
+    }
+}
+
+impl Clone for SecretKey {
+    fn clone(&self) -> Self {
+        SecretKey::from_bytes(self.0.as_bytes()).unwrap()
     }
 }
 
