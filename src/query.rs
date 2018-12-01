@@ -12,7 +12,7 @@ use crate::{
 };
 
 // Re-export query-like things under the query namespace
-pub use crate::{query_get_account_balance::*, query_get_transaction_receipt::*};
+pub use crate::{query_get_account_balance::*, query_get_transaction_receipt::*, query_get_account_info::*};
 
 #[doc(hidden)]
 pub trait QueryInner {

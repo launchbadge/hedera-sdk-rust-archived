@@ -1,6 +1,6 @@
 use crate::proto::{self, ToProto};
 use ed25519_dalek;
-use failure::{bail, Error};
+use failure::{bail, err_msg, Error};
 use failure_derive::Fail;
 use hex;
 use num::BigUint;
@@ -12,6 +12,7 @@ use simple_asn1::{
     FromASN1, ToASN1, OID,
 };
 use std::{
+    convert::TryFrom,
     fmt::{self, Display},
     str::FromStr,
 };
@@ -334,6 +335,18 @@ impl ToProto<proto::BasicTypes::Key> for PublicKey {
         let mut key = proto::BasicTypes::Key::new();
         key.set_ed25519(self.0.to_bytes().to_vec());
         Ok(key)
+    }
+}
+
+impl TryFrom<proto::BasicTypes::Key> for PublicKey {
+    type Error = Error;
+
+    fn try_from(mut key: proto::BasicTypes::Key) -> Result<Self, Self::Error> {
+        if key.has_ed25519() {
+            Self::from_bytes(key.take_ed25519())
+        } else {
+            Err(err_msg("Only ed25519 public keys are currently supported"))
+        }
     }
 }
 

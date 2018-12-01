@@ -4,19 +4,17 @@ use failure::{format_err, Error};
 use itertools::Itertools;
 
 use crate::{
+    id::{ContractId, FileId},
     query::{
         Query, QueryGetAccountBalance, QueryGetAccountBalanceResponse, QueryGetTransactionReceipt,
         QueryGetTransactionReceiptResponse,
     },
     transaction::{
-        Transaction, TransactionCryptoCreate, TransactionCryptoDelete,
-        TransactionCryptoDeleteClaim, TransactionCryptoUpdate, TransactionFileAppend,
-        TransactionFileCreate,
+        Transaction, TransactionContractCall, TransactionContractCreate, TransactionCryptoCreate,
+        TransactionCryptoDelete, TransactionCryptoDeleteClaim, TransactionCryptoUpdate,
+        TransactionFileAppend, TransactionFileCreate, TransactionFileDelete,
     },
-    transaction_contract_call::TransactionContractCall,
-    transaction_contract_create::TransactionContractCreate,
-    transaction_file_delete::TransactionFileDelete,
-    AccountId, ContractId, FileId, TransactionId,
+    AccountId, TransactionId,
 };
 
 pub struct Client {

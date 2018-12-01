@@ -17,6 +17,7 @@ mod id;
 mod proto;
 pub mod query;
 mod query_get_account_balance;
+mod query_get_account_info;
 mod query_get_transaction_receipt;
 mod timestamp;
 pub mod transaction;
