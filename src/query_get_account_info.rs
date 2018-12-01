@@ -72,7 +72,7 @@ impl TryFrom<proto::CryptoGetInfo::CryptoGetInfoResponse_AccountInfo>
             generate_receive_record_theshold: info.get_generateReceiveRecordThreshold(),
             receiver_signature_required: info.get_receiverSigRequired(),
             expiration_time: info.take_expirationTime().into(),
-            auto_renew_period: info.take_autoRenewPeriod().into(),
+            auto_renew_period: info.take_autoRenewPeriod().try_into()?,
             claims: info
                 .take_claims()
                 .into_iter()
