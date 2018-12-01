@@ -49,7 +49,7 @@ impl Transaction<TransactionFileCreate> {
     }
 
     #[inline]
-    pub fn file(&mut self, bytes: Vec<u8>) -> &mut Self {
+    pub fn contents(&mut self, bytes: Vec<u8>) -> &mut Self {
         self.inner().bytes = bytes;
         self
     }
