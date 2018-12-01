@@ -31,7 +31,7 @@ impl TransactionFileAppend {
 }
 
 impl Transaction<TransactionFileAppend> {
-    pub fn file(&mut self, bytes: Vec<u8>) -> &mut Self {
+    pub fn contents(&mut self, bytes: Vec<u8>) -> &mut Self {
         self.inner().bytes = bytes;
         self
     }
