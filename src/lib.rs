@@ -32,6 +32,7 @@ mod transaction_crypto_update;
 mod transaction_file_append;
 mod transaction_file_create;
 mod transaction_file_delete;
+mod transaction_file_update;
 mod transaction_id;
 mod transaction_receipt;
 mod transaction_response;
