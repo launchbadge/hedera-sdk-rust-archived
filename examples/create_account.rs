@@ -58,9 +58,9 @@ fn main() -> Result<(), Error> {
     sleep(Duration::from_secs(2));
 
     // todo: this fails for some reason
-//    // Get the account info
-//    let info = client.account(*account).info().get()?;
-//    println!("info = {:#?}", info);
+    //    // Get the account info
+    //    let info = client.account(*account).info().get()?;
+    //    println!("info = {:#?}", info);
 
     Ok(())
 }

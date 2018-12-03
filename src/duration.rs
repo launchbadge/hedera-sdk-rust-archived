@@ -1,7 +1,6 @@
 use crate::proto::{self, ToProto};
 use failure::Error;
-use std::convert::TryInto;
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 
 #[repr(C)]
 #[derive(Debug)]
@@ -31,6 +30,7 @@ impl ToProto<proto::Duration::Duration> for std::time::Duration {
 
 impl TryFrom<proto::Duration::Duration> for std::time::Duration {
     type Error = Error;
+
     fn try_from(duration: proto::Duration::Duration) -> Result<Self, Error> {
         Ok(Self::new(
             duration.get_seconds().try_into()?,

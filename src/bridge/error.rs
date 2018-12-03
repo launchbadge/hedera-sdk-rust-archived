@@ -22,7 +22,7 @@ macro_rules! try_ffi {
                         .lock()
                         .insert(failure::Error::from(error)),
                 )
-                .as_ffi()
+                .as_ffi();
             }
         }
     };
