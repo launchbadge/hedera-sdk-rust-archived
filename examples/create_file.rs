@@ -4,6 +4,8 @@ use hedera::{crypto::SecretKey, Client, TransactionStatus};
 use std::{env, thread::sleep, time::Duration as StdDuration};
 
 fn main() -> Result<(), Error> {
+    pretty_env_logger::try_init()?;
+
     let operator = env::var("OPERATOR")?.parse()?;
     let operator_secret: SecretKey = env::var("OPERATOR_SECRET")?.parse()?;
     let node = "0:0:3".parse()?;
@@ -17,13 +19,14 @@ fn main() -> Result<(), Error> {
         .operator(operator)
         .node(node)
         .memo("[hedera-sdk-rust][example] create_file")
-        .sign(operator_secret.clone())
-        .sign(operator_secret)
+        .sign(&operator_secret)
+        .sign(&operator_secret)
         .execute()?;
 
     println!("created (empty) file; transaction = {}", res.id);
 
-    sleep(StdDuration::from_secs(20));
+    println!("wait 2s ...");
+    sleep(StdDuration::from_secs(2));
 
     let receipt = client.transaction(res.id).receipt().get()?;
     if receipt.status != TransactionStatus::Success {

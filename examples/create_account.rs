@@ -30,7 +30,7 @@ fn main() -> Result<(), Error> {
         .operator(operator)
         .node(node)
         .memo("[hedera-sdk-rust][example]")
-        .sign(operator_secret)
+        .sign(&operator_secret)
         .execute()?;
 
     println!("created account; transaction = {}", res.id);
@@ -54,11 +54,10 @@ fn main() -> Result<(), Error> {
     let account = receipt.account_id.unwrap();
     println!("account = {}", account);
 
-    println!("wait for 2s... ");
-    sleep(Duration::from_secs(2));
+    println!("wait for 25s... ");
+    sleep(Duration::from_secs(25));
 
     // todo: this fails for some reason
-    //    // Get the account info
     //    let info = client.account(*account).info().get()?;
     //    println!("info = {:#?}", info);
 

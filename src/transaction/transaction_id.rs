@@ -1,8 +1,7 @@
-use std::{fmt, str::FromStr};
-
 use chrono::{DateTime, Duration, Utc};
 use failure::Error;
 use itertools::Itertools;
+use std::{fmt, str::FromStr};
 
 use crate::{
     error::ErrorKind,
@@ -61,6 +60,18 @@ impl FromStr for TransactionId {
                 account_id: pb.take_accountID().into(),
                 transaction_valid_start: pb.take_transactionValidStart().into(),
             })
+        }
+    }
+}
+
+impl From<proto::BasicTypes::TransactionID> for TransactionId {
+    fn from(mut pb: proto::BasicTypes::TransactionID) -> Self {
+        let transaction_valid_start = pb.take_transactionValidStart().into();
+        let account_id = pb.take_accountID().into();
+
+        Self {
+            transaction_valid_start,
+            account_id,
         }
     }
 }

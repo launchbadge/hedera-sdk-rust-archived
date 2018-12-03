@@ -2,17 +2,16 @@ use crate::{
     crypto::PublicKey,
     proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
     transaction::Transaction,
-    Client,
+    Client, ErrorKind,
 };
 use chrono::{DateTime, Utc};
 use failure::Error;
-use protobuf::RepeatedField;
 use query_interface::{interfaces, vtable_for};
 use std::any::Any;
 
 pub struct TransactionFileCreate {
     expiration_time: Option<DateTime<Utc>>,
-    keys: Vec<PublicKey>,
+    key: Option<PublicKey>,
     bytes: Vec<u8>,
 }
 
@@ -27,7 +26,7 @@ impl TransactionFileCreate {
             client,
             Self {
                 expiration_time: None,
-                keys: Vec::new(),
+                key: None,
                 bytes: Vec::new(),
             },
         )
@@ -43,7 +42,7 @@ impl Transaction<TransactionFileCreate> {
 
     #[inline]
     pub fn key(&mut self, key: PublicKey) -> &mut Self {
-        self.inner().keys.push(key);
+        self.inner().key = Some(key);
         self
     }
 
@@ -70,16 +69,15 @@ impl ToProto<TransactionBody_oneof_data> for TransactionFileCreate {
             data.set_expirationTime(expiration_time.to_proto()?);
         }
 
+        let key = match self.key.as_ref() {
+            Some(key) => key,
+            None => Err(ErrorKind::MissingField("key"))?,
+        };
+
         let mut key_list = proto::BasicTypes::KeyList::new();
-        key_list.set_keys(RepeatedField::from_vec(
-            self.keys
-                .iter()
-                .map(ToProto::to_proto)
-                .collect::<Result<Vec<_>, _>>()?,
-        ));
+        key_list.keys.push(key.to_proto()?);
 
         data.set_keys(key_list);
-
         data.set_contents(self.bytes.clone());
 
         Ok(TransactionBody_oneof_data::fileCreate(data))

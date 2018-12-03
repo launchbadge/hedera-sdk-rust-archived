@@ -145,7 +145,7 @@ impl ToProto<TransactionBody_oneof_data> for TransactionCryptoCreate {
 
         let key = match self.key.as_ref() {
             Some(key) => key,
-            None => Err(ErrorKind::MissingField("public_key"))?,
+            None => Err(ErrorKind::MissingField("key"))?,
         };
 
         data.set_key(key.to_proto()?);
