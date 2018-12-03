@@ -430,7 +430,7 @@ impl SecretKey {
 
 impl Clone for SecretKey {
     fn clone(&self) -> Self {
-        SecretKey::from_bytes(self.0.as_bytes()).unwrap()
+        Self::from_bytes(self.0.as_bytes()).unwrap()
     }
 }
 
