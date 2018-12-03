@@ -67,7 +67,9 @@ impl<T> Query<T> {
 
             Some(fileGetInfo(_)) => FileServiceClient::with_client(client).get_file_info(o, query),
 
-            Some(fileGetContents(_)) => FileServiceClient::with_client(client).get_file_content(o, query),
+            Some(fileGetContents(_)) => {
+                FileServiceClient::with_client(client).get_file_content(o, query)
+            }
 
             _ => unreachable!(),
         };
