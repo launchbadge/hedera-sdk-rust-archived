@@ -47,7 +47,7 @@ impl<T> Query<T> {
         };
 
         let query: proto::Query::Query = self.to_proto()?;
-        log::trace!("{:#?}", query);
+        log::trace!("sent: {:#?}", query);
 
         let o = grpc::RequestOptions::default();
 
@@ -56,19 +56,28 @@ impl<T> Query<T> {
             Some(cryptogetAccountBalance(_)) => {
                 CryptoServiceClient::with_client(client).crypto_get_balance(o, query)
             }
+
             Some(transactionGetReceipt(_)) => {
                 CryptoServiceClient::with_client(client).get_transaction_receipts(o, query)
             }
+
             Some(cryptoGetInfo(_)) => {
                 CryptoServiceClient::with_client(client).get_account_info(o, query)
             }
+
             Some(fileGetInfo(_)) => FileServiceClient::with_client(client).get_file_info(o, query),
 
-            _ => unimplemented!(),
+            Some(fileGetContents(_)) => FileServiceClient::with_client(client).get_file_content(o, query),
+
+            _ => unreachable!(),
         };
 
         // TODO: Implement async
-        Ok(response.wait_drop_metadata()?)
+        let response = response.wait_drop_metadata()?;
+
+        log::trace!("recv: {:#?}", response);
+
+        Ok(response)
     }
 
     pub fn get(self) -> Result<T, Error> {
@@ -89,12 +98,14 @@ impl<T> Query<T> {
             Some(cryptogetAccountBalance(mut res)) => res.take_header(),
             Some(transactionGetReceipt(mut res)) => res.take_header(),
             Some(cryptoGetInfo(mut res)) => res.take_header(),
+            Some(fileGetInfo(mut res)) => res.take_header(),
+            Some(fileGetContents(mut res)) => res.take_header(),
 
             _ => unreachable!(),
         };
 
         match header.get_nodeTransactionPrecheckCode().into() {
-            PreCheckCode::Ok => Ok(header.get_cost()),
+            PreCheckCode::Ok | PreCheckCode::InvalidTransaction => Ok(header.get_cost()),
             code => Err(ErrorKind::PreCheck(code))?,
         }
     }

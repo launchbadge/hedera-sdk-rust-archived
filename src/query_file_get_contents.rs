@@ -7,10 +7,7 @@ use crate::{
 use failure::Error;
 use std::convert::{TryFrom, TryInto};
 
-pub struct QueryFileGetContentsResponse {
-    pub file_id: FileId,
-    pub contents: Vec<u8>,
-}
+pub type QueryFileGetContentsResponse = Vec<u8>;
 
 impl TryFrom<proto::FileGetContents::FileGetContentsResponse_FileContents>
     for QueryFileGetContentsResponse
@@ -20,10 +17,7 @@ impl TryFrom<proto::FileGetContents::FileGetContentsResponse_FileContents>
     fn try_from(
         mut contents: proto::FileGetContents::FileGetContentsResponse_FileContents,
     ) -> Result<Self, Error> {
-        Ok(Self {
-            file_id: contents.take_fileID().into(),
-            contents: contents.take_contents(),
-        })
+        Ok(contents.take_contents())
     }
 }
 

@@ -228,6 +228,7 @@ impl<T> Transaction<T, TransactionRaw> {
             // determine what kind of tx we have
             let kind = match state.tx.body.as_ref().unwrap().data {
                 Some(fileCreate(_)) => Some(FileCreate),
+                Some(fileAppend(_)) => Some(FileAppend),
                 _ => None,
             };
 
@@ -243,8 +244,8 @@ impl<T> Transaction<T, TransactionRaw> {
             //  - owner of _thing_ being created
             //  - # correspond to transfer
 
-            if signatures.len() >= 1 && kind == Some(FileCreate) {
-                // IF we are on signature #1 and we creating a file or contract,
+            if signatures.len() >= 1 && (kind == Some(FileCreate) || kind == Some(FileAppend)) {
+                // IF we are on signature #1 and we operating on a file or contract,
                 // place the signature into a signature list
 
                 let mut sig = proto::BasicTypes::Signature::new();
@@ -274,6 +275,8 @@ impl<T> Transaction<T, TransactionRaw> {
         };
 
         let mut tx = state.tx;
+        log::trace!(target: "hedera::transaction", "sent: {:#?}", tx);
+
         let o = grpc::RequestOptions::default();
 
         // note: cannot fail
@@ -312,6 +315,7 @@ impl<T> Transaction<T, TransactionRaw> {
             }
 
             Some(fileCreate(_)) => FileServiceClient::with_client(client).create_file(o, tx),
+            Some(fileAppend(_)) => FileServiceClient::with_client(client).append_content(o, tx),
 
             Some(contractCreateInstance(_)) => {
                 SmartContractServiceClient::with_client(client).create_contract(o, tx)
@@ -322,6 +326,7 @@ impl<T> Transaction<T, TransactionRaw> {
 
         // TODO: Implement async
         let response = response.wait_drop_metadata()?;
+        log::trace!("recv: {:#?}", response);
 
         match response.get_nodeTransactionPrecheckCode().into() {
             PreCheckCode::Ok => Ok(TransactionResponse { id: id.into() }),

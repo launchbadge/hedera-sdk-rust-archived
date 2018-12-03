@@ -3,6 +3,8 @@ use hedera::Client;
 use std::{thread::sleep, time::Duration};
 
 fn main() -> Result<(), Error> {
+    pretty_env_logger::try_init()?;
+
     let client = Client::new("testnet.hedera.com:50001")?;
     let target = "0:0:2".parse()?;
 
