@@ -5,15 +5,16 @@ use grpc::ClientStub;
 
 use crate::{
     proto::{
-        self, CryptoService_grpc::CryptoService, Query::Query_oneof_query,
-        QueryHeader::QueryHeader, ToProto,
+        self, CryptoService_grpc::CryptoService, FileService_grpc::FileService,
+        Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto,
     },
     Client, ErrorKind, PreCheckCode,
 };
 
 // Re-export query-like things under the query namespace
 pub use crate::{
-    query_crypto_get_account_balance::*, query_crypto_get_info::*, query_get_transaction_receipt::*,
+    query_crypto_get_account_balance::*, query_crypto_get_info::*, query_file_get_info::*,
+    query_get_transaction_receipt::*,
 };
 
 #[doc(hidden)]
@@ -40,17 +41,26 @@ impl<T> Query<T> {
     }
 
     pub(crate) fn send(&self) -> Result<proto::Response::Response, Error> {
-        use self::proto::Query::Query_oneof_query::*;
+        use self::proto::{
+            CryptoService_grpc::CryptoServiceClient, FileService_grpc::FileServiceClient,
+            Query::Query_oneof_query::*,
+        };
 
         let query = self.to_proto()?;
-        let client =
-            proto::CryptoService_grpc::CryptoServiceClient::with_client(self.client.clone());
         let o = grpc::RequestOptions::default();
 
+        let client = Arc::clone(&self.client);
         let response = match query.query {
-            Some(cryptogetAccountBalance(_)) => client.crypto_get_balance(o, query),
-            Some(transactionGetReceipt(_)) => client.get_transaction_receipts(o, query),
-            Some(cryptoGetInfo(_)) => client.get_account_info(o, query),
+            Some(cryptogetAccountBalance(_)) => {
+                CryptoServiceClient::with_client(client).crypto_get_balance(o, query)
+            }
+            Some(transactionGetReceipt(_)) => {
+                CryptoServiceClient::with_client(client).get_transaction_receipts(o, query)
+            }
+            Some(cryptoGetInfo(_)) => {
+                CryptoServiceClient::with_client(client).get_account_info(o, query)
+            }
+            Some(fileGetInfo(_)) => FileServiceClient::with_client(client).get_file_info(o, query),
 
             _ => unimplemented!(),
         };

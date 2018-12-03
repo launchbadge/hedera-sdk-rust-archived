@@ -7,8 +7,8 @@ use crate::{
     id::{ContractId, FileId},
     query::{
         Query, QueryCryptoGetAccountBalance, QueryCryptoGetAccountBalanceResponse,
-        QueryCryptoGetInfo, QueryCryptoGetInfoResponse, QueryGetTransactionReceipt,
-        QueryGetTransactionReceiptResponse,
+        QueryCryptoGetInfo, QueryCryptoGetInfoResponse, QueryFileGetInfo, QueryFileGetInfoResponse,
+        QueryGetTransactionReceipt, QueryGetTransactionReceiptResponse,
     },
     transaction::{
         Transaction, TransactionContractCall, TransactionContractCreate, TransactionCryptoCreate,
@@ -144,6 +144,11 @@ impl<'a> PartialFileMessage<'a> {
     #[inline]
     pub fn delete(self) -> Transaction<TransactionFileDelete> {
         TransactionFileDelete::new(self.0, self.1)
+    }
+
+    #[inline]
+    pub fn info(self) -> Query<QueryFileGetInfoResponse> {
+        QueryFileGetInfo::new(self.0, self.1)
     }
 }
 
