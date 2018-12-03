@@ -46,7 +46,9 @@ impl<T> Query<T> {
             Query::Query_oneof_query::*,
         };
 
-        let query = self.to_proto()?;
+        let query: proto::Query::Query = self.to_proto()?;
+        log::trace!("{:#?}", query);
+
         let o = grpc::RequestOptions::default();
 
         let client = Arc::clone(&self.client);
