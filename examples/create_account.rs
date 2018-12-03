@@ -54,12 +54,5 @@ fn main() -> Result<(), Error> {
     let account = receipt.account_id.unwrap();
     println!("account = {}", account);
 
-    println!("wait for 25s... ");
-    sleep(Duration::from_secs(25));
-
-    // todo: this fails for some reason
-    //    let info = client.account(*account).info().get()?;
-    //    println!("info = {:#?}", info);
-
     Ok(())
 }
