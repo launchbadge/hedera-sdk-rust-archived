@@ -2,7 +2,6 @@ use crate::{
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
     query::{Query, QueryInner},
     AccountId, Client, ErrorKind, crypto::PublicKey, ContractId, PreCheckCode,
-    timestamp::Timestamp
 };
 
 use failure::Error;
@@ -33,12 +32,12 @@ impl QueryInner for QueryContractGetInfo {
     type Response = QueryContractGetInfoResponse;
 
     fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error>{
-        let mut response = response.take_contractgetInfo();
+        let mut response = response.take_contractGetInfo();
         let header = response.take_header();
 
-        match hearer.getnodeTransactionPrecheckCode().into() {
-            PreCheckCode::Ok => Ok(response.get_balance()),
-            code => Err(ErrorKind::Precheck(code))?
+        match header.get_nodeTransactionPrecheckCode().into() {
+            PreCheckCode::Ok => Ok(response.into()),
+            code => Err(ErrorKind::PreCheck(code))?
         }
     }
 
