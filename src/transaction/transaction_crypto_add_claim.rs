@@ -8,6 +8,7 @@ use failure::Error;
 use query_interface::{interfaces, vtable_for};
 use std::any::Any;
 
+#[derive(Debug)]
 pub struct TransactionCryptoAddClaim {
     account: AccountId,
     claim: Claim,
