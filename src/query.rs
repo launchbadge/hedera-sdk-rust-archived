@@ -106,6 +106,7 @@ impl<T> Query<T> {
             Some(cryptoGetInfo(mut res)) => res.take_header(),
             Some(fileGetInfo(mut res)) => res.take_header(),
             Some(fileGetContents(mut res)) => res.take_header(),
+            Some(transactionGetRecord(mut res)) => res.take_header(),
 
             _ => unreachable!(),
         };
