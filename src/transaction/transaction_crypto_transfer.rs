@@ -8,6 +8,16 @@ use protobuf::RepeatedField;
 use query_interface::{interfaces, vtable_for};
 use std::any::Any;
 
+impl From<proto::CryptoTransfer::TransferList> for Vec<(AccountId, i64)> {
+    fn from(mut transfers: proto::CryptoTransfer::TransferList) -> Self {
+        transfers
+            .take_accountAmounts()
+            .into_iter()
+            .map(|mut a| (a.take_accountID().into(), a.get_amount()))
+            .collect()
+    }
+}
+
 pub struct TransactionCryptoTransfer {
     transfers: Vec<(AccountId, i64)>,
 }

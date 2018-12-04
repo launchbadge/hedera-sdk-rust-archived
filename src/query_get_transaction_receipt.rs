@@ -27,34 +27,9 @@ impl QueryInner for QueryGetTransactionReceipt {
     fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
         let mut response = response.take_transactionGetReceipt();
         let header = response.take_header();
-        let mut receipt = response.take_receipt();
-
-        let account_id = if receipt.has_accountID() {
-            Some(Box::new(receipt.take_accountID().into()))
-        } else {
-            None
-        };
-
-        let file_id = if receipt.has_fileID() {
-            Some(Box::new(receipt.take_fileID().into()))
-        } else {
-            None
-        };
-
-        let contract_id = if receipt.has_contractID() {
-            Some(Box::new(receipt.take_contractID().into()))
-        } else {
-            None
-        };
 
         match header.get_nodeTransactionPrecheckCode().into() {
-            PreCheckCode::Ok => Ok(QueryGetTransactionReceiptResponse {
-                status: receipt.get_status().into(),
-                account_id,
-                contract_id,
-                file_id,
-            }),
-
+            PreCheckCode::Ok => Ok(response.take_receipt().into()),
             code => Err(ErrorKind::PreCheck(code))?,
         }
     }

@@ -9,7 +9,8 @@ use crate::{
         Query, QueryCryptoGetAccountBalance, QueryCryptoGetAccountBalanceResponse,
         QueryCryptoGetInfo, QueryCryptoGetInfoResponse, QueryFileGetContents,
         QueryFileGetContentsResponse, QueryFileGetInfo, QueryFileGetInfoResponse,
-        QueryGetTransactionReceipt, QueryGetTransactionReceiptResponse,
+        QueryGetTransactionReceipt, QueryGetTransactionReceiptResponse, QueryTransactionGetRecord,
+        QueryTransactionGetRecordResponse,
     },
     transaction::{
         Transaction, TransactionContractCall, TransactionContractCreate, TransactionCryptoCreate,
@@ -177,5 +178,14 @@ impl<'a> PartialTransactionMessage<'a> {
     #[inline]
     pub fn receipt(self) -> Query<QueryGetTransactionReceiptResponse> {
         QueryGetTransactionReceipt::new(self.0, self.1)
+    }
+
+    /// Get the record for a transaction.
+    ///
+    /// If the transaction requested a record, then the record lasts for one hour, and a state
+    /// proof is available for it.
+    #[inline]
+    pub fn record(self) -> Query<QueryTransactionGetRecordResponse> {
+        QueryTransactionGetRecord::new(self.0, self.1)
     }
 }
