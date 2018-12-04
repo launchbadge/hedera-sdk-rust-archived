@@ -14,11 +14,11 @@ use crate::{
     },
     transaction::{
         Transaction, TransactionContractCall, TransactionContractCreate, TransactionContractUpdate,
-        TransactionCryptoCreate, TransactionCryptoDelete, TransactionCryptoDeleteClaim,
-        TransactionCryptoUpdate, TransactionFileAppend, TransactionFileCreate,
-        TransactionFileDelete,
+        TransactionCryptoAddClaim, TransactionCryptoCreate, TransactionCryptoDelete,
+        TransactionCryptoDeleteClaim, TransactionCryptoUpdate, TransactionFileAppend,
+        TransactionFileCreate, TransactionFileDelete,
     },
-    AccountId, TransactionId,
+    AccountId, Claim, TransactionId,
 };
 
 pub struct Client {
@@ -128,6 +128,11 @@ impl<'a> PartialAccountMessage<'a> {
 pub struct PartialAccountClaimMessage<'a>(PartialAccountMessage<'a>, Vec<u8>);
 
 impl<'a> PartialAccountClaimMessage<'a> {
+    #[inline]
+    pub fn add(self, claim: Claim) -> Transaction<TransactionCryptoAddClaim> {
+        TransactionCryptoAddClaim::new((self.0).0, (self.0).1, claim)
+    }
+
     /// Delete a claim hash that was attached to the given account.
     /// This transaction is valid if signed by all the keys used for transfers out of the account.
     #[inline]

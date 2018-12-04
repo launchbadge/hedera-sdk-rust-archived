@@ -1,7 +1,7 @@
 use crate::{
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
     query::{Query, QueryInner},
-    ContractId, Client, ErrorKind, PreCheckCode
+    Client, ContractId, ErrorKind, PreCheckCode,
 };
 
 use failure::Error;
@@ -9,12 +9,15 @@ use failure::Error;
 pub type QueryContractGetBytecodeResponse = Vec<u8>;
 
 pub struct QueryContractGetBytecode {
-    contract_id: ContractId
+    contract_id: ContractId,
 }
 
 impl QueryContractGetBytecode {
-    pub fn new(client: &Client, contract_id: ContractId) -> Query<QueryContractGetBytecodeResponse> {
-        Query::new(client, Self{ contract_id })
+    pub fn new(
+        client: &Client,
+        contract_id: ContractId,
+    ) -> Query<QueryContractGetBytecodeResponse> {
+        Query::new(client, Self { contract_id })
     }
 }
 

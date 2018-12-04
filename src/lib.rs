@@ -9,6 +9,7 @@ extern crate test;
 #[cfg(feature = "bridge-c")]
 mod bridge;
 
+mod claim;
 pub mod client;
 pub mod crypto;
 mod duration;
@@ -16,8 +17,8 @@ mod error;
 mod id;
 mod proto;
 pub mod query;
-mod query_contract_get_info;
 mod query_contract_get_bytecode;
+mod query_contract_get_info;
 mod query_crypto_get_account_balance;
 mod query_crypto_get_info;
 mod query_file_get_contents;
@@ -31,6 +32,7 @@ pub mod transaction;
 pub use self::bridge::*;
 
 pub use self::{
+    claim::Claim,
     client::Client,
     error::ErrorKind,
     id::*,
