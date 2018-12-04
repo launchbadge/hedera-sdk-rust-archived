@@ -13,7 +13,7 @@ use crate::{
     query::{
         Query, QueryCryptoGetAccountBalance, QueryCryptoGetClaim, QueryCryptoGetInfo,
         QueryFileGetContents, QueryFileGetInfo, QueryGetTransactionReceipt,
-        QueryTransactionGetRecord,
+        QueryTransactionGetRecord, QueryGetByKey
     },
     transaction::{
         Transaction, TransactionContractCall, TransactionContractCreate, TransactionContractUpdate,
@@ -21,19 +21,54 @@ use crate::{
         TransactionCryptoUpdate, TransactionFileAppend, TransactionFileCreate,
         TransactionFileDelete, TransactionCryptoTransfer,
     },
+    crypto::PublicKey,
     AccountId, AccountInfo, FileInfo, TransactionId, TransactionReceipt, TransactionRecord,
 };
 
 use grpc::ClientStub;
 
+pub struct ClientBuilder {
+    address: String,
+    node: Option<AccountId>,
+}
+
 pub struct Client {
+    raw_client: Arc<grpc::Client>,
+    node: Option<AccountId>,
     pub(crate) crypto: Arc<CryptoServiceClient>,
     pub(crate) file: Arc<FileServiceClient>,
     pub(crate) contract: Arc<SmartContractServiceClient>,
 }
 
+impl ClientBuilder {
+    pub fn node(&mut self, node: AccountId) -> &mut Self {
+        self.node = Some(node);
+        self
+    }
+
+    pub fn build(&mut self) -> Result<Client, Error> {
+
+        let mut client = Client::new(&self.address)?;
+
+        if let Some(node) = self.node {
+            client.set_node(node);
+        }
+
+        Ok(client)
+    }
+
+
+}
+
 impl Client {
-    pub fn new(address: impl AsRef<str>) -> Result<Self, Error> {
+    pub fn builder(address: impl AsRef<str>) -> ClientBuilder {
+        ClientBuilder{
+            address: address.as_ref().into(),
+            node: None
+        }
+    }
+
+    pub(crate) fn new(address: &impl AsRef<str>) -> Result<Self, Error> {
         let address = address.as_ref();
         let (host, port) = address.split(':').next_tuple().ok_or_else(|| {
             format_err!("failed to parse 'host:port' from address: {:?}", address)
@@ -41,7 +76,7 @@ impl Client {
 
         let port = port.parse()?;
 
-        let inner = Arc::new(grpc::Client::new_plain(
+        let raw_client = Arc::new(grpc::Client::new_plain(
             &host,
             port,
             grpc::ClientConf {
@@ -53,22 +88,33 @@ impl Client {
             },
         )?);
 
-        let crypto = Arc::new(CryptoServiceClient::with_client(inner.clone()));
-
-        let file = Arc::new(FileServiceClient::with_client(inner.clone()));
-
-        let contract = Arc::new(SmartContractServiceClient::with_client(inner));
+        let crypto = Arc::new(CryptoServiceClient::with_client(raw_client.clone()));
+        let file = Arc::new(FileServiceClient::with_client(raw_client.clone()));
+        let contract = Arc::new(SmartContractServiceClient::with_client(raw_client.clone()));
 
         Ok(Self {
+            raw_client,
+            node: None,
             crypto,
             file,
-            contract,
+            contract
         })
+    }
+
+    #[inline]
+    pub(crate) fn set_node(&mut self, node: AccountId) -> &mut Self {
+        self.node = Some(node);
+        self
     }
 
     #[inline]
     pub fn transfer_crypto(&self) -> Transaction<TransactionCryptoTransfer> {
         TransactionCryptoTransfer::new(self)
+    }
+
+    #[inline]
+    pub(crate) fn raw_client(&self) -> Arc<grpc::Client>{
+        self.raw_client.clone()
     }
 
     /// Create a new account. After the account is created, the AccountID for it is in the
