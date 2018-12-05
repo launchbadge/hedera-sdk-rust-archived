@@ -5,16 +5,18 @@ use grpc::ClientStub;
 
 use crate::{
     proto::{
-        self, CryptoService_grpc::CryptoService, FileService_grpc::FileService, SmartContractService_grpc::SmartContractService,
-        Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto,
+        self, CryptoService_grpc::CryptoService, FileService_grpc::FileService,
+        Query::Query_oneof_query, QueryHeader::QueryHeader,
+        SmartContractService_grpc::SmartContractService, ToProto,
     },
     Client, ErrorKind, PreCheckCode,
 };
 
 // Re-export query-like things under the query namespace
 pub use crate::{
-    query_crypto_get_account_balance::*, query_crypto_get_info::*, query_file_get_contents::*,
-    query_file_get_info::*, query_get_transaction_receipt::*, query_contract_get_info::*, query_transaction_get_record::*,
+    query_contract_get_info::*, query_crypto_get_account_balance::*, query_crypto_get_info::*,
+    query_file_get_contents::*, query_file_get_info::*, query_get_transaction_receipt::*,
+    query_transaction_get_record::*,
 };
 
 #[doc(hidden)]
@@ -42,9 +44,8 @@ impl<T> Query<T> {
 
     pub(crate) fn send(&self) -> Result<proto::Response::Response, Error> {
         use self::proto::{
-            CryptoService_grpc::CryptoServiceClient, FileService_grpc::FileServiceClient, SmartContractService_grpc::SmartContractServiceClient,
-            Query::Query_oneof_query::*,
-
+            CryptoService_grpc::CryptoServiceClient, FileService_grpc::FileServiceClient,
+            Query::Query_oneof_query::*, SmartContractService_grpc::SmartContractServiceClient,
         };
 
         let query: proto::Query::Query = self.to_proto()?;
@@ -76,7 +77,9 @@ impl<T> Query<T> {
                 CryptoServiceClient::with_client(client).get_tx_record_by_tx_id(o, query)
             }
 
-            Some(contractGetInfo(_)) => SmartContractServiceClient::with_client(client).get_contract_info(o, query),
+            Some(contractGetInfo(_)) => {
+                SmartContractServiceClient::with_client(client).get_contract_info(o, query)
+            }
 
             _ => unreachable!(),
         };

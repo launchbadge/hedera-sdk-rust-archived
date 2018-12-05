@@ -1,12 +1,15 @@
 use crate::{
+    crypto::PublicKey,
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
     query::{Query, QueryInner},
-    AccountId, Client, ErrorKind, crypto::PublicKey, ContractId, PreCheckCode,
+    AccountId, Client, ContractId, ErrorKind, PreCheckCode,
 };
-use std::convert::{TryFrom, TryInto};
-use failure::Error;
-use std::{time::Duration};
 use chrono::{DateTime, Utc};
+use failure::Error;
+use std::{
+    convert::{TryFrom, TryInto},
+    time::Duration,
+};
 
 pub struct QueryContractGetInfoResponse {
     pub contract_id: ContractId,
@@ -22,11 +25,14 @@ pub struct QueryContractGetInfo {
     contract: ContractId,
 }
 
-impl TryFrom<proto::ContractGetInfo::ContractGetInfoResponse_ContractInfo> for QueryContractGetInfoResponse {
+impl TryFrom<proto::ContractGetInfo::ContractGetInfoResponse_ContractInfo>
+    for QueryContractGetInfoResponse
+{
     type Error = Error;
 
-    fn try_from(mut info: proto::ContractGetInfo::ContractGetInfoResponse_ContractInfo) -> Result<Self, Error> {
-
+    fn try_from(
+        mut info: proto::ContractGetInfo::ContractGetInfoResponse_ContractInfo,
+    ) -> Result<Self, Error> {
         let admin_key = if info.has_adminKey() {
             Some(info.take_adminKey().try_into()?)
         } else {
@@ -45,7 +51,6 @@ impl TryFrom<proto::ContractGetInfo::ContractGetInfoResponse_ContractInfo> for Q
     }
 }
 
-
 impl QueryContractGetInfo {
     pub fn new(client: &Client, contract: ContractId) -> Query<QueryContractGetInfoResponse> {
         Query::new(client, Self { contract })
@@ -55,13 +60,13 @@ impl QueryContractGetInfo {
 impl QueryInner for QueryContractGetInfo {
     type Response = QueryContractGetInfoResponse;
 
-    fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error>{
+    fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
         let mut response = response.take_contractGetInfo();
         let header = response.take_header();
 
         match header.get_nodeTransactionPrecheckCode().into() {
             PreCheckCode::Ok => Ok(response.take_contractInfo().try_into()?),
-            code => Err(ErrorKind::PreCheck(code))?
+            code => Err(ErrorKind::PreCheck(code))?,
         }
     }
 
@@ -71,6 +76,5 @@ impl QueryInner for QueryContractGetInfo {
         query.set_contractID(self.contract.to_proto()?);
 
         Ok(Query_oneof_query::contractGetInfo(query))
-
     }
 }
