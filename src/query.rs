@@ -1,13 +1,15 @@
 use std::sync::Arc;
 
 use failure::Error;
-use grpc::ClientStub;
 
 use crate::{
     proto::{
-        self, CryptoService_grpc::CryptoService, FileService_grpc::FileService,
+        self,
+        CryptoService_grpc::{CryptoService, CryptoServiceClient},
+        FileService_grpc::{FileService, FileServiceClient},
+        SmartContractService_grpc::{SmartContractService, SmartContractServiceClient},
         Query::Query_oneof_query, QueryHeader::QueryHeader,
-        SmartContractService_grpc::SmartContractService, ToProto,
+        ToProto,
     },
     Client, ErrorKind, PreCheckCode,
 };
@@ -28,7 +30,9 @@ pub trait QueryInner {
 }
 
 pub struct Query<T> {
-    pub(crate) client: Arc<grpc::Client>,
+    crypto_service: Arc<CryptoServiceClient>,
+    contract_service: Arc<SmartContractServiceClient>,
+    file_service: Arc<FileServiceClient>,
     kind: proto::QueryHeader::ResponseType,
     // TODO: payment: Transaction,
     inner: Box<dyn QueryInner<Response = T>>,
@@ -38,56 +42,54 @@ impl<T> Query<T> {
     pub(crate) fn new<U: QueryInner<Response = T> + 'static>(client: &Client, inner: U) -> Self {
         Self {
             kind: proto::QueryHeader::ResponseType::ANSWER_ONLY,
-            client: client.inner.clone(),
+            crypto_service: client.crypto.clone(),
+            contract_service: client.contract.clone(),
+            file_service: client.file.clone(),
             inner: Box::new(inner),
         }
     }
 
     pub(crate) fn send(&self) -> Result<proto::Response::Response, Error> {
-        use self::proto::{
-            CryptoService_grpc::CryptoServiceClient, FileService_grpc::FileServiceClient,
-            Query::Query_oneof_query::*, SmartContractService_grpc::SmartContractServiceClient,
-        };
+        use self::proto::Query::Query_oneof_query::*;
 
         let query: proto::Query::Query = self.to_proto()?;
         log::trace!("sent: {:#?}", query);
 
         let o = grpc::RequestOptions::default();
 
-        let client = Arc::clone(&self.client);
         let response = match query.query {
             Some(cryptogetAccountBalance(_)) => {
-                CryptoServiceClient::with_client(client).crypto_get_balance(o, query)
+                self.crypto_service.crypto_get_balance(o, query)
             }
 
             Some(transactionGetReceipt(_)) => {
-                CryptoServiceClient::with_client(client).get_transaction_receipts(o, query)
+                self.crypto_service.get_transaction_receipts(o, query)
             }
 
             Some(cryptoGetInfo(_)) => {
-                CryptoServiceClient::with_client(client).get_account_info(o, query)
+                self.crypto_service.get_account_info(o, query)
             }
 
-            Some(fileGetInfo(_)) => FileServiceClient::with_client(client).get_file_info(o, query),
+            Some(fileGetInfo(_)) => self.file_service.get_file_info(o, query),
 
             Some(fileGetContents(_)) => {
-                FileServiceClient::with_client(client).get_file_content(o, query)
+                self.file_service.get_file_content(o, query)
             }
 
             Some(transactionGetRecord(_)) => {
-                CryptoServiceClient::with_client(client).get_tx_record_by_tx_id(o, query)
+                self.crypto_service.get_tx_record_by_tx_id(o, query)
             }
 
             Some(cryptoGetAccountRecords(_)) => {
-                CryptoServiceClient::with_client(client).get_account_records(o, query)
+                self.crypto_service.get_account_records(o, query)
             }
 
             Some(contractGetInfo(_)) => {
-                SmartContractServiceClient::with_client(client).get_contract_info(o, query)
+                self.contract_service.get_contract_info(o, query)
             }
 
             Some(contractGetBytecode(_)) => {
-                SmartContractServiceClient::with_client(client).contract_get_bytecode(o, query)
+                self.contract_service.contract_get_bytecode(o, query)
             }
 
             _ => unreachable!(),

@@ -12,7 +12,6 @@ use crate::{
     AccountId, Client, PreCheckCode, TransactionId,
 };
 use failure::Error;
-use grpc::ClientStub;
 use protobuf::Message;
 use query_interface::Object;
 use std::{any::Any, marker::PhantomData, mem::swap, sync::Arc, time::Duration};
@@ -48,7 +47,9 @@ impl<T> TransactionKind<T> {
 }
 
 pub struct Transaction<T, S = TransactionBuilder<T>> {
-    client: Arc<grpc::Client>,
+    crypto_service: Arc<CryptoServiceClient>,
+    file_service: Arc<FileServiceClient>,
+    contract_service: Arc<SmartContractServiceClient>,
     kind: TransactionKind<T>,
     phantom: PhantomData<S>,
 }
@@ -60,7 +61,10 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
     {
         let inner = Box::<T>::new(inner);
         Self {
-            client: client.inner.clone(),
+//            client: client.inner.clone(),
+            crypto_service: client.crypto.clone(),
+            file_service: client.file.clone(),
+            contract_service: client.contract.clone(),
             kind: TransactionKind::Builder(TransactionBuilder {
                 id: None,
                 node: None,
@@ -290,19 +294,18 @@ impl<T> Transaction<T, TransactionRaw> {
             .clone();
 
         let operator = id.accountID.as_ref().unwrap().clone();
-        let client = Arc::clone(&self.client);
 
         let response = match tx.mut_body().data {
             Some(cryptoCreateAccount(_)) => {
-                CryptoServiceClient::with_client(client).create_account(o, tx)
+                self.crypto_service.create_account(o, tx)
             }
 
             Some(cryptoTransfer(_)) => {
-                CryptoServiceClient::with_client(client).crypto_transfer(o, tx)
+                self.crypto_service.crypto_transfer(o, tx)
             }
 
             Some(cryptoDeleteClaim(_)) => {
-                CryptoServiceClient::with_client(client).delete_claim(o, tx)
+                self.crypto_service.delete_claim(o, tx)
             }
 
             Some(cryptoDelete(ref mut data)) => {
@@ -311,14 +314,14 @@ impl<T> Transaction<T, TransactionRaw> {
                     data.set_transferAccountID(operator);
                 }
 
-                CryptoServiceClient::with_client(client).crypto_delete(o, tx)
+                self.crypto_service.crypto_delete(o, tx)
             }
 
-            Some(fileCreate(_)) => FileServiceClient::with_client(client).create_file(o, tx),
-            Some(fileAppend(_)) => FileServiceClient::with_client(client).append_content(o, tx),
+            Some(fileCreate(_)) => self.file_service.create_file(o, tx),
+            Some(fileAppend(_)) => self.file_service.append_content(o, tx),
 
             Some(contractCreateInstance(_)) => {
-                SmartContractServiceClient::with_client(client).create_contract(o, tx)
+                self.contract_service.create_contract(o, tx)
             }
 
             _ => unimplemented!(),
