@@ -27,20 +27,20 @@ use crate::{
 
 use grpc::ClientStub;
 
-pub struct ClientBuilder {
-    address: String,
+pub struct ClientBuilder<'a> {
+    address: &'a str,
     node: Option<AccountId>,
 }
 
 pub struct Client {
-    raw_client: Arc<grpc::Client>,
+    inner: Arc<grpc::Client>,
     node: Option<AccountId>,
     pub(crate) crypto: Arc<CryptoServiceClient>,
     pub(crate) file: Arc<FileServiceClient>,
     pub(crate) contract: Arc<SmartContractServiceClient>,
 }
 
-impl ClientBuilder {
+impl<'a> ClientBuilder<'a> {
     pub fn node(&mut self, node: AccountId) -> &mut Self {
         self.node = Some(node);
         self
@@ -57,18 +57,17 @@ impl ClientBuilder {
         Ok(client)
     }
 
-
 }
 
 impl Client {
-    pub fn builder(address: impl AsRef<str>) -> ClientBuilder {
+    pub fn builder(address: &str) -> ClientBuilder {
         ClientBuilder{
-            address: address.as_ref().into(),
+            address,
             node: None
         }
     }
 
-    pub(crate) fn new(address: &impl AsRef<str>) -> Result<Self, Error> {
+    pub(crate) fn new(address: impl AsRef<str>) -> Result<Self, Error> {
         let address = address.as_ref();
         let (host, port) = address.split(':').next_tuple().ok_or_else(|| {
             format_err!("failed to parse 'host:port' from address: {:?}", address)
@@ -93,7 +92,7 @@ impl Client {
         let contract = Arc::new(SmartContractServiceClient::with_client(raw_client.clone()));
 
         Ok(Self {
-            raw_client,
+            inner: raw_client,
             node: None,
             crypto,
             file,
@@ -114,7 +113,7 @@ impl Client {
 
     #[inline]
     pub(crate) fn raw_client(&self) -> Arc<grpc::Client>{
-        self.raw_client.clone()
+        self.inner.clone()
     }
 
     /// Create a new account. After the account is created, the AccountID for it is in the
