@@ -1,4 +1,5 @@
 use crate::{
+    claim::Claim,
     crypto::PublicKey,
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
     query::{Query, QueryInner},
@@ -10,30 +11,6 @@ use std::{
     convert::{TryFrom, TryInto},
     time::Duration,
 };
-
-#[derive(Debug)]
-pub struct Claim {
-    pub account_id: AccountId,
-    pub hash: Vec<u8>,
-    pub keys: Vec<PublicKey>, // KeyList
-}
-
-impl TryFrom<proto::CryptoAddClaim::Claim> for Claim {
-    type Error = Error;
-
-    fn try_from(mut claim: proto::CryptoAddClaim::Claim) -> Result<Self, Error> {
-        Ok(Self {
-            account_id: claim.take_accountID().into(),
-            hash: claim.take_hash(),
-            keys: claim
-                .take_keys()
-                .take_keys()
-                .into_iter()
-                .map(|k| k.try_into())
-                .collect::<Result<Vec<_>, _>>()?,
-        })
-    }
-}
 
 #[derive(Debug)]
 pub struct QueryCryptoGetInfoResponse {
