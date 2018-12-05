@@ -21,9 +21,6 @@ use crate::{
     proto::{
         CryptoService_grpc::CryptoServiceClient, FileService_grpc::FileServiceClient, SmartContractService_grpc::SmartContractServiceClient
     },
-    proto::{
-        CryptoService_grpc::CryptoServiceClient, FileService_grpc::FileServiceClient, SmartContractService_grpc::SmartContractServiceClient
-    },
     AccountId, TransactionId,
 };
 
