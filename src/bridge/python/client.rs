@@ -2,7 +2,7 @@ use super::{
     errors::PyValueError, query_crypto_get_account_balance::*, query_file_get_contents::*,
     query_get_transaction_receipt::*,
 };
-use crate::{AccountId, Client, TransactionId};
+use crate::{AccountId, Client, TransactionId, FileId};
 use pyo3::prelude::*;
 use std::rc::Rc;
 
@@ -36,7 +36,10 @@ impl PyClient {
     }
 
     fn file(&self, id: String) -> PyResult<PyPartialFileMessage> {
-        Ok(PyPartialFileMessage)
+        Ok(PyPartialFileMessage {
+            client: Rc::clone(&self.inner),
+            file: id.parse().map_err(PyValueError)?,
+        })
     }
 }
 
