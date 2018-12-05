@@ -1,5 +1,5 @@
 use crate::{
-    id::AccountId, proto, query_transaction_get_record::ContractFunctionResult,
+    id::AccountId, proto, query::ContractFunctionResult,
     transaction::TransactionReceipt,
 };
 use chrono::{DateTime, Utc};
