@@ -152,6 +152,12 @@ impl<'a> PartialAccountClaimMessage<'a> {
     pub fn delete(self) -> Transaction<TransactionCryptoDeleteClaim> {
         TransactionCryptoDeleteClaim::new((self.0).0, (self.0).1, self.1)
     }
+
+    #[inline]
+    pub fn get(self) -> Query<QueryCryptoGetClaimResponse> {
+    QueryCryptoGetClaim::new((self.0).0, (self.0).1, self.1)
+    }
+
 }
 
 pub struct PartialFileMessage<'a>(&'a Client, FileId);
@@ -214,11 +220,4 @@ impl<'a> PartialTransactionMessage<'a> {
     }
 }
 
-pub struct PartialClaimMessage<'a>(&'a Client, AccountId, Vec<u8>);
 
-impl<'a> PartialClaimMessage<'a> {
-    #[inline]
-    pub fn get(self) -> Query<QueryCryptoGetClaimResponse> {
-        QueryCryptoGetClaim::new(self.0, self.1, self.2)
-    }
-}
