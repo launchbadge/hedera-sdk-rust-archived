@@ -14,7 +14,7 @@ use crate::{
     },
     transaction::{
         Transaction, TransactionContractCall, TransactionContractCreate, TransactionContractUpdate,
-        TransactionCryptoAddClaim, TransactionCryptoCreate, TransactionCryptoDelete,
+        TransactionCryptoCreate, TransactionCryptoDelete,
         TransactionCryptoDeleteClaim, TransactionCryptoUpdate, TransactionFileAppend,
         TransactionFileCreate, TransactionFileDelete,
     },
