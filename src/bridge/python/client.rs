@@ -1,5 +1,6 @@
 use super::{
-    errors::PyValueError, query_crypto_get_account_balance::*, query_get_transaction_receipt::*,
+    errors::PyValueError, query_crypto_get_account_balance::*, query_file_get_contents::*,
+    query_get_transaction_receipt::*,
 };
 use crate::{AccountId, Client, TransactionId};
 use pyo3::prelude::*;
@@ -33,6 +34,10 @@ impl PyClient {
             transaction: id.parse().map_err(PyValueError)?,
         })
     }
+
+    fn file(&self, id: String) -> PyResult<PyPartialFileMessage> {
+        Ok(PyPartialFileMessage)
+    }
 }
 
 #[pyclass(name = PartialAccountMessage)]
@@ -64,5 +69,18 @@ impl PyPartialTransactionMessage {
             &self.client,
             self.transaction.clone(),
         ))
+    }
+}
+
+#[pyclass(name = PartialFileMessage)]
+pub(crate) struct PyPartialFileMessage {
+    client: Rc<Client>,
+    file: FileId,
+}
+
+#[pymethods]
+impl PyPartialFileMessage {
+    fn contents(&self) -> PyResult<PyQueryFileGetContents> {
+        Ok(PyQueryFileGetContents::new(&self.client, self.file.clone()))
     }
 }

@@ -2,7 +2,8 @@ use crate::{
     id::AccountId,
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
     query::{Query, QueryInner},
-    Client, ErrorKind, PreCheckCode, transaction::TransactionRecord,
+    transaction::TransactionRecord,
+    Client, ErrorKind, PreCheckCode,
 };
 use failure::Error;
 use std::convert::TryInto;
