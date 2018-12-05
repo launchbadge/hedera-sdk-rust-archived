@@ -1,8 +1,9 @@
 use crate::{
+    claim::Claim,
     crypto::PublicKey,
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
     query::{Query, QueryInner},
-    AccountId, Claim, Client, ErrorKind, PreCheckCode,
+    AccountId, Client, ErrorKind, PreCheckCode,
 };
 use chrono::{DateTime, Utc};
 use failure::Error;

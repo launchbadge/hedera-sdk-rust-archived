@@ -32,7 +32,6 @@ pub mod transaction;
 pub use self::bridge::*;
 
 pub use self::{
-    claim::Claim,
     client::Client,
     error::ErrorKind,
     id::*,

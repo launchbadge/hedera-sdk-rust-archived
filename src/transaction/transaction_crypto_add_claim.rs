@@ -1,8 +1,9 @@
 use crate::{
+    claim::Claim,
     id::AccountId,
     proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
     transaction::Transaction,
-    Claim, Client,
+    Client,
 };
 use failure::Error;
 use query_interface::{interfaces, vtable_for};
