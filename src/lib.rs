@@ -1,4 +1,4 @@
-#![feature(try_from)]
+#![feature(try_from, specialization)]
 #![cfg_attr(test, feature(test))]
 #![warn(clippy::pedantic)]
 #![allow(clippy::stutter, clippy::new_ret_no_self)]
@@ -6,7 +6,16 @@
 #[cfg(test)]
 extern crate test;
 
-#[cfg(any(feature = "bridge-c", feature = "bridge-python", feature = "bridge-java"))]
+#[cfg(feature = "bridge-python")]
+#[allow(unused_imports)]
+#[macro_use]
+extern crate pyo3;
+
+#[cfg(any(
+    feature = "bridge-c",
+    feature = "bridge-python",
+    feature = "bridge-java"
+))]
 mod bridge;
 
 mod claim;
@@ -29,7 +38,11 @@ mod query_transaction_get_record;
 mod timestamp;
 pub mod transaction;
 
-#[cfg(any(feature = "bridge-c", feature = "bridge-python", feature = "bridge-java"))]
+#[cfg(any(
+    feature = "bridge-c",
+    feature = "bridge-python",
+    feature = "bridge-java"
+))]
 pub use self::bridge::*;
 
 pub use self::{

@@ -101,11 +101,11 @@ impl<T> Query<T> {
         Ok(response)
     }
 
-    pub fn get(self) -> Result<T, Error> {
+    pub fn get(&mut self) -> Result<T, Error> {
         self.inner.get(self.send()?)
     }
 
-    pub fn cost(mut self) -> Result<u64, Error> {
+    pub fn cost(&mut self) -> Result<u64, Error> {
         use self::proto::Response::Response_oneof_response::*;
 
         // NOTE: This isn't the most ideal way to switch response types..
