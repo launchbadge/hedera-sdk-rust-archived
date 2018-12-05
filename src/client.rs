@@ -10,7 +10,7 @@ use crate::{
         QueryCryptoGetInfo, QueryCryptoGetInfoResponse, QueryFileGetContents,
         QueryFileGetContentsResponse, QueryFileGetInfo, QueryFileGetInfoResponse,
         QueryGetTransactionReceipt, QueryGetTransactionReceiptResponse, QueryTransactionGetRecord,
-        QueryTransactionGetRecordResponse,
+        QueryTransactionGetRecordResponse
     },
     transaction::{
         Transaction, TransactionContractCall, TransactionContractCreate, TransactionContractUpdate,
@@ -23,6 +23,8 @@ use crate::{
     },
     AccountId, TransactionId,
 };
+use crate::query_crypto_get_claim::QueryCryptoGetClaimResponse;
+use crate::query_crypto_get_claim::QueryCryptoGetClaim;
 use crate::query_get_by_key::QueryGetByKeyResponse;
 use crate::crypto::PublicKey;
 use crate::query_get_by_key::QueryGetByKey;
@@ -209,5 +211,14 @@ impl<'a> PartialTransactionMessage<'a> {
     #[inline]
     pub fn record(self) -> Query<QueryTransactionGetRecordResponse> {
         QueryTransactionGetRecord::new(self.0, self.1)
+    }
+}
+
+pub struct PartialClaimMessage<'a>(&'a Client, AccountId, Vec<u8>);
+
+impl<'a> PartialClaimMessage<'a> {
+    #[inline]
+    pub fn get(self) -> Query<QueryCryptoGetClaimResponse> {
+        QueryCryptoGetClaim::new(self.0, self.1, self.2)
     }
 }
