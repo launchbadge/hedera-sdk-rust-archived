@@ -1,6 +1,6 @@
 use crate::{
     crypto::PublicKey,
-    id::{Id, AccountId, FileId, ContractId},
+    id::{AccountId, FileId, ContractId},
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto, GetByKey::EntityID_oneof_entity::*},
     query::{Query, QueryInner},
     claim::Claim,
@@ -31,21 +31,16 @@ impl TryFrom<RepeatedField<proto::GetByKey::EntityID>> for QueryGetByKeyResponse
                 .filter_map(|id| id.entity)
                 .map(|entity| match entity {
                     accountID(account_id) => {
-                        let account_id: AccountId = account_id.try_into()?;
-
-                        Ok(Entity::Account(account_id))
+                        Ok(Entity::Account(account_id.try_into()?))
                     },
                     claim(claim_id) => {
-                        let claim_id: Claim = claim_id.try_into()?;
-                        Ok(Entity::Claim(claim_id))
+                        Ok(Entity::Claim(claim_id.try_into()?))
                     },
                     fileID(file_id) => {
-                        let file_id: FileId = file_id.try_into()?;
-                        Ok(Entity::File(file_id))
+                        Ok(Entity::File(file_id.try_into()?))
                     },
                     contractID(contract_id) => {
-                        let contract_id: ContractId = contract_id.try_into()?;
-                        Ok(Entity::Contract(contract_id))
+                        Ok(Entity::Contract(contract_id.try_into()?))
                     }
                 })
                 .collect::<Result<Vec<Entity>, Error>>()?

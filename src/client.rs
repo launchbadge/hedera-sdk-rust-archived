@@ -198,11 +198,3 @@ impl<'a> PartialTransactionMessage<'a> {
         QueryTransactionGetRecord::new(self.0, self.1)
     }
 }
-
-pub struct PartialGetByKeyMessage<'a>(&'a Client, PublicKey);
-
-impl<'a> PartialGetByKeyMessage<'a> {
-    pub fn get(self) -> Query<QueryGetByKeyResponse> {
-        QueryGetByKey::new(self.0, self.1)
-    }
-}
