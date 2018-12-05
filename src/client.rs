@@ -13,9 +13,10 @@ use crate::{
         QueryTransactionGetRecordResponse,
     },
     transaction::{
-        Transaction, TransactionContractCall, TransactionContractCreate, TransactionCryptoCreate,
-        TransactionCryptoDelete, TransactionCryptoDeleteClaim, TransactionCryptoUpdate,
-        TransactionFileAppend, TransactionFileCreate, TransactionFileDelete,
+        Transaction, TransactionContractCall, TransactionContractCreate, TransactionContractUpdate,
+        TransactionCryptoAddClaim, TransactionCryptoCreate, TransactionCryptoDelete,
+        TransactionCryptoDeleteClaim, TransactionCryptoUpdate, TransactionFileAppend,
+        TransactionFileCreate, TransactionFileDelete,
     },
     AccountId, TransactionId,
 };
@@ -165,6 +166,11 @@ impl<'a> PartialContractMessage<'a> {
     #[inline]
     pub fn call(self) -> Transaction<TransactionContractCall> {
         TransactionContractCall::new(self.0, self.1)
+    }
+
+    #[inline]
+    pub fn update(self) -> Transaction<TransactionContractUpdate> {
+        TransactionContractUpdate::new(self.0, self.1)
     }
 }
 
