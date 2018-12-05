@@ -34,19 +34,19 @@ pub struct ClientBuilder<'a> {
 
 pub struct Client {
     inner: Arc<grpc::Client>,
-    node: Option<AccountId>,
+    pub(crate) node: Option<AccountId>,
     pub(crate) crypto: Arc<CryptoServiceClient>,
     pub(crate) file: Arc<FileServiceClient>,
     pub(crate) contract: Arc<SmartContractServiceClient>,
 }
 
 impl<'a> ClientBuilder<'a> {
-    pub fn node(&mut self, node: AccountId) -> &mut Self {
+    pub fn node(mut self, node: AccountId) -> Self {
         self.node = Some(node);
         self
     }
 
-    pub fn build(&mut self) -> Result<Client, Error> {
+    pub fn build(self) -> Result<Client, Error> {
 
         let mut client = Client::new(&self.address)?;
 

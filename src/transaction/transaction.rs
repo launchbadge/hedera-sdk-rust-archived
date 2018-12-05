@@ -64,7 +64,7 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
             contract_service: client.contract.clone(),
             kind: TransactionKind::Builder(TransactionBuilder {
                 id: None,
-                node: None,
+                node: client.node,
                 memo: None,
                 inner: Box::<T>::new(inner) as Box<dyn Object>,
                 fee: 10,
