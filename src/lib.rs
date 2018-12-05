@@ -34,5 +34,5 @@ pub use self::{
     client::Client,
     error::ErrorKind,
     id::*,
-    transaction::{PreCheckCode, TransactionId, TransactionRecord, TransactionStatus},
+    transaction::{PreCheckCode, TransactionId, TransactionStatus},
 };
