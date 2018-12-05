@@ -20,6 +20,9 @@ use crate::{
     },
     AccountId, TransactionId,
 };
+use crate::query_get_by_key::QueryGetByKeyResponse;
+use crate::crypto::PublicKey;
+use crate::query_get_by_key::QueryGetByKey;
 
 pub struct Client {
     pub(crate) inner: Arc<grpc::Client>,
@@ -193,5 +196,13 @@ impl<'a> PartialTransactionMessage<'a> {
     #[inline]
     pub fn record(self) -> Query<QueryTransactionGetRecordResponse> {
         QueryTransactionGetRecord::new(self.0, self.1)
+    }
+}
+
+pub struct PartialGetByKeyMessage<'a>(&'a Client, PublicKey);
+
+impl<'a> PartialGetByKeyMessage<'a> {
+    pub fn get(self) -> Query<QueryGetByKeyResponse> {
+        QueryGetByKey::new(self.0, self.1)
     }
 }

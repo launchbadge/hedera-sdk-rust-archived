@@ -1,3 +1,4 @@
+use crate::claim::Claim;
 macro_rules! define_id {
     ($field:ident, $name:ident, $proto:ident, $method_set:ident, $method_get:ident) => {
         #[derive(Debug, PartialEq, Clone, Copy)]
@@ -81,3 +82,11 @@ define_id!(
     set_contractNum,
     get_contractNum
 );
+
+
+pub enum Id {
+    AccountID(AccountId),
+    Claim(Claim),
+    FileId(FileId),
+    ContractId(ContractId),
+}
