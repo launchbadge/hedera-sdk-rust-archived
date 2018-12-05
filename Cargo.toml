@@ -16,6 +16,8 @@ crate-type = ["rlib"]
 [features]
 default = []
 bridge-c = ["mbox", "libc", "slotmap"]
+bridge-java = []
+bridge-python = []
 
 [dependencies]
 # nightly enables various feature toggles and is recommended for security

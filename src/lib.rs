@@ -6,7 +6,7 @@
 #[cfg(test)]
 extern crate test;
 
-#[cfg(feature = "bridge-c")]
+#[cfg(any(feature = "bridge-c", feature = "bridge-python", feature = "bridge-java"))]
 mod bridge;
 
 mod claim;
@@ -29,7 +29,7 @@ mod query_transaction_get_record;
 mod timestamp;
 pub mod transaction;
 
-#[cfg(feature = "bridge-c")]
+#[cfg(any(feature = "bridge-c", feature = "bridge-python", feature = "bridge-java"))]
 pub use self::bridge::*;
 
 pub use self::{

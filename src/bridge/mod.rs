@@ -1,14 +1,17 @@
-#[macro_use]
-mod error;
-mod account_id;
-mod client;
-mod key;
-mod query;
-mod timestamp;
-mod transaction;
-mod transaction_id;
+#[cfg(feature = "bridge-c")]
+mod c;
 
-pub use self::{
-    account_id::*, client::*, error::*, key::*, query::*, timestamp::*, transaction::*,
-    transaction_id::*,
-};
+#[cfg(feature = "bridge-python")]
+mod python;
+
+#[cfg(feature = "bridge-java")]
+mod java;
+
+#[cfg(feature = "bridge-c")]
+pub use self::c::*;
+
+#[cfg(feature = "bridge-python")]
+pub use self::python::*;
+
+#[cfg(feature = "bridge-java")]
+pub use self::java::*;
