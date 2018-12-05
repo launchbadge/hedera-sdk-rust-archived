@@ -16,7 +16,7 @@ use crate::{
 pub use crate::{
     query_contract_get_info::*, query_crypto_get_account_balance::*, query_crypto_get_info::*,
     query_file_get_contents::*, query_file_get_info::*, query_get_transaction_receipt::*,
-    query_transaction_get_record::*,
+    query_transaction_get_record::*, query_contract_get_bytecode::*,
 };
 
 #[doc(hidden)]
@@ -79,6 +79,10 @@ impl<T> Query<T> {
 
             Some(contractGetInfo(_)) => {
                 SmartContractServiceClient::with_client(client).get_contract_info(o, query)
+            }
+
+            Some(contractGetBytecode(_)) => {
+                SmartContractServiceClient::with_client(client).contract_get_bytecode(o, query)
             }
 
             _ => unreachable!(),
