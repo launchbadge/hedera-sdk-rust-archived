@@ -13,8 +13,9 @@ use crate::{
 
 // Re-export query-like things under the query namespace
 pub use crate::{
-    query_crypto_get_account_balance::*, query_crypto_get_info::*, query_file_get_contents::*,
-    query_file_get_info::*, query_get_transaction_receipt::*, query_transaction_get_record::*,
+    query_crypto_get_account_balance::*, query_crypto_get_account_records::*,
+    query_crypto_get_info::*, query_file_get_contents::*, query_file_get_info::*,
+    query_get_transaction_receipt::*, query_transaction_get_record::*,
 };
 
 #[doc(hidden)]
@@ -75,6 +76,10 @@ impl<T> Query<T> {
                 CryptoServiceClient::with_client(client).get_tx_record_by_tx_id(o, query)
             }
 
+            Some(cryptoGetAccountRecords(_)) => {
+                CryptoServiceClient::with_client(client).get_account_records(o, query)
+            }
+
             _ => unreachable!(),
         };
 
@@ -107,6 +112,7 @@ impl<T> Query<T> {
             Some(fileGetInfo(mut res)) => res.take_header(),
             Some(fileGetContents(mut res)) => res.take_header(),
             Some(transactionGetRecord(mut res)) => res.take_header(),
+            Some(cryptoGetAccountRecords(mut res)) => res.take_header(),
 
             _ => unreachable!(),
         };

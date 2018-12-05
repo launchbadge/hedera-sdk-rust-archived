@@ -17,6 +17,7 @@ mod id;
 mod proto;
 pub mod query;
 mod query_crypto_get_account_balance;
+mod query_crypto_get_account_records;
 mod query_crypto_get_info;
 mod query_file_get_contents;
 mod query_file_get_info;
@@ -33,5 +34,5 @@ pub use self::{
     client::Client,
     error::ErrorKind,
     id::*,
-    transaction::{PreCheckCode, TransactionId, TransactionStatus},
+    transaction::{PreCheckCode, TransactionId, TransactionRecord, TransactionStatus},
 };

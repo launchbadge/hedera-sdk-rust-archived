@@ -1,13 +1,11 @@
 use crate::{
-    id::{AccountId, ContractId},
+    id::ContractId,
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
     query::{Query, QueryInner},
-    transaction::TransactionReceipt,
-    Client, ErrorKind, PreCheckCode, TransactionId,
+    Client, ErrorKind, PreCheckCode, TransactionId, TransactionRecord,
 };
-use chrono::{DateTime, Utc};
-use failure::{err_msg, Error};
-use std::convert::{TryFrom, TryInto};
+use failure::Error;
+use std::convert::TryInto;
 
 // TODO: Move to ContractCallLocalQuery once it exists
 pub struct ContractLogInfo {
@@ -49,55 +47,7 @@ impl From<proto::ContractCallLocal::ContractFunctionResult> for ContractFunction
     }
 }
 
-pub enum QueryTransactionGetRecordResponseBody {
-    ContractCall(ContractFunctionResult),
-    ContractCreate(ContractFunctionResult),
-    Transfer(Vec<(AccountId, i64)>),
-}
-
-pub struct QueryTransactionGetRecordResponse {
-    pub receipt: TransactionReceipt,
-    pub transaction_hash: Vec<u8>,
-    pub consensus_timestamp: Option<DateTime<Utc>>,
-    pub memo: String,
-    pub transaction_fee: u64,
-    pub body: QueryTransactionGetRecordResponseBody,
-}
-
-impl TryFrom<proto::TransactionRecord::TransactionRecord> for QueryTransactionGetRecordResponse {
-    type Error = Error;
-
-    fn try_from(mut record: proto::TransactionRecord::TransactionRecord) -> Result<Self, Error> {
-        Ok(Self {
-            receipt: record.take_receipt().into(),
-            transaction_hash: record.take_transactionHash(),
-            consensus_timestamp: if record.has_consensusTimestamp() {
-                Some(record.take_consensusTimestamp().try_into()?)
-            } else {
-                None
-            },
-            memo: record.take_memo(),
-            transaction_fee: record.get_transactionFee(),
-            body: {
-                if record.has_contractCallResult() {
-                    QueryTransactionGetRecordResponseBody::ContractCall(
-                        record.take_contractCallResult().into(),
-                    )
-                } else if record.has_contractCreateResult() {
-                    QueryTransactionGetRecordResponseBody::ContractCreate(
-                        record.take_contractCreateResult().into(),
-                    )
-                } else if record.has_transferList() {
-                    QueryTransactionGetRecordResponseBody::Transfer(
-                        record.take_transferList().into(),
-                    )
-                } else {
-                    Err(err_msg("transaction record contained no body"))?
-                }
-            },
-        })
-    }
-}
+pub type QueryTransactionGetRecordResponse = TransactionRecord;
 
 pub struct QueryTransactionGetRecord {
     transaction: TransactionId,

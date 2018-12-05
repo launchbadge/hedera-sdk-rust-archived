@@ -14,6 +14,7 @@ mod transaction_file_delete;
 mod transaction_file_update;
 mod transaction_id;
 mod transaction_receipt;
+mod transaction_record;
 mod transaction_response;
 
 pub use self::{
@@ -32,5 +33,6 @@ pub use self::{
     transaction_file_delete::*,
     transaction_id::TransactionId,
     transaction_receipt::{TransactionReceipt, TransactionStatus},
+    transaction_record::*,
     transaction_response::{PreCheckCode, TransactionResponse},
 };
