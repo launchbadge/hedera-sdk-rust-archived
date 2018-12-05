@@ -7,8 +7,9 @@ use crate::{
 use failure::Error;
 use std::convert::TryInto;
 
+#[derive(Debug)]
 pub struct QueryCryptoGetClaimResponse {
-    claim: Claim
+    pub claim: Claim
 }
 
 pub struct QueryCryptoGetClaim{
