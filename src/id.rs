@@ -82,11 +82,3 @@ define_id!(
     set_contractNum,
     get_contractNum
 );
-
-
-pub enum Id {
-    AccountID(AccountId),
-    Claim(Claim),
-    FileId(FileId),
-    ContractId(ContractId),
-}

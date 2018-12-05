@@ -10,8 +10,15 @@ use failure::Error;
 use std::convert::{TryFrom, TryInto};
 use protobuf::RepeatedField;
 
+pub enum Entity {
+    Account(AccountId),
+    Claim(Claim),
+    File(FileId),
+    Contract(ContractId),
+}
+
 pub struct QueryGetByKeyResponse {
-    pub entity_ids: Vec<Id>,
+    pub entities: Vec<Entity>,
 }
 
 impl TryFrom<RepeatedField<proto::GetByKey::EntityID>> for QueryGetByKeyResponse {
@@ -19,32 +26,29 @@ impl TryFrom<RepeatedField<proto::GetByKey::EntityID>> for QueryGetByKeyResponse
 
     fn try_from(response: RepeatedField<proto::GetByKey::EntityID>) -> Result<Self, Error> {
         Ok(Self {
-            entity_ids: response
+            entities: response
                 .into_iter()
-                .filter(|id| { id.entity.is_some() })
-                .map(|id| {
-                    // unwrap should always succeed here
-                    match id.entity.unwrap() {
-                        accountID(account_id) => {
-                            let account_id: AccountId = account_id.try_into()?;
+                .filter_map(|id| id.entity)
+                .map(|entity| match entity {
+                    accountID(account_id) => {
+                        let account_id: AccountId = account_id.try_into()?;
 
-                            Ok(Id::AccountID(account_id))
-                        },
-                        claim(claim_id) => {
-                            let claim_id: Claim = claim_id.try_into()?;
-                            Ok(Id::Claim(claim_id))
-                        },
-                        fileID(file_id) => {
-                            let file_id: FileId = file_id.try_into()?;
-                            Ok(Id::FileId(file_id))
-                        },
-                        contractID(contract_id) => {
-                            let contract_id: ContractId = contract_id.try_into()?;
-                            Ok(Id::ContractId(contract_id))
-                        }
+                        Ok(Entity::Account(account_id))
+                    },
+                    claim(claim_id) => {
+                        let claim_id: Claim = claim_id.try_into()?;
+                        Ok(Entity::Claim(claim_id))
+                    },
+                    fileID(file_id) => {
+                        let file_id: FileId = file_id.try_into()?;
+                        Ok(Entity::File(file_id))
+                    },
+                    contractID(contract_id) => {
+                        let contract_id: ContractId = contract_id.try_into()?;
+                        Ok(Entity::Contract(contract_id))
                     }
                 })
-                .collect::<Result<Vec<Id>, Error>>()?
+                .collect::<Result<Vec<Entity>, Error>>()?
         })
     }
 }
