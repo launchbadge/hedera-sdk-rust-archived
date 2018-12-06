@@ -1,10 +1,11 @@
 use crate::{
-    proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto, TransactionRecord::TransactionRecord},
+    proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto },
     query::{Query, QueryInner},
     Client, ErrorKind, ContractId, PreCheckCode,
-
+    transaction::TransactionRecord
 };
 use failure::Error;
+use std::convert::{TryFrom, TryInto};
 
 pub struct QueryContractGetRecordResponse {
     contract: ContractId,
@@ -21,12 +22,15 @@ impl QueryContractGetRecord {
     }
 }
 
-impl From<proto::ContractGetRecords::ContractGetRecordsResponse> for QueryContractGetRecordResponse {
-    fn from(mut response: proto::ContractGetRecords::ContractGetRecordsResponse) -> Self {
-        Self {
+impl TryFrom<proto::ContractGetRecords::ContractGetRecordsResponse> for QueryContractGetRecordResponse {
+    type Error = Error;
+
+    fn try_from(mut response: proto::ContractGetRecords::ContractGetRecordsResponse) -> Result<Self, Error> {
+        // let records = TransactionRecord::try_from(&mut response.take_records()).unwrap();
+        Ok(Self {
             contract: ContractId::from(response.take_contractID()),
-            records: response.take_records().into(),
-        }
+            records: response.take_records().into_iter().map(TryInto::try_into).collect::<Result<Vec<_>, _>>().unwrap(),
+        })
     }
 }
 
@@ -38,7 +42,7 @@ impl QueryInner for QueryContractGetRecord {
         let header = response.take_header();
 
         match header.get_nodeTransactionPrecheckCode().into() {
-            PreCheckCode::Ok => Ok(response.into()),
+            PreCheckCode::Ok => Ok(response.try_into()?),
             code => Err(ErrorKind::PreCheck(code))?
         }
     }
