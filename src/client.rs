@@ -10,7 +10,7 @@ use crate::{
         QueryCryptoGetInfo, QueryCryptoGetInfoResponse, QueryFileGetContents,
         QueryFileGetContentsResponse, QueryFileGetInfo, QueryFileGetInfoResponse,
         QueryGetTransactionReceipt, QueryGetTransactionReceiptResponse, QueryTransactionGetRecord,
-        QueryTransactionGetRecordResponse
+        QueryTransactionGetRecordResponse, QueryCryptoGetClaimResponse, QueryCryptoGetClaim
     },
     transaction::{
         Transaction, TransactionContractCall, TransactionContractCreate, TransactionContractUpdate,
@@ -23,11 +23,6 @@ use crate::{
     },
     AccountId, TransactionId,
 };
-use crate::query_crypto_get_claim::QueryCryptoGetClaimResponse;
-use crate::query_crypto_get_claim::QueryCryptoGetClaim;
-use crate::query_get_by_key::QueryGetByKeyResponse;
-use crate::crypto::PublicKey;
-use crate::query_get_by_key::QueryGetByKey;
 
 use grpc::ClientStub;
 
