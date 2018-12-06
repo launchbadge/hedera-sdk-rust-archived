@@ -18,14 +18,21 @@ use crate::{
         TransactionCryptoDeleteClaim, TransactionCryptoUpdate, TransactionFileAppend,
         TransactionFileCreate, TransactionFileDelete,
     },
+    proto::{
+        CryptoService_grpc::CryptoServiceClient, FileService_grpc::FileServiceClient, SmartContractService_grpc::SmartContractServiceClient
+    },
     AccountId, TransactionId,
 };
 use crate::query_get_by_key::QueryGetByKeyResponse;
 use crate::crypto::PublicKey;
 use crate::query_get_by_key::QueryGetByKey;
 
+use grpc::ClientStub;
+
 pub struct Client {
-    pub(crate) inner: Arc<grpc::Client>,
+    pub(crate) crypto: Arc<CryptoServiceClient>,
+    pub(crate) file: Arc<FileServiceClient>,
+    pub(crate) contract: Arc<SmartContractServiceClient>
 }
 
 impl Client {
@@ -49,7 +56,13 @@ impl Client {
             },
         )?);
 
-        Ok(Self { inner })
+        let crypto = Arc::new(CryptoServiceClient::with_client(inner.clone()));
+
+        let file = Arc::new(FileServiceClient::with_client(inner.clone()));
+
+        let contract = Arc::new(SmartContractServiceClient::with_client(inner));
+
+        Ok(Self { crypto, file, contract })
     }
 
     /// Create a new account. After the account is created, the AccountID for it is in the
