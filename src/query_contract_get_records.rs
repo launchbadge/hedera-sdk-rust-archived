@@ -29,7 +29,7 @@ impl TryFrom<proto::ContractGetRecords::ContractGetRecordsResponse> for QueryCon
         // let records = TransactionRecord::try_from(&mut response.take_records()).unwrap();
         Ok(Self {
             contract: ContractId::from(response.take_contractID()),
-            records: response.take_records().into_iter().map(TryInto::try_into).collect::<Result<Vec<_>, _>>().unwrap(),
+            records: response.take_records().into_iter().map(TryInto::try_into).collect::<Result<Vec<_>, _>>()?,
         })
     }
 }
