@@ -21,7 +21,7 @@ use crate::{
         TransactionCryptoUpdate, TransactionFileAppend, TransactionFileCreate,
         TransactionFileDelete, TransactionCryptoTransfer,
     },
-    crypto::PublicKey,
+    crypto::{ PublicKey, SecretKey },
     AccountId, AccountInfo, FileInfo, TransactionId, TransactionReceipt, TransactionRecord,
 };
 
@@ -30,11 +30,15 @@ use grpc::ClientStub;
 pub struct ClientBuilder<'a> {
     address: &'a str,
     node: Option<AccountId>,
+    operator: Option<AccountId>,
+    operator_secret: Option<SecretKey>
 }
 
 pub struct Client {
     inner: Arc<grpc::Client>,
     pub(crate) node: Option<AccountId>,
+    pub(crate) operator: Option<AccountId>,
+    pub(crate) operator_secret: Option<SecretKey>,
     pub(crate) crypto: Arc<CryptoServiceClient>,
     pub(crate) file: Arc<FileServiceClient>,
     pub(crate) contract: Arc<SmartContractServiceClient>,
@@ -43,6 +47,13 @@ pub struct Client {
 impl<'a> ClientBuilder<'a> {
     pub fn node(mut self, node: AccountId) -> Self {
         self.node = Some(node);
+        self
+    }
+
+    pub fn operator(mut self, operator: AccountId, operator_secret: SecretKey) -> Self {
+        self.operator = Some(operator);
+        self.operator_secret = Some(operator_secret);
+
         self
     }
 
@@ -63,7 +74,9 @@ impl Client {
     pub fn builder(address: &str) -> ClientBuilder {
         ClientBuilder{
             address,
-            node: None
+            node: None,
+            operator: None,
+            operator_secret: None,
         }
     }
 
@@ -94,6 +107,8 @@ impl Client {
         Ok(Self {
             inner: raw_client,
             node: None,
+            operator: None,
+            operator_secret: None,
             crypto,
             file,
             contract
@@ -103,6 +118,15 @@ impl Client {
     #[inline]
     pub(crate) fn set_node(&mut self, node: AccountId) -> &mut Self {
         self.node = Some(node);
+
+        self
+    }
+
+    #[inline]
+    pub(crate) fn set_operator(&mut self, operator: AccountId, operator_secret: SecretKey) -> &mut Self {
+        self.operator = Some(operator);
+        self.operator_secret = Some(operator_secret);
+
         self
     }
 

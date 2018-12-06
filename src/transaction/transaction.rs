@@ -19,6 +19,7 @@ pub struct TransactionBuilder<T> {
     id: Option<TransactionId>,
     node: Option<AccountId>,
     memo: Option<String>,
+    secret: Option<SecretKey>,
     generate_record: bool,
     fee: u64,
     pub(crate) inner: Box<dyn Object>,
@@ -62,11 +63,13 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
             crypto_service: client.crypto.clone(),
             file_service: client.file.clone(),
             contract_service: client.contract.clone(),
+
             kind: TransactionKind::Builder(TransactionBuilder {
                 id: None,
                 node: client.node,
                 memo: None,
                 inner: Box::<T>::new(inner) as Box<dyn Object>,
+                secret: None,
                 fee: 10,
                 generate_record: false,
                 phantom: PhantomData,
@@ -83,9 +86,10 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
         self
     }
 
-    pub fn operator(&mut self, id: AccountId) -> &mut Self {
+    pub fn operator(&mut self, id: AccountId, secret: SecretKey) -> &mut Self {
         if let Some(state) = self.as_builder() {
             state.id = Some(TransactionId::new(id));
+            state.secret = Some(secret);
         }
 
         self
@@ -119,7 +123,9 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
     }
 
     pub fn sign(&mut self, secret: &SecretKey) -> &mut Transaction<T, TransactionRaw> {
-        self.build().sign(secret)
+        let tx = self.build();
+
+        tx.sign(secret)
     }
 
     pub fn execute(&mut self) -> Result<TransactionId, Error> {
