@@ -10,11 +10,11 @@ use crate::{
         QueryCryptoGetInfo, QueryCryptoGetInfoResponse, QueryFileGetContents,
         QueryFileGetContentsResponse, QueryFileGetInfo, QueryFileGetInfoResponse,
         QueryGetTransactionReceipt, QueryGetTransactionReceiptResponse, QueryTransactionGetRecord,
-        QueryTransactionGetRecordResponse,
+        QueryTransactionGetRecordResponse
     },
     transaction::{
         Transaction, TransactionContractCall, TransactionContractCreate, TransactionContractUpdate,
-        TransactionCryptoAddClaim, TransactionCryptoCreate, TransactionCryptoDelete,
+        TransactionCryptoCreate, TransactionCryptoDelete,
         TransactionCryptoDeleteClaim, TransactionCryptoUpdate, TransactionFileAppend,
         TransactionFileCreate, TransactionFileDelete,
     },
@@ -23,6 +23,8 @@ use crate::{
     },
     AccountId, TransactionId,
 };
+use crate::query_crypto_get_claim::QueryCryptoGetClaimResponse;
+use crate::query_crypto_get_claim::QueryCryptoGetClaim;
 use crate::query_get_by_key::QueryGetByKeyResponse;
 use crate::crypto::PublicKey;
 use crate::query_get_by_key::QueryGetByKey;
@@ -150,6 +152,12 @@ impl<'a> PartialAccountClaimMessage<'a> {
     pub fn delete(self) -> Transaction<TransactionCryptoDeleteClaim> {
         TransactionCryptoDeleteClaim::new((self.0).0, (self.0).1, self.1)
     }
+
+    #[inline]
+    pub fn get(self) -> Query<QueryCryptoGetClaimResponse> {
+    QueryCryptoGetClaim::new((self.0).0, (self.0).1, self.1)
+    }
+
 }
 
 pub struct PartialFileMessage<'a>(&'a Client, FileId);
@@ -211,3 +219,5 @@ impl<'a> PartialTransactionMessage<'a> {
         QueryTransactionGetRecord::new(self.0, self.1)
     }
 }
+
+
