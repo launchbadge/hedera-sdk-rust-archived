@@ -26,12 +26,9 @@ mod error;
 mod id;
 mod proto;
 pub mod query;
-<<<<<<< HEAD
 mod query_contract_get_records;
-=======
 mod query_contract_get_bytecode;
 mod query_contract_get_info;
->>>>>>> 2841edec513b65caeed02363ef67a31b62b11459
 mod query_crypto_get_account_balance;
 mod query_crypto_get_claim;
 mod query_crypto_get_account_records;
