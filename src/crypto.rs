@@ -248,9 +248,8 @@ impl FromASN1 for PrivateKeyInfo {
     }
 }
 
-// Public Key
-//
-
+/// An ed25519 public key.
+#[repr(C)]
 #[derive(Debug, PartialEq, Clone)]
 pub struct PublicKey(ed25519_dalek::PublicKey);
 
@@ -350,9 +349,8 @@ impl TryFrom<proto::BasicTypes::Key> for PublicKey {
     }
 }
 
-// Secret Key
-//
-
+/// An EdDSA secret key.
+#[repr(C)]
 #[derive(Debug)]
 pub struct SecretKey(ed25519_dalek::SecretKey);
 
@@ -452,42 +450,7 @@ impl Display for SecretKey {
     }
 }
 
-// KeyPair
-//
-
-#[derive(Debug)]
-pub struct KeyPair(ed25519_dalek::Keypair);
-
-impl KeyPair {
-    pub fn generate() -> Self {
-        Self::generate_from(&mut thread_rng())
-    }
-
-    pub fn generate_from<R: CryptoRng + Rng>(rng: &mut R) -> Self {
-        KeyPair(ed25519_dalek::Keypair::generate::<Sha512, _>(rng))
-    }
-
-    pub fn sign(&self, message: impl AsRef<[u8]>) -> Signature {
-        Signature(self.0.sign::<Sha512>(message.as_ref()))
-    }
-
-    pub fn verify(&self, message: impl AsRef<[u8]>, signature: &Signature) -> Result<bool, Error> {
-        match self.0.verify::<Sha512>(message.as_ref(), &signature.0) {
-            Ok(_) => Ok(true),
-            Err(error) => {
-                if error.to_string() == "Verification equation was not satisfied" {
-                    Ok(false)
-                } else {
-                    Err(error)?
-                }
-            }
-        }
-    }
-}
-
-// Signature
-//
-
+/// An EdDSA signature.
 #[derive(Debug)]
 pub struct Signature(ed25519_dalek::Signature);
 
@@ -527,7 +490,7 @@ impl ToProto<proto::BasicTypes::Signature> for Signature {
 
 #[cfg(test)]
 mod tests {
-    use super::{KeyPair, PublicKey, SecretKey, Signature};
+    use super::{PublicKey, SecretKey, Signature};
     use crate::test::{black_box, Bencher};
     use failure::Error;
 
@@ -604,17 +567,6 @@ mod tests {
 
         assert_eq!(public_key1, public_key2);
         assert_eq!(secret_key1.0.as_bytes(), secret_key2.0.as_bytes());
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_key_pair_generate() -> Result<(), Error> {
-        let key_pair = KeyPair::generate();
-        let signature = key_pair.sign(MESSAGE.as_bytes());
-        let verified = key_pair.verify(MESSAGE.as_bytes(), &signature)?;
-
-        assert!(verified);
 
         Ok(())
     }
