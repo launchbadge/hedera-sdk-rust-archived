@@ -28,7 +28,7 @@ pub struct TransactionBuilder<T> {
 
 pub struct TransactionRaw {
     bytes: Vec<u8>,
-    tx: proto::Transaction::Transaction,
+    pub(crate) tx: proto::Transaction::Transaction,
 }
 
 pub enum TransactionKind<T> {
@@ -131,7 +131,7 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
 
     // Transition from builder to raw
     // Done before the first signature or execute
-    fn build(&mut self) -> &mut Transaction<T, TransactionRaw> {
+    pub fn build(&mut self) -> &mut Transaction<T, TransactionRaw> {
         match self.kind.take() {
             TransactionKind::Empty => panic!("transaction already executed"),
 
