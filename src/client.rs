@@ -20,6 +20,9 @@ use crate::{
     },
     AccountId, TransactionId,
 };
+use crate::query_get_by_key::QueryGetByKeyResponse;
+use crate::crypto::PublicKey;
+use crate::query_get_by_key::QueryGetByKey;
 
 pub struct Client {
     pub(crate) inner: Arc<grpc::Client>,
