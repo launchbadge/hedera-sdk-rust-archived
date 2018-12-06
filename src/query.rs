@@ -1,21 +1,25 @@
 use std::sync::Arc;
 
 use failure::Error;
-use grpc::ClientStub;
 
 use crate::{
     proto::{
-        self, CryptoService_grpc::CryptoService, FileService_grpc::FileService,
-        Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto,
+        self,
+        CryptoService_grpc::{CryptoService, CryptoServiceClient},
+        FileService_grpc::{FileService, FileServiceClient},
+        SmartContractService_grpc::{SmartContractService, SmartContractServiceClient},
+        Query::Query_oneof_query, QueryHeader::QueryHeader,
+        ToProto,
     },
     Client, ErrorKind, PreCheckCode,
 };
 
 // Re-export query-like things under the query namespace
 pub use crate::{
-    query_crypto_get_account_balance::*, query_crypto_get_info::*, query_file_get_contents::*,
-    query_file_get_info::*, query_get_transaction_receipt::*, query_transaction_get_record::*,
-    query_contract_get_records::*
+    query_contract_get_bytecode::*, query_contract_get_info::*,
+    query_crypto_get_account_balance::*, query_crypto_get_account_records::*,
+    query_crypto_get_info::*, query_file_get_contents::*, query_file_get_info::*,
+    query_get_transaction_receipt::*, query_transaction_get_record::*,
 };
 
 #[doc(hidden)]
@@ -26,7 +30,9 @@ pub trait QueryInner {
 }
 
 pub struct Query<T> {
-    pub(crate) client: Arc<grpc::Client>,
+    crypto_service: Arc<CryptoServiceClient>,
+    contract_service: Arc<SmartContractServiceClient>,
+    file_service: Arc<FileServiceClient>,
     kind: proto::QueryHeader::ResponseType,
     // TODO: payment: Transaction,
     inner: Box<dyn QueryInner<Response = T>>,
@@ -36,44 +42,54 @@ impl<T> Query<T> {
     pub(crate) fn new<U: QueryInner<Response = T> + 'static>(client: &Client, inner: U) -> Self {
         Self {
             kind: proto::QueryHeader::ResponseType::ANSWER_ONLY,
-            client: client.inner.clone(),
+            crypto_service: client.crypto.clone(),
+            contract_service: client.contract.clone(),
+            file_service: client.file.clone(),
             inner: Box::new(inner),
         }
     }
 
     pub(crate) fn send(&self) -> Result<proto::Response::Response, Error> {
-        use self::proto::{
-            CryptoService_grpc::CryptoServiceClient, FileService_grpc::FileServiceClient,
-            Query::Query_oneof_query::*,
-        };
+        use self::proto::Query::Query_oneof_query::*;
 
         let query: proto::Query::Query = self.to_proto()?;
         log::trace!("sent: {:#?}", query);
 
         let o = grpc::RequestOptions::default();
 
-        let client = Arc::clone(&self.client);
         let response = match query.query {
             Some(cryptogetAccountBalance(_)) => {
-                CryptoServiceClient::with_client(client).crypto_get_balance(o, query)
+                self.crypto_service.crypto_get_balance(o, query)
             }
 
             Some(transactionGetReceipt(_)) => {
-                CryptoServiceClient::with_client(client).get_transaction_receipts(o, query)
+                self.crypto_service.get_transaction_receipts(o, query)
             }
 
             Some(cryptoGetInfo(_)) => {
-                CryptoServiceClient::with_client(client).get_account_info(o, query)
+                self.crypto_service.get_account_info(o, query)
             }
 
-            Some(fileGetInfo(_)) => FileServiceClient::with_client(client).get_file_info(o, query),
+            Some(fileGetInfo(_)) => self.file_service.get_file_info(o, query),
 
             Some(fileGetContents(_)) => {
-                FileServiceClient::with_client(client).get_file_content(o, query)
+                self.file_service.get_file_content(o, query)
             }
 
             Some(transactionGetRecord(_)) => {
-                CryptoServiceClient::with_client(client).get_tx_record_by_tx_id(o, query)
+                self.crypto_service.get_tx_record_by_tx_id(o, query)
+            }
+
+            Some(cryptoGetAccountRecords(_)) => {
+                self.crypto_service.get_account_records(o, query)
+            }
+
+            Some(contractGetInfo(_)) => {
+                self.contract_service.get_contract_info(o, query)
+            }
+
+            Some(contractGetBytecode(_)) => {
+                self.contract_service.contract_get_bytecode(o, query)
             }
 
             _ => unreachable!(),
@@ -87,11 +103,11 @@ impl<T> Query<T> {
         Ok(response)
     }
 
-    pub fn get(self) -> Result<T, Error> {
+    pub fn get(&mut self) -> Result<T, Error> {
         self.inner.get(self.send()?)
     }
 
-    pub fn cost(mut self) -> Result<u64, Error> {
+    pub fn cost(&mut self) -> Result<u64, Error> {
         use self::proto::Response::Response_oneof_response::*;
 
         // NOTE: This isn't the most ideal way to switch response types..
@@ -108,6 +124,7 @@ impl<T> Query<T> {
             Some(fileGetInfo(mut res)) => res.take_header(),
             Some(fileGetContents(mut res)) => res.take_header(),
             Some(transactionGetRecord(mut res)) => res.take_header(),
+            Some(cryptoGetAccountRecords(mut res)) => res.take_header(),
 
             _ => unreachable!(),
         };

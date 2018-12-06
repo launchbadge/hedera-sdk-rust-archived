@@ -10,18 +10,31 @@ use crate::{
         QueryCryptoGetInfo, QueryCryptoGetInfoResponse, QueryFileGetContents,
         QueryFileGetContentsResponse, QueryFileGetInfo, QueryFileGetInfoResponse,
         QueryGetTransactionReceipt, QueryGetTransactionReceiptResponse, QueryTransactionGetRecord,
-        QueryTransactionGetRecordResponse,
+        QueryTransactionGetRecordResponse
     },
     transaction::{
-        Transaction, TransactionContractCall, TransactionContractCreate, TransactionCryptoCreate,
-        TransactionCryptoDelete, TransactionCryptoDeleteClaim, TransactionCryptoUpdate,
-        TransactionFileAppend, TransactionFileCreate, TransactionFileDelete,
+        Transaction, TransactionContractCall, TransactionContractCreate, TransactionContractUpdate,
+        TransactionCryptoCreate, TransactionCryptoDelete,
+        TransactionCryptoDeleteClaim, TransactionCryptoUpdate, TransactionFileAppend,
+        TransactionFileCreate, TransactionFileDelete,
+    },
+    proto::{
+        CryptoService_grpc::CryptoServiceClient, FileService_grpc::FileServiceClient, SmartContractService_grpc::SmartContractServiceClient
     },
     AccountId, TransactionId,
 };
+use crate::query_crypto_get_claim::QueryCryptoGetClaimResponse;
+use crate::query_crypto_get_claim::QueryCryptoGetClaim;
+use crate::query_get_by_key::QueryGetByKeyResponse;
+use crate::crypto::PublicKey;
+use crate::query_get_by_key::QueryGetByKey;
+
+use grpc::ClientStub;
 
 pub struct Client {
-    pub(crate) inner: Arc<grpc::Client>,
+    pub(crate) crypto: Arc<CryptoServiceClient>,
+    pub(crate) file: Arc<FileServiceClient>,
+    pub(crate) contract: Arc<SmartContractServiceClient>
 }
 
 impl Client {
@@ -45,7 +58,13 @@ impl Client {
             },
         )?);
 
-        Ok(Self { inner })
+        let crypto = Arc::new(CryptoServiceClient::with_client(inner.clone()));
+
+        let file = Arc::new(FileServiceClient::with_client(inner.clone()));
+
+        let contract = Arc::new(SmartContractServiceClient::with_client(inner));
+
+        Ok(Self { crypto, file, contract })
     }
 
     /// Create a new account. After the account is created, the AccountID for it is in the
@@ -133,6 +152,12 @@ impl<'a> PartialAccountClaimMessage<'a> {
     pub fn delete(self) -> Transaction<TransactionCryptoDeleteClaim> {
         TransactionCryptoDeleteClaim::new((self.0).0, (self.0).1, self.1)
     }
+
+    #[inline]
+    pub fn get(self) -> Query<QueryCryptoGetClaimResponse> {
+    QueryCryptoGetClaim::new((self.0).0, (self.0).1, self.1)
+    }
+
 }
 
 pub struct PartialFileMessage<'a>(&'a Client, FileId);
@@ -166,6 +191,11 @@ impl<'a> PartialContractMessage<'a> {
     pub fn call(self) -> Transaction<TransactionContractCall> {
         TransactionContractCall::new(self.0, self.1)
     }
+
+    #[inline]
+    pub fn update(self) -> Transaction<TransactionContractUpdate> {
+        TransactionContractUpdate::new(self.0, self.1)
+    }
 }
 
 pub struct PartialTransactionMessage<'a>(&'a Client, TransactionId);
@@ -189,3 +219,5 @@ impl<'a> PartialTransactionMessage<'a> {
         QueryTransactionGetRecord::new(self.0, self.1)
     }
 }
+
+

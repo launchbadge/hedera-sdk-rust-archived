@@ -16,6 +16,8 @@ crate-type = ["rlib"]
 [features]
 default = []
 bridge-c = ["mbox", "libc", "slotmap"]
+bridge-java = []
+bridge-python = ["pyo3"]
 
 [dependencies]
 # nightly enables various feature toggles and is recommended for security
@@ -42,6 +44,7 @@ grpc = "0.6.1"
 query_interface = "0.3.5"
 httpbis = "0.7.0"
 log = "0.4.6"
+pyo3 = { version = "0.5.2", features = [ "extension-module" ], optional = true }
 
 [dev-dependencies]
 pretty_env_logger = "0.2.5"
