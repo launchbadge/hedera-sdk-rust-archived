@@ -1,4 +1,3 @@
-use protobuf::RepeatedField;
 use crate::{
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto, TransactionRecord::TransactionRecord},
     query::{Query, QueryInner},
@@ -9,7 +8,7 @@ use failure::Error;
 
 pub struct QueryContractGetRecordResponse {
     contract: ContractId,
-    records: RepeatedField<TransactionRecord>,
+    records: Vec<TransactionRecord>,
 }
 
 pub struct QueryContractGetRecord {
@@ -26,7 +25,7 @@ impl From<proto::ContractGetRecords::ContractGetRecordsResponse> for QueryContra
     fn from(mut response: proto::ContractGetRecords::ContractGetRecordsResponse) -> Self {
         Self {
             contract: ContractId::from(response.take_contractID()),
-            records: response.take_records()
+            records: response.take_records().into(),
         }
     }
 }

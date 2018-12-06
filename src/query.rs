@@ -15,6 +15,7 @@ use crate::{
 pub use crate::{
     query_crypto_get_account_balance::*, query_crypto_get_info::*, query_file_get_contents::*,
     query_file_get_info::*, query_get_transaction_receipt::*, query_transaction_get_record::*,
+    query_contract_get_records::*
 };
 
 #[doc(hidden)]
