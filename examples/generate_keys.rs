@@ -1,4 +1,4 @@
-use hedera::crypto::SecretKey;
+use hedera::SecretKey;
 
 fn main() {
     let secret = SecretKey::generate();
