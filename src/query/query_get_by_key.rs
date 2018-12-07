@@ -8,7 +8,7 @@ use crate::{
     id::{AccountId, ContractId, FileId},
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
     query::{Query, QueryInner},
-    Client, ErrorKind, PreCheckCode,
+    Client,
 };
 
 pub enum Entity {
@@ -49,10 +49,7 @@ impl QueryInner for QueryGetByKey {
         let mut response = response.take_getByKey();
         let header = response.take_header();
 
-        match header.get_nodeTransactionPrecheckCode().into() {
-            PreCheckCode::Ok => try_into_entities(response.take_entities()),
-            code => Err(ErrorKind::PreCheck(code))?,
-        }
+        try_precheck!(header).and_then(move |_| try_into_entities(response.take_entities()))
     }
 
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error> {

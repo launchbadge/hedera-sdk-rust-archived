@@ -1,7 +1,3 @@
-use std::sync::Arc;
-
-use failure::Error;
-
 use crate::{
     proto::{
         self,
@@ -12,8 +8,10 @@ use crate::{
         SmartContractService_grpc::{SmartContractService, SmartContractServiceClient},
         ToProto,
     },
-    Client, ErrorKind, PreCheckCode,
+    Client,
 };
+use failure::Error;
+use std::sync::Arc;
 
 #[doc(hidden)]
 pub trait QueryInner {
@@ -108,10 +106,7 @@ impl<T> Query<T> {
             _ => unreachable!(),
         };
 
-        match header.get_nodeTransactionPrecheckCode().into() {
-            PreCheckCode::Ok | PreCheckCode::InvalidTransaction => Ok(header.get_cost()),
-            code => Err(ErrorKind::PreCheck(code))?,
-        }
+        try_precheck!(header).map(|h| h.get_cost())
     }
 }
 

@@ -2,7 +2,7 @@ use crate::{
     id::FileId,
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
     query::{Query, QueryInner},
-    Client, ErrorKind, PreCheckCode,
+    Client,
 };
 use failure::Error;
 use try_from::{TryFrom, TryInto};
@@ -34,10 +34,7 @@ impl QueryInner for QueryFileGetContents {
         let mut response = response.take_fileGetContents();
         let header = response.take_header();
 
-        match header.get_nodeTransactionPrecheckCode().into() {
-            PreCheckCode::Ok => response.take_fileContents().try_into(),
-            code => Err(ErrorKind::PreCheck(code))?,
-        }
+        try_precheck!(header).and_then(move |_| response.take_fileContents().try_into())
     }
 
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error> {

@@ -1,7 +1,7 @@
 use crate::{
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
     query::{Query, QueryInner},
-    Client, ContractId, ErrorKind, PreCheckCode,
+    Client, ContractId,
 };
 use failure::Error;
 
@@ -22,10 +22,7 @@ impl QueryInner for QueryContractGetBytecode {
         let mut response = response.take_contractGetBytecodeResponse();
         let header = response.take_header();
 
-        match header.get_nodeTransactionPrecheckCode().into() {
-            PreCheckCode::Ok => Ok(response.take_bytecode()),
-            code => Err(ErrorKind::PreCheck(code))?,
-        }
+        try_precheck!(header).map(move |_| response.take_bytecode())
     }
 
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error> {

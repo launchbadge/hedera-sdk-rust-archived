@@ -24,8 +24,8 @@ mod transaction_status;
 pub use self::{
     claim::Claim,
     client::Client,
-    error::ErrorKind,
     crypto::{PublicKey, SecretKey, Signature},
+    error::ErrorKind,
     id::*,
     info::{AccountInfo, ContractInfo, FileInfo},
     response::PreCheckCode,
