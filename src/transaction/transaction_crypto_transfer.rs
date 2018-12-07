@@ -27,16 +27,18 @@ interfaces!(
     ToProto<TransactionBody_oneof_data>
 );
 
-impl Transaction<TransactionCryptoTransfer> {
-    pub fn crypto_transfer(client: &Client) -> Self {
-        Self::new(
+impl TransactionCryptoTransfer {
+    pub fn new(client: &Client) -> Transaction<Self> {
+        Transaction::new(
             client,
-            TransactionCryptoTransfer {
+            Self {
                 transfers: Vec::new(),
             },
         )
     }
+}
 
+impl Transaction<TransactionCryptoTransfer> {
     #[inline]
     pub fn transfer(&mut self, id: AccountId, amount: i64) -> &mut Self {
         self.inner().transfers.push((id, amount));
