@@ -18,9 +18,9 @@ mod timestamp;
 pub mod transaction;
 
 pub use self::{
+    claim::Claim,
     client::Client,
     error::ErrorKind,
     id::*,
     transaction::{PreCheckCode, TransactionId, TransactionStatus},
-    claim::Claim,
 };
