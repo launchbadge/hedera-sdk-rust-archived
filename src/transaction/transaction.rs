@@ -19,7 +19,6 @@ pub struct TransactionBuilder<T> {
     id: Option<TransactionId>,
     node: Option<AccountId>,
     memo: Option<String>,
-    secret: Option<SecretKey>,
     generate_record: bool,
     fee: u64,
     pub(crate) inner: Box<dyn Object>,
@@ -50,6 +49,7 @@ pub struct Transaction<T, S = TransactionBuilder<T>> {
     crypto_service: Arc<CryptoServiceClient>,
     file_service: Arc<FileServiceClient>,
     contract_service: Arc<SmartContractServiceClient>,
+    secret: Option<SecretKey>,
     kind: TransactionKind<T>,
     phantom: PhantomData<S>,
 }
@@ -59,17 +59,21 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
     where
         T: Object + ToProto<proto::Transaction::TransactionBody_oneof_data> + 'static,
     {
+        let id = match client.operator {
+            Some(operator_id) => Some(TransactionId::new(operator_id)),
+            None => None
+        };
+
         Self {
             crypto_service: client.crypto.clone(),
             file_service: client.file.clone(),
             contract_service: client.contract.clone(),
-
+            secret: client.operator_secret.clone(),
             kind: TransactionKind::Builder(TransactionBuilder {
-                id: None,
-                node: client.node,
+                id,
+                node: client.node.clone(),
                 memo: None,
                 inner: Box::<T>::new(inner) as Box<dyn Object>,
-                secret: None,
                 fee: 10,
                 generate_record: false,
                 phantom: PhantomData,
@@ -86,11 +90,13 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
         self
     }
 
-    pub fn operator(&mut self, id: AccountId, secret: SecretKey) -> &mut Self {
+    pub fn operator(&mut self, id: AccountId) -> &mut Self {
         if let Some(state) = self.as_builder() {
             state.id = Some(TransactionId::new(id));
-            state.secret = Some(secret);
         }
+
+        // invalidate the default secret if it exists
+        self.secret = None;
 
         self
     }
@@ -123,9 +129,7 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
     }
 
     pub fn sign(&mut self, secret: &SecretKey) -> &mut Transaction<T, TransactionRaw> {
-        let tx = self.build();
-
-        tx.sign(secret)
+        self.build().sign(secret)
     }
 
     pub fn execute(&mut self) -> Result<TransactionId, Error> {
@@ -254,6 +258,18 @@ impl<T> Transaction<T, TransactionRaw> {
         log::trace!(target: "hedera::transaction", "sent: {:#?}", tx);
 
         let o = grpc::RequestOptions::default();
+
+        // if the default operator wasn't changed,
+        // sign and insert the signature at the top of the list
+        if let Some(secret) = &self.secret {
+            let signature = secret.sign(&state.bytes).to_proto().unwrap();
+
+            // note: this cannot fail
+            let signatures = &mut tx.sigs.as_mut().unwrap().sigs;
+
+            signatures.insert(0, signature)
+
+        }
 
         // note: cannot fail
         let id = tx

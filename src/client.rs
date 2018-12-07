@@ -13,7 +13,7 @@ use crate::{
     query::{
         Query, QueryCryptoGetAccountBalance, QueryCryptoGetClaim, QueryCryptoGetInfo,
         QueryFileGetContents, QueryFileGetInfo, QueryGetTransactionReceipt,
-        QueryTransactionGetRecord, QueryGetByKey
+        QueryTransactionGetRecord
     },
     transaction::{
         Transaction, TransactionContractCall, TransactionContractCreate, TransactionContractUpdate,
@@ -21,7 +21,7 @@ use crate::{
         TransactionCryptoUpdate, TransactionFileAppend, TransactionFileCreate,
         TransactionFileDelete, TransactionCryptoTransfer,
     },
-    crypto::{ PublicKey, SecretKey },
+    crypto::SecretKey,
     AccountId, AccountInfo, FileInfo, TransactionId, TransactionReceipt, TransactionRecord,
 };
 
@@ -35,7 +35,6 @@ pub struct ClientBuilder<'a> {
 }
 
 pub struct Client {
-    inner: Arc<grpc::Client>,
     pub(crate) node: Option<AccountId>,
     pub(crate) operator: Option<AccountId>,
     pub(crate) operator_secret: Option<SecretKey>,
@@ -105,7 +104,6 @@ impl Client {
         let contract = Arc::new(SmartContractServiceClient::with_client(raw_client.clone()));
 
         Ok(Self {
-            inner: raw_client,
             node: None,
             operator: None,
             operator_secret: None,
@@ -133,11 +131,6 @@ impl Client {
     #[inline]
     pub fn transfer_crypto(&self) -> Transaction<TransactionCryptoTransfer> {
         TransactionCryptoTransfer::new(self)
-    }
-
-    #[inline]
-    pub(crate) fn raw_client(&self) -> Arc<grpc::Client>{
-        self.inner.clone()
     }
 
     /// Create a new account. After the account is created, the AccountID for it is in the
