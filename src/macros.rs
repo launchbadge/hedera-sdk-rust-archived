@@ -1,4 +1,3 @@
-#[macro_export]
 macro_rules! try_precheck {
     ($response:expr) => {
         match $response.get_nodeTransactionPrecheckCode().into() {
