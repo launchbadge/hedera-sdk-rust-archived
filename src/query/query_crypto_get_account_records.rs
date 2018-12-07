@@ -19,7 +19,7 @@ impl QueryCryptoGetAccountRecords {
 }
 
 impl QueryInner for QueryCryptoGetAccountRecords {
-    type Response = Vec<TransactionRecord;
+    type Response = Vec<TransactionRecord>;
 
     fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
         let mut response = response.take_cryptoGetAccountRecords();
