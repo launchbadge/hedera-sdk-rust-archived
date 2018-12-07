@@ -18,7 +18,7 @@ extern crate pyo3;
 ))]
 mod bridge;
 
-mod claim;
+pub mod claim;
 pub mod client;
 pub mod crypto;
 mod duration;
