@@ -3,9 +3,9 @@ macro_rules! define_id {
         #[derive(Debug, PartialEq, Clone, Copy)]
         #[repr(C)]
         pub struct $name {
-            shard: i64,
-            realm: i64,
-            $field: i64,
+            pub shard: i64,
+            pub realm: i64,
+            pub $field: i64,
         }
 
         impl $name {
