@@ -7,8 +7,9 @@ use crate::{
         self,
         CryptoService_grpc::{CryptoService, CryptoServiceClient},
         FileService_grpc::{FileService, FileServiceClient},
+        Query::Query_oneof_query,
+        QueryHeader::QueryHeader,
         SmartContractService_grpc::{SmartContractService, SmartContractServiceClient},
-        Query::Query_oneof_query, QueryHeader::QueryHeader,
         ToProto,
     },
     Client, ErrorKind, PreCheckCode,
@@ -50,39 +51,25 @@ impl<T> Query<T> {
         let o = grpc::RequestOptions::default();
 
         let response = match query.query {
-            Some(cryptogetAccountBalance(_)) => {
-                self.crypto_service.crypto_get_balance(o, query)
-            }
+            Some(cryptogetAccountBalance(_)) => self.crypto_service.crypto_get_balance(o, query),
 
             Some(transactionGetReceipt(_)) => {
                 self.crypto_service.get_transaction_receipts(o, query)
             }
 
-            Some(cryptoGetInfo(_)) => {
-                self.crypto_service.get_account_info(o, query)
-            }
+            Some(cryptoGetInfo(_)) => self.crypto_service.get_account_info(o, query),
 
             Some(fileGetInfo(_)) => self.file_service.get_file_info(o, query),
 
-            Some(fileGetContents(_)) => {
-                self.file_service.get_file_content(o, query)
-            }
+            Some(fileGetContents(_)) => self.file_service.get_file_content(o, query),
 
-            Some(transactionGetRecord(_)) => {
-                self.crypto_service.get_tx_record_by_tx_id(o, query)
-            }
+            Some(transactionGetRecord(_)) => self.crypto_service.get_tx_record_by_tx_id(o, query),
 
-            Some(cryptoGetAccountRecords(_)) => {
-                self.crypto_service.get_account_records(o, query)
-            }
+            Some(cryptoGetAccountRecords(_)) => self.crypto_service.get_account_records(o, query),
 
-            Some(contractGetInfo(_)) => {
-                self.contract_service.get_contract_info(o, query)
-            }
+            Some(contractGetInfo(_)) => self.contract_service.get_contract_info(o, query),
 
-            Some(contractGetBytecode(_)) => {
-                self.contract_service.contract_get_bytecode(o, query)
-            }
+            Some(contractGetBytecode(_)) => self.contract_service.contract_get_bytecode(o, query),
 
             _ => unreachable!(),
         };

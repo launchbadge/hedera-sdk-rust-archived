@@ -1,14 +1,19 @@
+use std::convert::TryInto;
+
+use failure::Error;
+use protobuf::RepeatedField;
+
 use crate::{
-    crypto::PublicKey,
-    id::{AccountId, FileId, ContractId},
-    proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto, GetByKey::EntityID_oneof_entity::*},
-    query::{Query, QueryInner},
     claim::Claim,
+    crypto::PublicKey,
+    id::{AccountId, ContractId, FileId},
+    proto::{
+        self, GetByKey::EntityID_oneof_entity::*, Query::Query_oneof_query,
+        QueryHeader::QueryHeader, ToProto,
+    },
+    query::{Query, QueryInner},
     Client, ErrorKind, PreCheckCode,
 };
-use failure::Error;
-use std::convert::{TryFrom, TryInto};
-use protobuf::RepeatedField;
 
 pub enum Entity {
     Account(AccountId),
@@ -17,56 +22,37 @@ pub enum Entity {
     Contract(ContractId),
 }
 
-pub struct QueryGetByKeyResponse {
-    pub entities: Vec<Entity>,
-}
-
-impl TryFrom<RepeatedField<proto::GetByKey::EntityID>> for QueryGetByKeyResponse {
-    type Error = Error;
-
-    fn try_from(response: RepeatedField<proto::GetByKey::EntityID>) -> Result<Self, Error> {
-        Ok(Self {
-            entities: response
-                .into_iter()
-                .filter_map(|id| id.entity)
-                .map(|entity| match entity {
-                    accountID(account_id) => {
-                        Ok(Entity::Account(account_id.try_into()?))
-                    },
-                    claim(claim_id) => {
-                        Ok(Entity::Claim(claim_id.try_into()?))
-                    },
-                    fileID(file_id) => {
-                        Ok(Entity::File(file_id.try_into()?))
-                    },
-                    contractID(contract_id) => {
-                        Ok(Entity::Contract(contract_id.try_into()?))
-                    }
-                })
-                .collect::<Result<Vec<Entity>, Error>>()?
+fn try_into_entities(ids: RepeatedField<proto::GetByKey::EntityID>) -> Result<Vec<Entity>, Error> {
+    ids.into_iter()
+        .filter_map(|id| id.entity)
+        .map(|entity| match entity {
+            accountID(account_id) => Ok(Entity::Account(account_id.try_into()?)),
+            claim(claim_id) => Ok(Entity::Claim(claim_id.try_into()?)),
+            fileID(file_id) => Ok(Entity::File(file_id.try_into()?)),
+            contractID(contract_id) => Ok(Entity::Contract(contract_id.try_into()?)),
         })
-    }
+        .collect::<Result<Vec<Entity>, Error>>()
 }
 
 pub struct QueryGetByKey {
-    key: PublicKey
+    key: PublicKey,
 }
 
 impl QueryGetByKey {
-    pub fn new(client: &Client, key: PublicKey) -> Query<QueryGetByKeyResponse> {
+    pub fn new(client: &Client, key: PublicKey) -> Query<Vec<Entity>> {
         Query::new(client, Self { key })
     }
 }
 
 impl QueryInner for QueryGetByKey {
-    type Response = QueryGetByKeyResponse;
+    type Response = Vec<Entity>;
 
     fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
         let mut response = response.take_getByKey();
         let header = response.take_header();
 
         match header.get_nodeTransactionPrecheckCode().into() {
-            PreCheckCode::Ok => Ok(response.take_entities().try_into()?),
+            PreCheckCode::Ok => try_into_entities(response.take_entities()),
             code => Err(ErrorKind::PreCheck(code))?,
         }
     }

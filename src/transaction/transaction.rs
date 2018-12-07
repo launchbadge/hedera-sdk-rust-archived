@@ -61,7 +61,7 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
     {
         let inner = Box::<T>::new(inner);
         Self {
-//            client: client.inner.clone(),
+            //            client: client.inner.clone(),
             crypto_service: client.crypto.clone(),
             file_service: client.file.clone(),
             contract_service: client.contract.clone(),
@@ -296,17 +296,11 @@ impl<T> Transaction<T, TransactionRaw> {
         let operator = id.accountID.as_ref().unwrap().clone();
 
         let response = match tx.mut_body().data {
-            Some(cryptoCreateAccount(_)) => {
-                self.crypto_service.create_account(o, tx)
-            }
+            Some(cryptoCreateAccount(_)) => self.crypto_service.create_account(o, tx),
 
-            Some(cryptoTransfer(_)) => {
-                self.crypto_service.crypto_transfer(o, tx)
-            }
+            Some(cryptoTransfer(_)) => self.crypto_service.crypto_transfer(o, tx),
 
-            Some(cryptoDeleteClaim(_)) => {
-                self.crypto_service.delete_claim(o, tx)
-            }
+            Some(cryptoDeleteClaim(_)) => self.crypto_service.delete_claim(o, tx),
 
             Some(cryptoDelete(ref mut data)) => {
                 if !data.has_transferAccountID() {
@@ -320,9 +314,7 @@ impl<T> Transaction<T, TransactionRaw> {
             Some(fileCreate(_)) => self.file_service.create_file(o, tx),
             Some(fileAppend(_)) => self.file_service.append_content(o, tx),
 
-            Some(contractCreateInstance(_)) => {
-                self.contract_service.create_contract(o, tx)
-            }
+            Some(contractCreateInstance(_)) => self.contract_service.create_contract(o, tx),
 
             _ => unimplemented!(),
         };

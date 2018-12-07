@@ -5,20 +5,18 @@ use crate::{
 };
 use failure::Error;
 
-pub type QueryCryptoGetAccountBalanceResponse = u64;
-
 pub struct QueryCryptoGetAccountBalance {
     account: AccountId,
 }
 
 impl QueryCryptoGetAccountBalance {
-    pub fn new(client: &Client, account: AccountId) -> Query<QueryCryptoGetAccountBalanceResponse> {
+    pub fn new(client: &Client, account: AccountId) -> Query<u64> {
         Query::new(client, Self { account })
     }
 }
 
 impl QueryInner for QueryCryptoGetAccountBalance {
-    type Response = QueryCryptoGetAccountBalanceResponse;
+    type Response = u64;
 
     fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
         let mut response = response.take_cryptogetAccountBalance();

@@ -8,20 +8,18 @@ use crate::{
 use failure::Error;
 use std::convert::TryInto;
 
-pub type QueryCryptoGetAccountRecordsResponse = Vec<TransactionRecord>;
-
 pub struct QueryCryptoGetAccountRecords {
     account: AccountId,
 }
 
 impl QueryCryptoGetAccountRecords {
-    pub fn new(client: &Client, account: AccountId) -> Query<QueryCryptoGetAccountRecordsResponse> {
+    pub fn new(client: &Client, account: AccountId) -> Query<Vec<TransactionRecord>> {
         Query::new(client, Self { account })
     }
 }
 
 impl QueryInner for QueryCryptoGetAccountRecords {
-    type Response = QueryCryptoGetAccountRecordsResponse;
+    type Response = Vec<TransactionRecord;
 
     fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
         let mut response = response.take_cryptoGetAccountRecords();

@@ -1,38 +1,33 @@
 use crate::{
+    claim::Claim,
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
     query::{Query, QueryInner},
-    claim::Claim,
     AccountId, Client, ErrorKind, PreCheckCode,
 };
 use failure::Error;
 use std::convert::TryInto;
 
-#[derive(Debug)]
-pub struct QueryCryptoGetClaimResponse {
-    pub claim: Claim
-}
-
-pub struct QueryCryptoGetClaim{
+pub struct QueryCryptoGetClaim {
     account: AccountId,
     hash: Vec<u8>,
 }
 
 impl QueryCryptoGetClaim {
-    pub fn new(client: &Client, account: AccountId, hash: Vec<u8>) -> Query<QueryCryptoGetClaimResponse> {
+    pub fn new(client: &Client, account: AccountId, hash: Vec<u8>) -> Query<Claim> {
         Query::new(client, Self { account, hash })
     }
 }
 
 impl QueryInner for QueryCryptoGetClaim {
-    type Response = QueryCryptoGetClaimResponse;
+    type Response = Claim;
 
-    fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error>{
+    fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
         let mut response = response.take_cryptoGetClaim();
         let header = response.take_header();
 
         match header.get_nodeTransactionPrecheckCode().into() {
-            PreCheckCode::Ok => Ok(QueryCryptoGetClaimResponse{claim: response.take_claim().try_into()?}),
-            code => Err(ErrorKind::PreCheck(code))?
+            PreCheckCode::Ok => response.take_claim().try_into(),
+            code => Err(ErrorKind::PreCheck(code))?,
         }
     }
 
@@ -43,6 +38,5 @@ impl QueryInner for QueryCryptoGetClaim {
         query.set_hash(self.hash.clone());
 
         Ok(Query_oneof_query::cryptoGetClaim(query))
-
     }
 }

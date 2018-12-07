@@ -11,7 +11,7 @@ use std::{
     time::Duration,
 };
 
-pub struct QueryContractGetInfoResponse {
+pub struct ContractInfo {
     pub contract_id: ContractId,
     pub account_id: AccountId,
     pub contract_account_id: String,
@@ -21,13 +21,7 @@ pub struct QueryContractGetInfoResponse {
     pub storage: i64,
 }
 
-pub struct QueryContractGetInfo {
-    contract: ContractId,
-}
-
-impl TryFrom<proto::ContractGetInfo::ContractGetInfoResponse_ContractInfo>
-    for QueryContractGetInfoResponse
-{
+impl TryFrom<proto::ContractGetInfo::ContractGetInfoResponse_ContractInfo> for ContractInfo {
     type Error = Error;
 
     fn try_from(
@@ -51,21 +45,25 @@ impl TryFrom<proto::ContractGetInfo::ContractGetInfoResponse_ContractInfo>
     }
 }
 
+pub struct QueryContractGetInfo {
+    contract: ContractId,
+}
+
 impl QueryContractGetInfo {
-    pub fn new(client: &Client, contract: ContractId) -> Query<QueryContractGetInfoResponse> {
+    pub fn new(client: &Client, contract: ContractId) -> Query<ContractInfo> {
         Query::new(client, Self { contract })
     }
 }
 
 impl QueryInner for QueryContractGetInfo {
-    type Response = QueryContractGetInfoResponse;
+    type Response = ContractInfo;
 
     fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
         let mut response = response.take_contractGetInfo();
         let header = response.take_header();
 
         match header.get_nodeTransactionPrecheckCode().into() {
-            PreCheckCode::Ok => Ok(response.take_contractInfo().try_into()?),
+            PreCheckCode::Ok => response.take_contractInfo().try_into(),
             code => Err(ErrorKind::PreCheck(code))?,
         }
     }

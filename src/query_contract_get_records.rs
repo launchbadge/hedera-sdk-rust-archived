@@ -7,22 +7,17 @@ use crate::{
 use failure::Error;
 use std::convert::{TryFrom, TryInto};
 
-pub struct QueryContractGetRecordResponse {
-    contract: ContractId,
-    records: Vec<TransactionRecord>,
-}
-
-pub struct QueryContractGetRecord {
+pub struct QueryContractGetRecords {
     contract: ContractId
 }
 
-impl QueryContractGetRecord {
-    pub fn new(client: &Client, contract: ContractId) -> Query<QueryContractGetRecordResponse> {
+impl QueryContractGetRecords {
+    pub fn new(client: &Client, contract: ContractId) -> Query<Vec<TransactionRecord>> {
         Query::new(client, Self { contract })
     }
 }
 
-impl TryFrom<proto::ContractGetRecords::ContractGetRecordsResponse> for QueryContractGetRecordResponse {
+impl TryFrom<proto::ContractGetRecords::ContractGetRecordsResponse> for Vec<TransactionRecord> {
     type Error = Error;
 
     fn try_from(mut response: proto::ContractGetRecords::ContractGetRecordsResponse) -> Result<Self, Error> {
@@ -34,15 +29,15 @@ impl TryFrom<proto::ContractGetRecords::ContractGetRecordsResponse> for QueryCon
     }
 }
 
-impl QueryInner for QueryContractGetRecord {
-    type Response = QueryContractGetRecordResponse;
+impl QueryInner for QueryContractGetRecords {
+    type Response = Vec<TransactionRecord>;
 
     fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
         let mut response = response.take_contractGetRecordsResponse();
         let header = response.take_header();
 
         match header.get_nodeTransactionPrecheckCode().into() {
-            PreCheckCode::Ok => Ok(response.try_into()?),
+            PreCheckCode::Ok => response.try_into(),
             code => Err(ErrorKind::PreCheck(code))?
         }
     }

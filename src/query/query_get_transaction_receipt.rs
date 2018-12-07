@@ -10,19 +10,14 @@ pub struct QueryGetTransactionReceipt {
     transaction_id: TransactionId,
 }
 
-pub type QueryGetTransactionReceiptResponse = TransactionReceipt;
-
 impl QueryGetTransactionReceipt {
-    pub fn new(
-        client: &Client,
-        transaction_id: TransactionId,
-    ) -> Query<QueryGetTransactionReceiptResponse> {
+    pub fn new(client: &Client, transaction_id: TransactionId) -> Query<TransactionReceipt> {
         Query::new(client, Self { transaction_id })
     }
 }
 
 impl QueryInner for QueryGetTransactionReceipt {
-    type Response = QueryGetTransactionReceiptResponse;
+    type Response = TransactionReceipt;
 
     fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
         let mut response = response.take_transactionGetReceipt();
