@@ -126,43 +126,6 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
         self.build().execute()
     }
 
-    // Transition from builder to raw
-    // Done before the first signature or execute
-    pub fn build(&mut self) -> &mut Transaction<T, TransactionRaw> {
-        match self.kind.take() {
-            TransactionKind::Empty => panic!("transaction already executed"),
-
-            TransactionKind::Raw(raw) => {
-                // Do nothing; we are already built
-                self.kind = TransactionKind::Raw(raw);
-            }
-
-            TransactionKind::Err(err) => {
-                // Do nothing; we have an error
-                self.kind = TransactionKind::Err(err);
-            }
-
-            TransactionKind::Builder(state) => {
-                match state.to_proto() {
-                    Ok(tx) => {
-                        // note: this cannot fail
-                        let tx: proto::Transaction::Transaction = tx;
-                        let bytes = tx.body.as_ref().unwrap().write_to_bytes().unwrap();
-
-                        self.kind = TransactionKind::Raw(TransactionRaw { tx, bytes })
-                    }
-
-                    Err(error) => {
-                        self.kind = TransactionKind::Err(error);
-                    }
-                };
-            }
-        }
-
-        // this is 100% safe; its changing a marker type parameter
-        unsafe { std::mem::transmute(self) }
-    }
-
     #[inline]
     fn as_builder(&mut self) -> Option<&mut TransactionBuilder<T>> {
         match &mut self.kind {
@@ -327,6 +290,61 @@ impl<T> Transaction<T, TransactionRaw> {
         log::trace!("recv: {:#?}", response);
 
         try_precheck!(response).map(|_| id.into())
+    }
+}
+
+impl<T: 'static, S: 'static> Transaction<T, S> {
+    #[inline]
+    pub(crate) fn take_raw(&mut self) -> Result<TransactionRaw, Error> {
+        match self.kind.take() {
+            TransactionKind::Builder(_) => self.build().take_raw(),
+
+            TransactionKind::Raw(state) => Ok(state),
+
+            TransactionKind::Err(err) => Err(err),
+
+            TransactionKind::Empty => {
+                panic!("transaction already executed")
+            }
+        }
+    }
+
+    // Transition from builder to raw
+    // Done before the first signature or execute
+    #[inline]
+    pub(crate) fn build(&mut self) -> &mut Transaction<T, TransactionRaw> {
+        match &self.kind {
+            TransactionKind::Empty => panic!("transaction already executed"),
+
+            TransactionKind::Raw(_) | TransactionKind::Err(_) => {
+                // Do nothing; we are already built
+                // this is 100% safe; its changing a marker type parameter
+                return unsafe { std::mem::transmute(self) };
+            }
+
+            _ => {
+                // Fall-through to do something fun
+            }
+        }
+
+        if let TransactionKind::Builder(state) = self.kind.take() {
+            match state.to_proto() {
+                Ok(tx) => {
+                    // note: this cannot fail
+                    let tx: proto::Transaction::Transaction = tx;
+                    let bytes = tx.body.as_ref().unwrap().write_to_bytes().unwrap();
+
+                    self.kind = TransactionKind::Raw(TransactionRaw { tx, bytes })
+                }
+
+                Err(error) => {
+                    self.kind = TransactionKind::Err(error);
+                }
+            }
+        }
+
+        // this is 100% safe; its changing a marker type parameter
+        unsafe { std::mem::transmute(self) }
     }
 }
 

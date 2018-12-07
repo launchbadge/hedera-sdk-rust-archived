@@ -19,7 +19,7 @@ use crate::{
         Transaction, TransactionContractCall, TransactionContractCreate, TransactionContractUpdate,
         TransactionCryptoCreate, TransactionCryptoDelete, TransactionCryptoDeleteClaim,
         TransactionCryptoUpdate, TransactionFileAppend, TransactionFileCreate,
-        TransactionFileDelete,
+        TransactionFileDelete, TransactionCryptoTransfer,
     },
     AccountId, AccountInfo, FileInfo, TransactionId, TransactionReceipt, TransactionRecord,
 };
@@ -64,6 +64,11 @@ impl Client {
             file,
             contract,
         })
+    }
+
+    #[inline]
+    pub fn transfer_crypto(&self) -> Transaction<TransactionCryptoTransfer> {
+        TransactionCryptoTransfer::new(self)
     }
 
     /// Create a new account. After the account is created, the AccountID for it is in the

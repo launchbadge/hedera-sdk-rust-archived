@@ -8,6 +8,8 @@ use crate::{
         SmartContractService_grpc::{SmartContractService, SmartContractServiceClient},
         ToProto,
     },
+    ErrorKind, PreCheckCode,
+    transaction::{Transaction, TransactionCryptoTransfer},
     Client,
 };
 use failure::Error;
@@ -41,7 +43,47 @@ impl<T> Query<T> {
         }
     }
 
-    pub(crate) fn send(&self) -> Result<proto::Response::Response, Error> {
+    pub fn payment<S: 'static>(
+        &mut self,
+        transaction: &mut Transaction<TransactionCryptoTransfer, S>,
+    ) -> Result<&mut Self, Error> {
+        self.payment = Some(transaction.build().take_raw()?.tx);
+        Ok(self)
+    }
+
+    pub fn get(&mut self) -> Result<T, Error> {
+        self.inner.get(self.send()?)
+    }
+
+    pub fn cost(&mut self) -> Result<u64, Error> {
+        use self::proto::Response::Response_oneof_response::*;
+
+        // NOTE: This isn't the most ideal way to switch response types..
+        self.kind = proto::QueryHeader::ResponseType::COST_ANSWER;
+        let response = self.send()?;
+
+        // Why is the cost field inside the specific answer type field in the proto ?
+        // Maybe send up a question later.
+
+        let header = match response.response {
+            Some(cryptogetAccountBalance(mut res)) => res.take_header(),
+            Some(transactionGetReceipt(mut res)) => res.take_header(),
+            Some(cryptoGetInfo(mut res)) => res.take_header(),
+            Some(fileGetInfo(mut res)) => res.take_header(),
+            Some(fileGetContents(mut res)) => res.take_header(),
+            Some(transactionGetRecord(mut res)) => res.take_header(),
+            Some(cryptoGetAccountRecords(mut res)) => res.take_header(),
+
+            _ => unreachable!(),
+        };
+
+        match header.get_nodeTransactionPrecheckCode().into() {
+            PreCheckCode::Ok | PreCheckCode::InvalidTransaction => Ok(header.get_cost()),
+            code => Err(ErrorKind::PreCheck(code))?,
+        }
+    }
+
+    fn send(&self) -> Result<proto::Response::Response, Error> {
         use self::proto::Query::Query_oneof_query::*;
 
         let query: proto::Query::Query = self.to_proto()?;
@@ -80,43 +122,6 @@ impl<T> Query<T> {
         log::trace!("recv: {:#?}", response);
 
         Ok(response)
-    }
-
-    pub fn get(&mut self) -> Result<T, Error> {
-        self.inner.get(self.send()?)
-    }
-
-    pub fn payment(mut self, mut transaction: Transaction<TransactionCryptoTransfer>) -> Self {
-        if let Some(tx) = transaction.build().as_raw() {
-            self.payment = Some(tx.tx.clone())
-        }
-
-        self
-    }
-
-    pub fn cost(&mut self) -> Result<u64, Error> {
-        use self::proto::Response::Response_oneof_response::*;
-
-        // NOTE: This isn't the most ideal way to switch response types..
-        self.kind = proto::QueryHeader::ResponseType::COST_ANSWER;
-        let response = self.send()?;
-
-        // Why is the cost field inside the specific answer type field in the proto ?
-        // Maybe send up a question later.
-
-        let header = match response.response {
-            Some(cryptogetAccountBalance(mut res)) => res.take_header(),
-            Some(transactionGetReceipt(mut res)) => res.take_header(),
-            Some(cryptoGetInfo(mut res)) => res.take_header(),
-            Some(fileGetInfo(mut res)) => res.take_header(),
-            Some(fileGetContents(mut res)) => res.take_header(),
-            Some(transactionGetRecord(mut res)) => res.take_header(),
-            Some(cryptoGetAccountRecords(mut res)) => res.take_header(),
-
-            _ => unreachable!(),
-        };
-
-        try_precheck!(header).map(|h| h.get_cost())
     }
 }
 
