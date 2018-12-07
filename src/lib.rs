@@ -41,4 +41,5 @@ pub use self::{
     error::ErrorKind,
     id::*,
     transaction::{PreCheckCode, TransactionId, TransactionStatus},
+    claim::Claim,
 };
