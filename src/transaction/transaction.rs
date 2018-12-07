@@ -30,7 +30,7 @@ pub struct TransactionRaw {
     tx: proto::Transaction::Transaction,
 }
 
-pub enum TransactionKind<T> {
+enum TransactionKind<T> {
     Empty,
     Err(Error),
     Builder(TransactionBuilder<T>),
