@@ -1,6 +1,6 @@
 [package]
 name = "hedera"
-version = "0.3.0"
+version = "0.3.1-alpha.0"
 description = "Hedera SDK for Rust"
 license = "Apache-2.0"
 repository = "https://github.com/hashgraph/hedera-sdk-rust"
