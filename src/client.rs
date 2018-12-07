@@ -4,22 +4,22 @@ use failure::{format_err, Error};
 use itertools::Itertools;
 
 use crate::{
+    claim::Claim,
     id::{ContractId, FileId},
+    proto::{
+        CryptoService_grpc::CryptoServiceClient, FileService_grpc::FileServiceClient,
+        SmartContractService_grpc::SmartContractServiceClient,
+    },
     query::{
-        Query, QueryCryptoGetAccountBalance, QueryCryptoGetAccountBalanceResponse,
-        QueryCryptoGetInfo, QueryCryptoGetInfoResponse, QueryFileGetContents,
-        QueryFileGetContentsResponse, QueryFileGetInfo, QueryFileGetInfoResponse,
-        QueryGetTransactionReceipt, QueryGetTransactionReceiptResponse, QueryTransactionGetRecord,
-        QueryTransactionGetRecordResponse, QueryCryptoGetClaimResponse, QueryCryptoGetClaim
+        CryptoInfo, FileInfo, Query, QueryCryptoGetAccountBalance, QueryCryptoGetClaim,
+        QueryCryptoGetInfo, QueryFileGetContents, QueryFileGetInfo, QueryGetTransactionReceipt,
+        QueryTransactionGetRecord,
     },
     transaction::{
         Transaction, TransactionContractCall, TransactionContractCreate, TransactionContractUpdate,
-        TransactionCryptoCreate, TransactionCryptoDelete,
-        TransactionCryptoDeleteClaim, TransactionCryptoUpdate, TransactionFileAppend,
-        TransactionFileCreate, TransactionFileDelete,
-    },
-    proto::{
-        CryptoService_grpc::CryptoServiceClient, FileService_grpc::FileServiceClient, SmartContractService_grpc::SmartContractServiceClient
+        TransactionCryptoCreate, TransactionCryptoDelete, TransactionCryptoDeleteClaim,
+        TransactionCryptoUpdate, TransactionFileAppend, TransactionFileCreate,
+        TransactionFileDelete, TransactionReceipt, TransactionRecord,
     },
     AccountId, TransactionId,
 };
@@ -29,7 +29,7 @@ use grpc::ClientStub;
 pub struct Client {
     pub(crate) crypto: Arc<CryptoServiceClient>,
     pub(crate) file: Arc<FileServiceClient>,
-    pub(crate) contract: Arc<SmartContractServiceClient>
+    pub(crate) contract: Arc<SmartContractServiceClient>,
 }
 
 impl Client {
@@ -59,7 +59,11 @@ impl Client {
 
         let contract = Arc::new(SmartContractServiceClient::with_client(inner));
 
-        Ok(Self { crypto, file, contract })
+        Ok(Self {
+            crypto,
+            file,
+            contract,
+        })
     }
 
     /// Create a new account. After the account is created, the AccountID for it is in the
@@ -108,13 +112,13 @@ pub struct PartialAccountMessage<'a>(&'a Client, AccountId);
 impl<'a> PartialAccountMessage<'a> {
     /// Get the balance of a crypto-currency account.
     #[inline]
-    pub fn balance(self) -> Query<QueryCryptoGetAccountBalanceResponse> {
+    pub fn balance(self) -> Query<u64> {
         QueryCryptoGetAccountBalance::new(self.0, self.1)
     }
 
     /// Get all the information about an account, including the balance.
     #[inline]
-    pub fn info(self) -> Query<QueryCryptoGetInfoResponse> {
+    pub fn info(self) -> Query<CryptoInfo> {
         QueryCryptoGetInfo::new(self.0, self.1)
     }
 
@@ -149,10 +153,9 @@ impl<'a> PartialAccountClaimMessage<'a> {
     }
 
     #[inline]
-    pub fn get(self) -> Query<QueryCryptoGetClaimResponse> {
-    QueryCryptoGetClaim::new((self.0).0, (self.0).1, self.1)
+    pub fn get(self) -> Query<Claim> {
+        QueryCryptoGetClaim::new((self.0).0, (self.0).1, self.1)
     }
-
 }
 
 pub struct PartialFileMessage<'a>(&'a Client, FileId);
@@ -169,12 +172,12 @@ impl<'a> PartialFileMessage<'a> {
     }
 
     #[inline]
-    pub fn info(self) -> Query<QueryFileGetInfoResponse> {
+    pub fn info(self) -> Query<FileInfo> {
         QueryFileGetInfo::new(self.0, self.1)
     }
 
     #[inline]
-    pub fn contents(self) -> Query<QueryFileGetContentsResponse> {
+    pub fn contents(self) -> Query<Vec<u8>> {
         QueryFileGetContents::new(self.0, self.1)
     }
 }
@@ -201,7 +204,7 @@ impl<'a> PartialTransactionMessage<'a> {
     /// Once a transaction reaches consensus, then information about whether it succeeded or
     /// failed will be available until the end of the receipt period.
     #[inline]
-    pub fn receipt(self) -> Query<QueryGetTransactionReceiptResponse> {
+    pub fn receipt(self) -> Query<TransactionReceipt> {
         QueryGetTransactionReceipt::new(self.0, self.1)
     }
 
@@ -210,9 +213,7 @@ impl<'a> PartialTransactionMessage<'a> {
     /// If the transaction requested a record, then the record lasts for one hour, and a state
     /// proof is available for it.
     #[inline]
-    pub fn record(self) -> Query<QueryTransactionGetRecordResponse> {
+    pub fn record(self) -> Query<TransactionRecord> {
         QueryTransactionGetRecord::new(self.0, self.1)
     }
 }
-
-

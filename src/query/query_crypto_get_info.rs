@@ -13,7 +13,7 @@ use std::{
 };
 
 #[derive(Debug)]
-pub struct QueryCryptoGetInfoResponse {
+pub struct CryptoInfo {
     pub account_id: AccountId,
     pub contract_account_id: String,
     pub deleted: bool,
@@ -30,9 +30,7 @@ pub struct QueryCryptoGetInfoResponse {
     pub claims: Vec<Claim>,
 }
 
-impl TryFrom<proto::CryptoGetInfo::CryptoGetInfoResponse_AccountInfo>
-    for QueryCryptoGetInfoResponse
-{
+impl TryFrom<proto::CryptoGetInfo::CryptoGetInfoResponse_AccountInfo> for CryptoInfo {
     type Error = Error;
 
     fn try_from(
@@ -66,20 +64,20 @@ pub struct QueryCryptoGetInfo {
 }
 
 impl QueryCryptoGetInfo {
-    pub fn new(client: &Client, account: AccountId) -> Query<QueryCryptoGetInfoResponse> {
+    pub fn new(client: &Client, account: AccountId) -> Query<CryptoInfo> {
         Query::new(client, Self { account })
     }
 }
 
 impl QueryInner for QueryCryptoGetInfo {
-    type Response = QueryCryptoGetInfoResponse;
+    type Response = CryptoInfo;
 
     fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
         let mut response = response.take_cryptoGetInfo();
         let header = response.take_header();
 
         match header.get_nodeTransactionPrecheckCode().into() {
-            PreCheckCode::Ok => Ok(response.take_accountInfo().try_into()?),
+            PreCheckCode::Ok => response.take_accountInfo().try_into(),
             code => Err(ErrorKind::PreCheck(code))?,
         }
     }

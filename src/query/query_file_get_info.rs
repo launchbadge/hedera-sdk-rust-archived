@@ -9,7 +9,7 @@ use chrono::{DateTime, Utc};
 use failure::Error;
 use std::convert::{TryFrom, TryInto};
 
-pub struct QueryFileGetInfoResponse {
+pub struct FileInfo {
     pub file_id: FileId,
     pub size: i64,
     pub expiration_time: DateTime<Utc>,
@@ -17,7 +17,7 @@ pub struct QueryFileGetInfoResponse {
     pub keys: Vec<PublicKey>,
 }
 
-impl TryFrom<proto::FileGetInfo::FileGetInfoResponse_FileInfo> for QueryFileGetInfoResponse {
+impl TryFrom<proto::FileGetInfo::FileGetInfoResponse_FileInfo> for FileInfo {
     type Error = Error;
 
     fn try_from(mut info: proto::FileGetInfo::FileGetInfoResponse_FileInfo) -> Result<Self, Error> {
@@ -41,20 +41,20 @@ pub struct QueryFileGetInfo {
 }
 
 impl QueryFileGetInfo {
-    pub fn new(client: &Client, file: FileId) -> Query<QueryFileGetInfoResponse> {
+    pub fn new(client: &Client, file: FileId) -> Query<FileInfo> {
         Query::new(client, Self { file })
     }
 }
 
 impl QueryInner for QueryFileGetInfo {
-    type Response = QueryFileGetInfoResponse;
+    type Response = FileInfo;
 
     fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
         let mut response = response.take_fileGetInfo();
         let header = response.take_header();
 
         match header.get_nodeTransactionPrecheckCode().into() {
-            PreCheckCode::Ok => Ok(response.take_fileInfo().try_into()?),
+            PreCheckCode::Ok => response.take_fileInfo().try_into(),
             code => Err(ErrorKind::PreCheck(code))?,
         }
     }

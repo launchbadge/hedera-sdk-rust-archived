@@ -6,23 +6,18 @@ use crate::{
 
 use failure::Error;
 
-pub type QueryContractGetBytecodeResponse = Vec<u8>;
-
 pub struct QueryContractGetBytecode {
     contract_id: ContractId,
 }
 
 impl QueryContractGetBytecode {
-    pub fn new(
-        client: &Client,
-        contract_id: ContractId,
-    ) -> Query<QueryContractGetBytecodeResponse> {
+    pub fn new(client: &Client, contract_id: ContractId) -> Query<Vec<u8>> {
         Query::new(client, Self { contract_id })
     }
 }
 
 impl QueryInner for QueryContractGetBytecode {
-    type Response = QueryContractGetBytecodeResponse;
+    type Response = Vec<u8>;
 
     fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
         let mut response = response.take_contractGetBytecodeResponse();

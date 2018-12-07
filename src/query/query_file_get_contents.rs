@@ -7,11 +7,7 @@ use crate::{
 use failure::Error;
 use std::convert::{TryFrom, TryInto};
 
-pub type QueryFileGetContentsResponse = Vec<u8>;
-
-impl TryFrom<proto::FileGetContents::FileGetContentsResponse_FileContents>
-    for QueryFileGetContentsResponse
-{
+impl TryFrom<proto::FileGetContents::FileGetContentsResponse_FileContents> for Vec<u8> {
     type Error = Error;
 
     fn try_from(
@@ -26,20 +22,20 @@ pub struct QueryFileGetContents {
 }
 
 impl QueryFileGetContents {
-    pub fn new(client: &Client, file: FileId) -> Query<QueryFileGetContentsResponse> {
+    pub fn new(client: &Client, file: FileId) -> Query<Vec<u8>> {
         Query::new(client, Self { file })
     }
 }
 
 impl QueryInner for QueryFileGetContents {
-    type Response = QueryFileGetContentsResponse;
+    type Response = Vec<u8>;
 
     fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
         let mut response = response.take_fileGetContents();
         let header = response.take_header();
 
         match header.get_nodeTransactionPrecheckCode().into() {
-            PreCheckCode::Ok => Ok(response.take_fileContents().try_into()?),
+            PreCheckCode::Ok => response.take_fileContents().try_into(),
             code => Err(ErrorKind::PreCheck(code))?,
         }
     }

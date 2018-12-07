@@ -48,30 +48,25 @@ impl From<proto::ContractCallLocal::ContractFunctionResult> for ContractFunction
     }
 }
 
-pub type QueryTransactionGetRecordResponse = TransactionRecord;
-
 pub struct QueryTransactionGetRecord {
     transaction: TransactionId,
 }
 
 impl QueryTransactionGetRecord {
-    pub fn new(
-        client: &Client,
-        transaction: TransactionId,
-    ) -> Query<QueryTransactionGetRecordResponse> {
+    pub fn new(client: &Client, transaction: TransactionId) -> Query<TransactionRecord> {
         Query::new(client, Self { transaction })
     }
 }
 
 impl QueryInner for QueryTransactionGetRecord {
-    type Response = QueryTransactionGetRecordResponse;
+    type Response = TransactionRecord;
 
     fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
         let mut response = response.take_transactionGetRecord();
         let header = response.take_header();
 
         match header.get_nodeTransactionPrecheckCode().into() {
-            PreCheckCode::Ok => Ok(response.take_transactionRecord().try_into()?),
+            PreCheckCode::Ok => response.take_transactionRecord().try_into(),
             code => Err(ErrorKind::PreCheck(code))?,
         }
     }

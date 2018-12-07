@@ -1,7 +1,4 @@
-use crate::{
-    id::AccountId, proto, query::ContractFunctionResult,
-    transaction::TransactionReceipt,
-};
+use crate::{id::AccountId, proto, query::ContractFunctionResult, transaction::TransactionReceipt};
 use chrono::{DateTime, Utc};
 use failure::{err_msg, Error};
 use std::convert::{TryFrom, TryInto};
