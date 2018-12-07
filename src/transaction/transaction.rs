@@ -135,8 +135,14 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
         match self.kind.take() {
             TransactionKind::Empty => panic!("transaction already executed"),
 
-            TransactionKind::Raw(_) | TransactionKind::Err(_) => {
-                // Do nothing; we are already built or have an error
+            TransactionKind::Raw(raw) => {
+                // Do nothing; we are already built
+                self.kind = TransactionKind::Raw(raw);
+            }
+
+            TransactionKind::Err(err) => {
+                // Do nothing; we have an error
+                self.kind = TransactionKind::Err(err);
             }
 
             TransactionKind::Builder(state) => {
