@@ -1,36 +1,11 @@
-use failure::{err_msg, Error};
-use protobuf::RepeatedField;
-use try_from::TryInto;
-
 use crate::{
-    claim::Claim,
     crypto::PublicKey,
-    id::{AccountId, ContractId, FileId},
+    entity::try_into_entities,
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
     query::{Query, QueryInner},
-    Client,
+    Client, Entity,
 };
-
-pub enum Entity {
-    Account(AccountId),
-    Claim(Claim),
-    File(FileId),
-    Contract(ContractId),
-}
-
-fn try_into_entities(ids: RepeatedField<proto::GetByKey::EntityID>) -> Result<Vec<Entity>, Error> {
-    use self::proto::GetByKey::EntityID_oneof_entity::*;
-
-    ids.into_iter()
-        .map(|id| match id.entity {
-            Some(accountID(account_id)) => Ok(Entity::Account(account_id.into())),
-            Some(claim(c)) => Ok(Entity::Claim(c.try_into()?)),
-            Some(fileID(file_id)) => Ok(Entity::File(file_id.into())),
-            Some(contractID(contract_id)) => Ok(Entity::Contract(contract_id.into())),
-            None => Err(err_msg("empty entity id?")),
-        })
-        .collect::<Result<Vec<Entity>, Error>>()
-}
+use failure::Error;
 
 pub struct QueryGetByKey {
     key: PublicKey,

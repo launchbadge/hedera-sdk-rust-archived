@@ -8,6 +8,7 @@ mod claim;
 pub mod client;
 mod crypto;
 mod duration;
+mod entity;
 mod error;
 mod id;
 mod info;
@@ -25,6 +26,7 @@ pub use self::{
     claim::Claim,
     client::Client,
     crypto::{PublicKey, SecretKey, Signature},
+    entity::Entity,
     error::ErrorKind,
     id::*,
     info::{AccountInfo, ContractInfo, FileInfo},
