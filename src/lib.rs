@@ -18,7 +18,7 @@ extern crate pyo3;
 ))]
 mod bridge;
 
-pub mod claim;
+mod claim;
 pub mod client;
 pub mod crypto;
 mod duration;
@@ -41,4 +41,5 @@ pub use self::{
     error::ErrorKind,
     id::*,
     transaction::{PreCheckCode, TransactionId, TransactionStatus},
+    claim::Claim,
 };
