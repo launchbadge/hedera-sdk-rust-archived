@@ -7,7 +7,7 @@ use failure::Error;
 use protobuf::RepeatedField;
 use std::convert::{TryFrom, TryInto};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Claim {
     pub account: AccountId,
     pub hash: Vec<u8>,
