@@ -25,7 +25,7 @@ pub struct Query<T> {
     contract_service: Arc<SmartContractServiceClient>,
     file_service: Arc<FileServiceClient>,
     kind: proto::QueryHeader::ResponseType,
-    // TODO: payment: Transaction,
+    payment: Option<proto::Transaction::Transaction>,
     inner: Box<dyn QueryInner<Response = T>>,
 }
 
@@ -33,6 +33,7 @@ impl<T> Query<T> {
     pub(crate) fn new<U: QueryInner<Response = T> + 'static>(client: &Client, inner: U) -> Self {
         Self {
             kind: proto::QueryHeader::ResponseType::ANSWER_ONLY,
+            payment: None,
             crypto_service: client.crypto.clone(),
             contract_service: client.contract.clone(),
             file_service: client.file.clone(),
@@ -44,6 +45,7 @@ impl<T> Query<T> {
         use self::proto::Query::Query_oneof_query::*;
 
         let query: proto::Query::Query = self.to_proto()?;
+
         log::trace!("sent: {:#?}", query);
 
         let o = grpc::RequestOptions::default();
@@ -84,6 +86,14 @@ impl<T> Query<T> {
         self.inner.get(self.send()?)
     }
 
+    pub fn payment(mut self, mut transaction: Transaction<TransactionCryptoTransfer>) -> Self {
+        if let Some(tx) = transaction.build().as_raw() {
+            self.payment = Some(tx.tx.clone())
+        }
+
+        self
+    }
+
     pub fn cost(&mut self) -> Result<u64, Error> {
         use self::proto::Response::Response_oneof_response::*;
 
@@ -114,6 +124,10 @@ impl<T> ToProto<proto::Query::Query> for Query<T> {
     fn to_proto(&self) -> Result<proto::Query::Query, Error> {
         let mut header = proto::QueryHeader::QueryHeader::new();
         header.set_responseType(self.kind);
+
+        if let Some(payment) = &self.payment {
+            header.set_payment(payment.clone());
+        }
 
         let mut query = proto::Query::Query::new();
         query.query = Some(self.inner.to_query_proto(header)?);
