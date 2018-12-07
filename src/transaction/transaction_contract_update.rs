@@ -20,8 +20,8 @@ pub struct TransactionContractUpdate {
 }
 
 interfaces!(
-    TransactionContractUpdate: Any,
-    ToProto<TransactionBody_oneof_data>
+    TransactionContractUpdate: dyn Any,
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionContractUpdate {

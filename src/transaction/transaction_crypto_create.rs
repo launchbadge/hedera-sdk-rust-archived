@@ -6,7 +6,8 @@ use crate::{
 };
 use failure::Error;
 use query_interface::{interfaces, vtable_for};
-use std::{any::Any, convert::TryInto, time::Duration};
+use std::{any::Any, time::Duration};
+use try_from::TryInto;
 
 pub struct TransactionCryptoCreate {
     key: Option<PublicKey>,
@@ -21,8 +22,8 @@ pub struct TransactionCryptoCreate {
 }
 
 interfaces!(
-    TransactionCryptoCreate: Any,
-    ToProto<TransactionBody_oneof_data>
+    TransactionCryptoCreate: dyn Any,
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionCryptoCreate {

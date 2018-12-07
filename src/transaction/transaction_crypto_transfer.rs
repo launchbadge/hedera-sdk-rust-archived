@@ -23,8 +23,8 @@ pub struct TransactionCryptoTransfer {
 }
 
 interfaces!(
-    TransactionCryptoTransfer: Any,
-    ToProto<TransactionBody_oneof_data>
+    TransactionCryptoTransfer: dyn Any,
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionCryptoTransfer {

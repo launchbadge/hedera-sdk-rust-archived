@@ -5,7 +5,7 @@ use crate::{
     AccountId, Client, ErrorKind, PreCheckCode,
 };
 use failure::Error;
-use std::convert::TryInto;
+use try_from::TryInto;
 
 pub struct QueryCryptoGetClaim {
     account: AccountId,

@@ -5,7 +5,7 @@ use crate::{
 };
 use failure::Error;
 use protobuf::RepeatedField;
-use std::convert::{TryFrom, TryInto};
+use try_from::{TryFrom, TryInto};
 
 #[derive(Debug, Clone)]
 pub struct Claim {
@@ -32,7 +32,7 @@ impl Claim {
 }
 
 impl TryFrom<proto::CryptoAddClaim::Claim> for Claim {
-    type Error = Error;
+    type Err = Error;
 
     fn try_from(mut claim: proto::CryptoAddClaim::Claim) -> Result<Self, Error> {
         Ok(Self {

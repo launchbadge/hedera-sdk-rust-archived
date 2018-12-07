@@ -1,40 +1,10 @@
 use crate::{
-    crypto::PublicKey,
-    id::FileId,
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
     query::{Query, QueryInner},
-    Client, ErrorKind, PreCheckCode,
+    Client, ErrorKind, FileId, FileInfo, PreCheckCode,
 };
-use chrono::{DateTime, Utc};
 use failure::Error;
-use std::convert::{TryFrom, TryInto};
-
-pub struct FileInfo {
-    pub file_id: FileId,
-    pub size: i64,
-    pub expiration_time: DateTime<Utc>,
-    pub deleted: bool,
-    pub keys: Vec<PublicKey>,
-}
-
-impl TryFrom<proto::FileGetInfo::FileGetInfoResponse_FileInfo> for FileInfo {
-    type Error = Error;
-
-    fn try_from(mut info: proto::FileGetInfo::FileGetInfoResponse_FileInfo) -> Result<Self, Error> {
-        Ok(Self {
-            file_id: info.take_fileID().into(),
-            size: info.get_size(),
-            expiration_time: info.take_expirationTime().into(),
-            deleted: info.get_deleted(),
-            keys: info
-                .take_keys()
-                .take_keys()
-                .into_iter()
-                .map(|k| k.try_into())
-                .collect::<Result<Vec<_>, _>>()?,
-        })
-    }
-}
+use try_from::TryInto;
 
 pub struct QueryFileGetInfo {
     file: FileId,

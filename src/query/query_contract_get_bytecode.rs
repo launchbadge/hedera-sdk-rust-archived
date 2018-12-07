@@ -3,7 +3,6 @@ use crate::{
     query::{Query, QueryInner},
     Client, ContractId, ErrorKind, PreCheckCode,
 };
-
 use failure::Error;
 
 pub struct QueryContractGetBytecode {

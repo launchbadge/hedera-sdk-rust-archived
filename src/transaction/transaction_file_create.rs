@@ -16,8 +16,8 @@ pub struct TransactionFileCreate {
 }
 
 interfaces!(
-    TransactionFileCreate: Any,
-    ToProto<TransactionBody_oneof_data>
+    TransactionFileCreate: dyn Any,
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionFileCreate {

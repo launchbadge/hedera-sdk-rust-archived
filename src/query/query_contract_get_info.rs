@@ -1,49 +1,10 @@
 use crate::{
-    crypto::PublicKey,
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
     query::{Query, QueryInner},
-    AccountId, Client, ContractId, ErrorKind, PreCheckCode,
+    Client, ContractId, ContractInfo, ErrorKind, PreCheckCode,
 };
-use chrono::{DateTime, Utc};
 use failure::Error;
-use std::{
-    convert::{TryFrom, TryInto},
-    time::Duration,
-};
-
-pub struct ContractInfo {
-    pub contract_id: ContractId,
-    pub account_id: AccountId,
-    pub contract_account_id: String,
-    pub admin_key: Option<PublicKey>,
-    pub expiration_time: DateTime<Utc>,
-    pub auto_renew_period: Duration,
-    pub storage: i64,
-}
-
-impl TryFrom<proto::ContractGetInfo::ContractGetInfoResponse_ContractInfo> for ContractInfo {
-    type Error = Error;
-
-    fn try_from(
-        mut info: proto::ContractGetInfo::ContractGetInfoResponse_ContractInfo,
-    ) -> Result<Self, Error> {
-        let admin_key = if info.has_adminKey() {
-            Some(info.take_adminKey().try_into()?)
-        } else {
-            None
-        };
-
-        Ok(Self {
-            contract_id: info.take_contractID().into(),
-            account_id: info.take_accountID().into(),
-            contract_account_id: info.take_contractAccountID(),
-            admin_key,
-            expiration_time: info.take_expirationTime().into(),
-            auto_renew_period: info.take_autoRenewPeriod().try_into()?,
-            storage: info.get_storage(),
-        })
-    }
-}
+use try_from::TryInto;
 
 pub struct QueryContractGetInfo {
     contract: ContractId,

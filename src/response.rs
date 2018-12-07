@@ -1,4 +1,4 @@
-use crate::{proto, TransactionId};
+use crate::proto;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[repr(u8)]
@@ -44,9 +44,4 @@ impl From<proto::TransactionResponse::NodeTransactionPrecheckCode> for PreCheckC
             NOT_SUPPORTED => PreCheckCode::NotSupported,
         }
     }
-}
-
-#[repr(C)]
-pub struct TransactionResponse {
-    pub id: TransactionId,
 }

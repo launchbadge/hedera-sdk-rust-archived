@@ -5,10 +5,10 @@ use crate::{
     Client, ErrorKind, PreCheckCode,
 };
 use failure::Error;
-use std::convert::{TryFrom, TryInto};
+use try_from::{TryFrom, TryInto};
 
 impl TryFrom<proto::FileGetContents::FileGetContentsResponse_FileContents> for Vec<u8> {
-    type Error = Error;
+    type Err = Error;
 
     fn try_from(
         mut contents: proto::FileGetContents::FileGetContentsResponse_FileContents,

@@ -18,8 +18,8 @@ pub struct TransactionFileUpdate {
 }
 
 interfaces!(
-    TransactionFileUpdate: Any,
-    ToProto<TransactionBody_oneof_data>
+    TransactionFileUpdate: dyn Any,
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionFileUpdate {

@@ -1,6 +1,6 @@
-# Intellij
-.idea/workspace.xml
-.idea/*
+# Editor project files
+.idea/
+.vscode/
 
-# Rust build artifacts
+# Rust artifacts
 target/

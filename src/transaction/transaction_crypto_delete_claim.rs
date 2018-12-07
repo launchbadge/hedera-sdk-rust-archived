@@ -13,8 +13,8 @@ pub struct TransactionCryptoDeleteClaim {
 }
 
 interfaces!(
-    TransactionCryptoDeleteClaim: Any,
-    ToProto<TransactionBody_oneof_data>
+    TransactionCryptoDeleteClaim: dyn Any,
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionCryptoDeleteClaim {

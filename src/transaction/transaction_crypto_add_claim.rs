@@ -16,8 +16,8 @@ pub struct TransactionCryptoAddClaim {
 }
 
 interfaces!(
-    TransactionCryptoAddClaim: Any,
-    ToProto<TransactionBody_oneof_data>
+    TransactionCryptoAddClaim: dyn Any,
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionCryptoAddClaim {

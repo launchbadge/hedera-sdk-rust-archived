@@ -18,8 +18,8 @@ pub struct TransactionAdminFileDelete {
 }
 
 interfaces!(
-    TransactionAdminFileDelete: Any,
-    ToProto<TransactionBody_oneof_data>
+    TransactionAdminFileDelete: dyn Any,
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionAdminFileDelete {
@@ -60,8 +60,8 @@ pub struct TransactionAdminContractDelete {
 }
 
 interfaces!(
-    TransactionAdminContractDelete: Any,
-    ToProto<TransactionBody_oneof_data>
+    TransactionAdminContractDelete: dyn Any,
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionAdminContractDelete {

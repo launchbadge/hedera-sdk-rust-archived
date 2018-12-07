@@ -2,11 +2,10 @@ use crate::{
     id::ContractId,
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
     query::{Query, QueryInner},
-    transaction::TransactionRecord,
-    Client, ErrorKind, PreCheckCode, TransactionId,
+    Client, ErrorKind, PreCheckCode, TransactionId, TransactionRecord,
 };
 use failure::Error;
-use std::convert::TryInto;
+use try_from::TryInto;
 
 // TODO: Move to ContractCallLocalQuery once it exists
 pub struct ContractLogInfo {

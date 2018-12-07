@@ -5,7 +5,8 @@ use crate::{
 use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
 use failure::Error;
 use itertools::Itertools;
-use std::{convert::TryInto, str::FromStr};
+use std::str::FromStr;
+use try_from::TryInto;
 
 #[repr(C)]
 #[derive(Debug)]

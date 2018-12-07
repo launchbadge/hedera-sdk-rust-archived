@@ -13,8 +13,8 @@ pub struct TransactionFileDelete {
 }
 
 interfaces!(
-    TransactionFileDelete: Any,
-    ToProto<TransactionBody_oneof_data>
+    TransactionFileDelete: dyn Any,
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionFileDelete {

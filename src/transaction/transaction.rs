@@ -1,4 +1,3 @@
-use super::TransactionResponse;
 use crate::{
     crypto::SecretKey,
     error::ErrorKind,
@@ -9,7 +8,7 @@ use crate::{
         SmartContractService_grpc::{SmartContractService, SmartContractServiceClient},
         ToProto,
     },
-    AccountId, Client, PreCheckCode, TransactionId,
+    AccountId, Client, TransactionId,
 };
 use failure::Error;
 use protobuf::Message;
@@ -59,9 +58,7 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
     where
         T: Object + ToProto<proto::Transaction::TransactionBody_oneof_data> + 'static,
     {
-        let inner = Box::<T>::new(inner);
         Self {
-            //            client: client.inner.clone(),
             crypto_service: client.crypto.clone(),
             file_service: client.file.clone(),
             contract_service: client.contract.clone(),
@@ -69,7 +66,7 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
                 id: None,
                 node: None,
                 memo: None,
-                inner: inner as Box<dyn Object>,
+                inner: Box::<T>::new(inner) as Box<dyn Object>,
                 fee: 10,
                 generate_record: false,
                 phantom: PhantomData,
@@ -125,7 +122,7 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
         self.build().sign(secret)
     }
 
-    pub fn execute(&mut self) -> Result<TransactionResponse, Error> {
+    pub fn execute(&mut self) -> Result<TransactionId, Error> {
         self.build().execute()
     }
 
@@ -195,7 +192,7 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
             .as_builder()
             .unwrap()
             .inner
-            .query_mut::<Any>()
+            .query_mut::<dyn Any>()
             .and_then(|inner| inner.downcast_mut())
         {
             Some(inner) => inner,
@@ -274,7 +271,7 @@ impl<T> Transaction<T, TransactionRaw> {
         self
     }
 
-    pub fn execute(&mut self) -> Result<TransactionResponse, Error> {
+    pub fn execute(&mut self) -> Result<TransactionId, Error> {
         use self::proto::Transaction::TransactionBody_oneof_data::*;
 
         let state = match self.kind.take() {
@@ -329,10 +326,7 @@ impl<T> Transaction<T, TransactionRaw> {
         let response = response.wait_drop_metadata()?;
         log::trace!("recv: {:#?}", response);
 
-        match response.get_nodeTransactionPrecheckCode().into() {
-            PreCheckCode::Ok => Ok(TransactionResponse { id: id.into() }),
-            code => Err(ErrorKind::PreCheck(code))?,
-        }
+        try_precheck!(response).map(|_| id.into())
     }
 }
 

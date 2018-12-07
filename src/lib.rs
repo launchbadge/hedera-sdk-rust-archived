@@ -1,26 +1,36 @@
-#![feature(try_from)]
-#![cfg_attr(test, feature(test))]
-#![warn(clippy::pedantic)]
+#![warn(clippy::pedantic, future_incompatible)]
 #![allow(clippy::stutter, clippy::new_ret_no_self)]
 
-#[cfg(test)]
-extern crate test;
+#[macro_use]
+mod macros;
 
 mod claim;
 pub mod client;
-pub mod crypto;
+mod crypto;
 mod duration;
 mod error;
 mod id;
+mod info;
 mod proto;
 pub mod query;
+mod response;
 mod timestamp;
 pub mod transaction;
+mod transaction_id;
+mod transaction_receipt;
+mod transaction_record;
+mod transaction_status;
 
 pub use self::{
     claim::Claim,
     client::Client,
     error::ErrorKind,
+    crypto::{PublicKey, SecretKey, Signature},
     id::*,
-    transaction::{PreCheckCode, TransactionId, TransactionStatus},
+    info::{AccountInfo, ContractInfo, FileInfo},
+    response::PreCheckCode,
+    transaction_id::TransactionId,
+    transaction_receipt::TransactionReceipt,
+    transaction_record::TransactionRecord,
+    transaction_status::TransactionStatus,
 };

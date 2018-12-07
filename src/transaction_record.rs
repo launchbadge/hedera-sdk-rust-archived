@@ -1,7 +1,7 @@
-use crate::{id::AccountId, proto, query::ContractFunctionResult, transaction::TransactionReceipt};
+use crate::{id::AccountId, proto, query::ContractFunctionResult, TransactionReceipt};
 use chrono::{DateTime, Utc};
 use failure::{err_msg, Error};
-use std::convert::{TryFrom, TryInto};
+use try_from::{TryFrom, TryInto};
 
 pub enum TransactionRecordBody {
     ContractCall(ContractFunctionResult),
@@ -19,14 +19,14 @@ pub struct TransactionRecord {
 }
 
 impl TryFrom<proto::TransactionRecord::TransactionRecord> for TransactionRecord {
-    type Error = Error;
+    type Err = Error;
 
     fn try_from(mut record: proto::TransactionRecord::TransactionRecord) -> Result<Self, Error> {
         Ok(Self {
             receipt: record.take_receipt().into(),
             transaction_hash: record.take_transactionHash(),
             consensus_timestamp: if record.has_consensusTimestamp() {
-                Some(record.take_consensusTimestamp().try_into()?)
+                Some(record.take_consensusTimestamp().into())
             } else {
                 None
             },
@@ -44,5 +44,19 @@ impl TryFrom<proto::TransactionRecord::TransactionRecord> for TransactionRecord 
                 }
             },
         })
+    }
+}
+
+impl TryFrom<proto::ContractGetRecords::ContractGetRecordsResponse> for Vec<TransactionRecord> {
+    type Err = Error;
+
+    fn try_from(
+        mut response: proto::ContractGetRecords::ContractGetRecordsResponse,
+    ) -> Result<Self, Error> {
+        response
+            .take_records()
+            .into_iter()
+            .map(TryInto::try_into)
+            .collect::<Result<Self, _>>()
     }
 }

@@ -23,7 +23,7 @@ fn main() -> Result<(), Error> {
     let client = Client::new("testnet.hedera.com:50001")?;
 
     // Create our account
-    let res = client
+    let id = client
         .create_account()
         .key(public)
         .initial_balance(10)
@@ -33,7 +33,7 @@ fn main() -> Result<(), Error> {
         .sign(&operator_secret)
         .execute()?;
 
-    println!("created account; transaction = {}", res.id);
+    println!("created account; transaction = {}", id);
 
     // If we got here we know we passed pre-check
     // Depending on your requirements that may be enough for some kinds of transactions
@@ -42,7 +42,7 @@ fn main() -> Result<(), Error> {
     sleep(Duration::from_secs(2));
 
     // Get the receipt and check the status to prove it was successful
-    let receipt = client.transaction(res.id).receipt().get()?;
+    let receipt = client.transaction(id).receipt().get()?;
     if receipt.status != TransactionStatus::Success {
         Err(format_err!(
             "transaction has a non-successful status: {:?}",

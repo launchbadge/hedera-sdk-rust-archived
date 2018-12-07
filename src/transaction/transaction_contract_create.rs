@@ -21,8 +21,8 @@ pub struct TransactionContractCreate {
 }
 
 interfaces!(
-    TransactionContractCreate: Any,
-    ToProto<TransactionBody_oneof_data>
+    TransactionContractCreate: dyn Any,
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionContractCreate {

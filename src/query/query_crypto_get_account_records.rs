@@ -2,11 +2,10 @@ use crate::{
     id::AccountId,
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
     query::{Query, QueryInner},
-    transaction::TransactionRecord,
-    Client, ErrorKind, PreCheckCode,
+    Client, ErrorKind, PreCheckCode, TransactionRecord,
 };
 use failure::Error;
-use std::convert::TryInto;
+use try_from::TryInto;
 
 pub struct QueryCryptoGetAccountRecords {
     account: AccountId,

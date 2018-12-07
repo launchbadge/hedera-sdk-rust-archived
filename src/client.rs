@@ -11,17 +11,17 @@ use crate::{
         SmartContractService_grpc::SmartContractServiceClient,
     },
     query::{
-        CryptoInfo, FileInfo, Query, QueryCryptoGetAccountBalance, QueryCryptoGetClaim,
-        QueryCryptoGetInfo, QueryFileGetContents, QueryFileGetInfo, QueryGetTransactionReceipt,
+        Query, QueryCryptoGetAccountBalance, QueryCryptoGetClaim, QueryCryptoGetInfo,
+        QueryFileGetContents, QueryFileGetInfo, QueryGetTransactionReceipt,
         QueryTransactionGetRecord,
     },
     transaction::{
         Transaction, TransactionContractCall, TransactionContractCreate, TransactionContractUpdate,
         TransactionCryptoCreate, TransactionCryptoDelete, TransactionCryptoDeleteClaim,
         TransactionCryptoUpdate, TransactionFileAppend, TransactionFileCreate,
-        TransactionFileDelete, TransactionReceipt, TransactionRecord,
+        TransactionFileDelete,
     },
-    AccountId, TransactionId,
+    AccountId, AccountInfo, FileInfo, TransactionId, TransactionReceipt, TransactionRecord,
 };
 
 use grpc::ClientStub;
@@ -75,7 +75,7 @@ impl Client {
     }
 
     #[inline]
-    pub fn account(&self, id: AccountId) -> PartialAccountMessage {
+    pub fn account(&self, id: AccountId) -> PartialAccountMessage<'_> {
         PartialAccountMessage(self, id)
     }
 
@@ -86,7 +86,7 @@ impl Client {
     }
 
     #[inline]
-    pub fn contract(&self, id: ContractId) -> PartialContractMessage {
+    pub fn contract(&self, id: ContractId) -> PartialContractMessage<'_> {
         PartialContractMessage(self, id)
     }
 
@@ -97,7 +97,7 @@ impl Client {
     }
 
     #[inline]
-    pub fn file(&self, id: FileId) -> PartialFileMessage {
+    pub fn file(&self, id: FileId) -> PartialFileMessage<'_> {
         PartialFileMessage(self, id)
     }
 
@@ -118,7 +118,7 @@ impl<'a> PartialAccountMessage<'a> {
 
     /// Get all the information about an account, including the balance.
     #[inline]
-    pub fn info(self) -> Query<CryptoInfo> {
+    pub fn info(self) -> Query<AccountInfo> {
         QueryCryptoGetInfo::new(self.0, self.1)
     }
 

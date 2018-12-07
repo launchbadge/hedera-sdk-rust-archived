@@ -13,8 +13,8 @@ pub struct TransactionFileAppend {
 }
 
 interfaces!(
-    TransactionFileAppend: Any,
-    ToProto<TransactionBody_oneof_data>
+    TransactionFileAppend: dyn Any,
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionFileAppend {

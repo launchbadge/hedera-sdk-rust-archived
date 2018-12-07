@@ -15,8 +15,8 @@ pub struct TransactionContractCall {
 }
 
 interfaces!(
-    TransactionContractCall: Any,
-    ToProto<TransactionBody_oneof_data>
+    TransactionContractCall: dyn Any,
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionContractCall {

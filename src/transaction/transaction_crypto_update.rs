@@ -24,8 +24,8 @@ pub struct TransactionCryptoUpdate {
 }
 
 interfaces!(
-    TransactionCryptoUpdate: Any,
-    ToProto<TransactionBody_oneof_data>
+    TransactionCryptoUpdate: dyn Any,
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionCryptoUpdate {

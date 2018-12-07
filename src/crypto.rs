@@ -12,10 +12,10 @@ use simple_asn1::{
     FromASN1, ToASN1, OID,
 };
 use std::{
-    convert::TryFrom,
     fmt::{self, Display},
     str::FromStr,
 };
+use try_from::TryFrom;
 
 // Types used for (de-)serializing public and secret keys from ASN.1 byte
 // streams.
@@ -338,9 +338,9 @@ impl ToProto<proto::BasicTypes::Key> for PublicKey {
 }
 
 impl TryFrom<proto::BasicTypes::Key> for PublicKey {
-    type Error = Error;
+    type Err = Error;
 
-    fn try_from(mut key: proto::BasicTypes::Key) -> Result<Self, Self::Error> {
+    fn try_from(mut key: proto::BasicTypes::Key) -> Result<Self, Self::Err> {
         if key.has_ed25519() {
             Self::from_bytes(key.take_ed25519())
         } else {
@@ -491,7 +491,6 @@ impl ToProto<proto::BasicTypes::Signature> for Signature {
 #[cfg(test)]
 mod tests {
     use super::{PublicKey, SecretKey, Signature};
-    use crate::test::{black_box, Bencher};
     use failure::Error;
 
     const KEY_PUBLIC_ASN1_HEX: &str =
@@ -569,36 +568,5 @@ mod tests {
         assert_eq!(secret_key1.0.as_bytes(), secret_key2.0.as_bytes());
 
         Ok(())
-    }
-
-    #[bench]
-    fn bench_generate(b: &mut Bencher) {
-        b.iter(|| {
-            let secret = SecretKey::generate();
-            let public = secret.public();
-
-            black_box(public);
-        });
-    }
-
-    #[bench]
-    fn bench_sign(b: &mut Bencher) {
-        let key: SecretKey = KEY_SECRET_ASN1_HEX.parse().unwrap();
-
-        b.iter(|| {
-            black_box(key.sign(MESSAGE.as_bytes()));
-        });
-    }
-
-    #[bench]
-    fn bench_verify(b: &mut Bencher) {
-        let key = SecretKey::generate();
-        let public = key.public();
-        let message = MESSAGE.as_bytes();
-        let signature = key.sign(message);
-
-        b.iter(|| {
-            black_box(public.verify(message, &signature).unwrap());
-        });
     }
 }

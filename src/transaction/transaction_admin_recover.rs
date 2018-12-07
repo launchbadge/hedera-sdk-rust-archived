@@ -16,8 +16,8 @@ pub struct TransactionAdminFileRecover {
 }
 
 interfaces!(
-    TransactionAdminFileRecover: Any,
-    ToProto<TransactionBody_oneof_data>
+    TransactionAdminFileRecover: dyn Any,
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionAdminFileRecover {
@@ -42,8 +42,8 @@ pub struct TransactionAdminContractRecover {
 }
 
 interfaces!(
-    TransactionAdminContractRecover: Any,
-    ToProto<TransactionBody_oneof_data>
+    TransactionAdminContractRecover: dyn Any,
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionAdminContractRecover {

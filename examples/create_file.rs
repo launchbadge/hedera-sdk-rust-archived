@@ -17,7 +17,7 @@ fn main() -> Result<(), Error> {
     // Create (empty) File
     //
 
-    let res = client
+    let id = client
         .create_file()
         .expires_at(Utc::now() + Duration::minutes(10))
         .key(operator_secret.public())
@@ -28,7 +28,7 @@ fn main() -> Result<(), Error> {
         .sign(&operator_secret)
         .execute()?;
 
-    println!("created (empty) file; transaction = {}", res.id);
+    println!("created (empty) file; transaction = {}", id);
     println!("wait 2s ...");
     sleep(StdDuration::from_secs(2));
 
@@ -36,7 +36,7 @@ fn main() -> Result<(), Error> {
     // Pull the file receipt (to get the file ID)
     //
 
-    let receipt = client.transaction(res.id).receipt().get()?;
+    let receipt = client.transaction(id).receipt().get()?;
     if receipt.status != TransactionStatus::Success {
         return Err(format_err!(
             "transaction has a non-successful status: {:?}",
@@ -51,7 +51,7 @@ fn main() -> Result<(), Error> {
     // Append some content to the file
     //
 
-    let res = client
+    let id = client
         .file(file)
         .append(contents.as_bytes().to_vec())
         .operator(operator)
@@ -61,12 +61,12 @@ fn main() -> Result<(), Error> {
         .sign(&operator_secret)
         .execute()?;
 
-    println!("added content to file; transaction = {}", res.id);
+    println!("added content to file; transaction = {}", id);
     println!("wait 10s ...");
     sleep(StdDuration::from_secs(10));
 
     // Pull the receipt; just to be sure it was successful
-    let receipt = client.transaction(res.id).receipt().get()?;
+    let receipt = client.transaction(id).receipt().get()?;
     if receipt.status != TransactionStatus::Success {
         return Err(format_err!(
             "transaction has a non-successful status: {:?}",
