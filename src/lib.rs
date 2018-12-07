@@ -1,4 +1,4 @@
-#![feature(try_from, specialization)]
+#![feature(try_from)]
 #![cfg_attr(test, feature(test))]
 #![warn(clippy::pedantic)]
 #![allow(clippy::stutter, clippy::new_ret_no_self)]
