@@ -1,6 +1,6 @@
 use std::convert::TryInto;
 
-use failure::Error;
+use failure::{err_msg, Error};
 use protobuf::RepeatedField;
 
 use crate::{
@@ -24,12 +24,12 @@ pub enum Entity {
 
 fn try_into_entities(ids: RepeatedField<proto::GetByKey::EntityID>) -> Result<Vec<Entity>, Error> {
     ids.into_iter()
-        .filter_map(|id| id.entity)
-        .map(|entity| match entity {
-            accountID(account_id) => Ok(Entity::Account(account_id.try_into()?)),
-            claim(claim_id) => Ok(Entity::Claim(claim_id.try_into()?)),
-            fileID(file_id) => Ok(Entity::File(file_id.try_into()?)),
-            contractID(contract_id) => Ok(Entity::Contract(contract_id.try_into()?)),
+        .map(|id| match id.entity {
+            Some(accountID(account_id)) => Ok(Entity::Account(account_id.try_into()?)),
+            Some(claim(claim_id)) => Ok(Entity::Claim(claim_id.try_into()?)),
+            Some(fileID(file_id)) => Ok(Entity::File(file_id.try_into()?)),
+            Some(contractID(contract_id)) => Ok(Entity::Contract(contract_id.try_into()?)),
+            None => Err(err_msg("empty entity id?")),
         })
         .collect::<Result<Vec<Entity>, Error>>()
 }
