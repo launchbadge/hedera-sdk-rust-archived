@@ -6,14 +6,22 @@ use std::env;
 fn main() -> Result<(), Error> {
     let operator = env::var("OPERATOR")?.parse()?;
     let operator_secret= env::var("OPERATOR_SECRET")?.parse()?;
-    let target = "0:0:2".parse()?;
     let node = "0:0:3".parse()?;
 
     let client = Client::new("testnet.hedera.com:50001")?;
 
+    // Get the cost for getting the balance
+
+    let balance_cost = client.account(operator).balance().cost()?;
+
+    println!("cost:balance = {} tinybars", balance_cost);
+
+    // Wait 1s between queries (limitation of test networks)
+    sleep(Duration::from_secs(1));
+
     // Get _just_ the balance for the account first
 
-    let balance = client.account(target).balance().get()?;
+    let balance = client.account(operator).balance().get()?;
 
     println!("balance = {} tinybars", balance);
     println!("balance = {} hbars", (balance as f64) / 100000000.0);
@@ -25,16 +33,16 @@ fn main() -> Result<(), Error> {
     // First we get how much this will cost
     // Then we can manually construct a crypto transfer to the node to pay for our query
 
-    let info_cost = client.account(target).info().cost()?;
+    let info_cost = client.account(operator).info().cost()?;
 
-    println!("info cost = {} tinybars", info_cost);
+    println!("cost:info = {} tinybars", info_cost);
 
     // Wait 1s between queries (limitation of test networks)
     sleep(Duration::from_secs(1));
 
     // Now actually get the full information for the account
 
-    let info = client.account(target).info()
+    let info = client.account(operator).info()
         .payment(client.transfer_crypto()
             .operator(operator)
             .node(node)

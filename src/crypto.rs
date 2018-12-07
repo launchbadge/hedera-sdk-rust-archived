@@ -12,7 +12,7 @@ use simple_asn1::{
     FromASN1, ToASN1, OID,
 };
 use std::{
-    fmt::{self, Display},
+    fmt::{self, Debug, Display},
     str::FromStr,
 };
 use try_from::TryFrom;
@@ -250,7 +250,7 @@ impl FromASN1 for PrivateKeyInfo {
 
 /// An ed25519 public key.
 #[repr(C)]
-#[derive(Debug, PartialEq, Clone)]
+#[derive(PartialEq, Clone)]
 pub struct PublicKey(ed25519_dalek::PublicKey);
 
 impl PublicKey {
@@ -322,6 +322,12 @@ impl FromStr for PublicKey {
     }
 }
 
+impl Debug for PublicKey {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "\"{}\"", self)
+    }
+}
+
 /// Format a `PublicKey` as a hex representation of its bytes in ASN.1 format.
 impl Display for PublicKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -342,7 +348,7 @@ impl TryFrom<proto::BasicTypes::Key> for PublicKey {
 
     fn try_from(mut key: proto::BasicTypes::Key) -> Result<Self, Self::Err> {
         if key.has_ed25519() {
-            Self::from_bytes(key.take_ed25519())
+            Self::from_bytes(hex::decode(key.take_ed25519())?)
         } else {
             Err(err_msg("Only ed25519 public keys are currently supported"))
         }
@@ -351,7 +357,6 @@ impl TryFrom<proto::BasicTypes::Key> for PublicKey {
 
 /// An EdDSA secret key.
 #[repr(C)]
-#[derive(Debug)]
 pub struct SecretKey(ed25519_dalek::SecretKey);
 
 impl SecretKey {
@@ -440,6 +445,12 @@ impl FromStr for SecretKey {
     #[inline]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::from_bytes(&hex::decode(s.as_bytes())?)
+    }
+}
+
+impl Debug for SecretKey {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "\"{}\"", self)
     }
 }
 
