@@ -66,7 +66,7 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
             secret: client.operator_secret.clone(),
             kind: TransactionKind::Builder(TransactionBuilder {
                 id: client.operator.map(TransactionId::new),
-                node: client.node.clone(),
+                node: client.node,
                 memo: None,
                 inner: Box::<T>::new(inner) as Box<dyn Object>,
                 fee: 10,

@@ -1,5 +1,5 @@
 #![warn(clippy::pedantic, future_incompatible, unreachable_pub)]
-#![allow(clippy::stutter, clippy::new_ret_no_self)]
+#![allow(clippy::stutter, clippy::new_ret_no_self, clippy::module_inception)]
 
 #[macro_use]
 mod macros;

@@ -45,8 +45,8 @@ impl<T> Query<T> {
             crypto_service: client.crypto.clone(),
             contract_service: client.contract.clone(),
             file_service: client.file.clone(),
-            node: client.node.clone(),
-            operator: client.operator.clone(),
+            node: client.node,
+            operator: client.operator,
             secret: client.operator_secret.clone(),
             attempt: 0,
             inner: Box::new(inner),
@@ -76,8 +76,8 @@ impl<T> Query<T> {
             PreCheckCode::InvalidTransaction if self.payment.is_none() => {
                 if self.operator.is_some() && self.node.is_some() && self.secret.is_some() {
                     let cost = header.get_cost();
-                    let operator = self.operator.clone();
-                    let node = self.node.clone();
+                    let operator = self.operator;
+                    let node = self.node;
                     let operator_secret = self.secret.clone();
 
                     self.payment = Some(
@@ -99,15 +99,15 @@ impl<T> Query<T> {
                     // Wait 1s before trying again
                     sleep(Duration::from_secs(1));
 
-                    return self.get();
+                    self.get()
                 } else {
                     // Requires monies and we don't have anything defaulted
                     // todo: return a more specific error
-                    return Err(ErrorKind::PreCheck(PreCheckCode::InvalidTransaction))?;
+                    Err(ErrorKind::PreCheck(PreCheckCode::InvalidTransaction))?
                 }
             }
 
-            code => return Err(ErrorKind::PreCheck(code))?,
+            code => Err(ErrorKind::PreCheck(code))?,
         }
     }
 
