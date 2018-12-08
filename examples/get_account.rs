@@ -1,11 +1,11 @@
 use failure::Error;
 use hedera::Client;
-use std::{thread::sleep, time::Duration};
 use std::env;
+use std::{thread::sleep, time::Duration};
 
 fn main() -> Result<(), Error> {
     let operator = env::var("OPERATOR")?.parse()?;
-    let operator_secret= env::var("OPERATOR_SECRET")?.parse()?;
+    let operator_secret = env::var("OPERATOR_SECRET")?.parse()?;
     let node = "0:0:3".parse()?;
 
     let client = Client::new("testnet.hedera.com:50001")?;
@@ -42,14 +42,19 @@ fn main() -> Result<(), Error> {
 
     // Now actually get the full information for the account
 
-    let info = client.account(operator).info()
-        .payment(client.transfer_crypto()
-            .operator(operator)
-            .node(node)
-            .transfer(node, info_cost as i64)
-            .transfer(operator, -(info_cost  as i64))
-            .sign(&operator_secret)
-            .sign(&operator_secret))?
+    let info = client
+        .account(operator)
+        .info()
+        .payment(
+            client
+                .transfer_crypto()
+                .operator(operator)
+                .node(node)
+                .transfer(node, info_cost as i64)
+                .transfer(operator, -(info_cost as i64))
+                .sign(&operator_secret)
+                .sign(&operator_secret),
+        )?
         .get()?;
 
     println!("info = {:#?}", info);

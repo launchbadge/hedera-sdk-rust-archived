@@ -315,9 +315,7 @@ impl<T: 'static, S: 'static> Transaction<T, S> {
 
             TransactionKind::Err(err) => Err(err),
 
-            TransactionKind::Empty => {
-                panic!("transaction already executed")
-            }
+            TransactionKind::Empty => panic!("transaction already executed"),
         }
     }
 
