@@ -3,12 +3,14 @@ use chrono::{DateTime, Utc};
 use failure::{err_msg, Error};
 use try_from::{TryFrom, TryInto};
 
+#[derive(Debug, Clone)]
 pub enum TransactionRecordBody {
     ContractCall(ContractFunctionResult),
     ContractCreate(ContractFunctionResult),
     Transfer(Vec<(AccountId, i64)>),
 }
 
+#[derive(Debug, Clone)]
 pub struct TransactionRecord {
     pub receipt: TransactionReceipt,
     pub transaction_hash: Vec<u8>,

@@ -8,6 +8,7 @@ use failure::Error;
 use try_from::TryInto;
 
 // TODO: Move to ContractCallLocalQuery once it exists
+#[derive(Debug, Clone)]
 pub struct ContractLogInfo {
     pub bloom: Vec<u8>,
     pub topic: Vec<Vec<u8>>,
@@ -25,6 +26,7 @@ impl From<proto::ContractCallLocal::ContractLoginfo> for ContractLogInfo {
 }
 
 // TODO: Move to ContractCallLocalQuery once it exists
+#[derive(Debug, Clone)]
 pub struct ContractFunctionResult {
     pub contract_id: ContractId,
     pub contract_call_result: Vec<u8>,
