@@ -49,7 +49,7 @@ pub struct Transaction<T, S = TransactionBuilder<T>> {
     crypto_service: Arc<CryptoServiceClient>,
     file_service: Arc<FileServiceClient>,
     contract_service: Arc<SmartContractServiceClient>,
-    secret: Arc<Option<SecretKey>>,
+    secret: Option<Arc<SecretKey>>,
     kind: TransactionKind<T>,
     phantom: PhantomData<S>,
 }
@@ -89,7 +89,7 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
         if let Some(state) = self.as_builder() {
             state.id = Some(TransactionId::new(id));
         }
-        self.secret = Arc::new(Some(secret));
+        self.secret = Some(Arc::new(secret));
 
         self
     }
@@ -254,7 +254,7 @@ impl<T> Transaction<T, TransactionRaw> {
 
         // sign as the operator
 
-        if let Some(secret) = self.secret.as_ref(){
+        if let Some(secret) = &self.secret {
             let signature = secret.sign(&state.bytes).to_proto().unwrap();
             let signatures = &mut tx.sigs.as_mut().unwrap().sigs;
 

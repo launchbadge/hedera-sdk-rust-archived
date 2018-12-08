@@ -37,7 +37,7 @@ pub struct ClientBuilder<'a> {
 pub struct Client {
     pub(crate) node: Option<AccountId>,
     pub(crate) operator: Option<AccountId>,
-    pub(crate) operator_secret: Arc<Option<SecretKey>>,
+    pub(crate) operator_secret: Option<Arc<SecretKey>>,
     pub(crate) crypto: Arc<CryptoServiceClient>,
     pub(crate) file: Arc<FileServiceClient>,
     pub(crate) contract: Arc<SmartContractServiceClient>,
@@ -64,6 +64,10 @@ impl<'a> ClientBuilder<'a> {
             client.set_node(node);
         }
 
+        if let (Some(operator), Some(secret)) = (self.operator, self.operator_secret) {
+            client.set_operator(operator, secret);
+        }
+
         Ok(client)
     }
 
@@ -87,7 +91,7 @@ impl Client {
 
         let port = port.parse()?;
 
-        let raw_client = Arc::new(grpc::Client::new_plain(
+        let inner = Arc::new(grpc::Client::new_plain(
             &host,
             port,
             grpc::ClientConf {
@@ -99,14 +103,14 @@ impl Client {
             },
         )?);
 
-        let crypto = Arc::new(CryptoServiceClient::with_client(raw_client.clone()));
-        let file = Arc::new(FileServiceClient::with_client(raw_client.clone()));
-        let contract = Arc::new(SmartContractServiceClient::with_client(raw_client.clone()));
+        let crypto = Arc::new(CryptoServiceClient::with_client(inner.clone()));
+        let file = Arc::new(FileServiceClient::with_client(inner.clone()));
+        let contract = Arc::new(SmartContractServiceClient::with_client(inner.clone()));
 
         Ok(Self {
             node: None,
             operator: None,
-            operator_secret: Arc::new(None),
+            operator_secret: None,
             crypto,
             file,
             contract
@@ -123,7 +127,7 @@ impl Client {
     #[inline]
     pub(crate) fn set_operator(&mut self, operator: AccountId, operator_secret: SecretKey) -> &mut Self {
         self.operator = Some(operator);
-        self.operator_secret = Arc::new(Some(operator_secret));
+        self.operator_secret = Some(Arc::new(operator_secret));
 
         self
     }
