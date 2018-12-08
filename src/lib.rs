@@ -34,5 +34,6 @@ pub use self::{
     transaction_id::TransactionId,
     transaction_receipt::TransactionReceipt,
     transaction_record::TransactionRecord,
+    transaction_record::TransactionRecordBody,
     transaction_status::TransactionStatus,
 };
