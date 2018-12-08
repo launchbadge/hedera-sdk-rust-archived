@@ -85,11 +85,13 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
         self
     }
 
-    pub fn operator(&mut self, id: AccountId, secret: SecretKey) -> &mut Self {
+    pub fn operator(&mut self, id: AccountId) -> &mut Self {
+        // This resets any default operator we may have had
+        self.secret = None;
+
         if let Some(state) = self.as_builder() {
             state.id = Some(TransactionId::new(id));
         }
-        self.secret = Some(Arc::new(secret));
 
         self
     }
@@ -169,7 +171,7 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
     }
 }
 
-impl<T> Transaction<T, TransactionRaw> {
+impl<T: 'static> Transaction<T, TransactionRaw> {
     #[inline]
     pub(crate) fn as_raw(&mut self) -> Option<&mut TransactionRaw> {
         match &mut self.kind {
@@ -194,6 +196,7 @@ impl<T> Transaction<T, TransactionRaw> {
             BasicTypes::HederaFunctionality::*, Transaction::TransactionBody_oneof_data::*,
         };
 
+        let has_secret = self.secret.is_some();
         if let Some(state) = self.as_raw() {
             // note: this cannot fail
             let mut signature = secret.sign(&state.bytes).to_proto().unwrap();
@@ -217,7 +220,7 @@ impl<T> Transaction<T, TransactionRaw> {
             //  - owner of _thing_ being created
             //  - # correspond to transfer
 
-            if kind == Some(FileCreate) || kind == Some(FileAppend) {
+            if (has_secret || signatures.len() >= 1) && (kind == Some(FileCreate) || kind == Some(FileAppend)) {
                 // IF we are on signature #1 and we operating on a file or contract,
                 // place the signature into a signature list
 
@@ -240,32 +243,8 @@ impl<T> Transaction<T, TransactionRaw> {
     pub fn execute(&mut self) -> Result<TransactionId, Error> {
         use self::proto::Transaction::TransactionBody_oneof_data::*;
 
-        let state = match self.kind.take() {
-            TransactionKind::Raw(state) => state,
-            TransactionKind::Builder(_) => unreachable!(),
-            TransactionKind::Empty => panic!("transaction already executed"),
-            TransactionKind::Err(error) => return Err(error),
-        };
-
+        let state = self.take_raw()?;
         let mut tx = state.tx;
-        log::trace!(target: "hedera::transaction", "sent: {:#?}", tx);
-
-        let o = grpc::RequestOptions::default();
-
-        // sign as the operator
-
-        if let Some(secret) = &self.secret {
-            let signature = secret.sign(&state.bytes).to_proto().unwrap();
-
-            if !tx.has_sigs() {
-                // If .sign was never called this will be still need to be initialized
-                tx.set_sigs(proto::BasicTypes::SignatureList::new());
-            }
-
-            let signatures = &mut tx.sigs.as_mut().unwrap().sigs;
-
-            signatures.insert(0, signature);
-        }
 
         // note: cannot fail
         let id = tx
@@ -277,27 +256,16 @@ impl<T> Transaction<T, TransactionRaw> {
             .unwrap()
             .clone();
 
-        let operator = id.accountID.as_ref().unwrap().clone();
+        log::trace!(target: "hedera::transaction", "sent: {:#?}", tx);
 
+        let o = grpc::RequestOptions::default();
         let response = match tx.mut_body().data {
             Some(cryptoCreateAccount(_)) => self.crypto_service.create_account(o, tx),
-
             Some(cryptoTransfer(_)) => self.crypto_service.crypto_transfer(o, tx),
-
             Some(cryptoDeleteClaim(_)) => self.crypto_service.delete_claim(o, tx),
-
-            Some(cryptoDelete(ref mut data)) => {
-                if !data.has_transferAccountID() {
-                    // default the transfer account ID to the operator of the transaction
-                    data.set_transferAccountID(operator);
-                }
-
-                self.crypto_service.crypto_delete(o, tx)
-            }
-
+            Some(cryptoDelete(_)) => self.crypto_service.crypto_delete(o, tx),
             Some(fileCreate(_)) => self.file_service.create_file(o, tx),
             Some(fileAppend(_)) => self.file_service.append_content(o, tx),
-
             Some(contractCreateInstance(_)) => self.contract_service.create_contract(o, tx),
 
             _ => unimplemented!(),
@@ -314,10 +282,66 @@ impl<T> Transaction<T, TransactionRaw> {
 impl<T: 'static, S: 'static> Transaction<T, S> {
     #[inline]
     pub(crate) fn take_raw(&mut self) -> Result<TransactionRaw, Error> {
+        use self::proto::Transaction::TransactionBody_oneof_data::*;
+
         match self.kind.take() {
             TransactionKind::Builder(_) => self.build().take_raw(),
 
-            TransactionKind::Raw(state) => Ok(state),
+            TransactionKind::Raw(mut state) => {
+                let tx = &mut state.tx;
+
+                // note: cannot fail
+                let id = tx
+                    .body
+                    .as_ref()
+                    .unwrap()
+                    .transactionID
+                    .as_ref()
+                    .unwrap()
+                    .clone();
+
+                let operator = id.accountID.as_ref().unwrap().clone();
+
+                if !tx.has_sigs() {
+                    // If .sign was never called this will be still need to be initialized
+                    tx.set_sigs(proto::BasicTypes::SignatureList::new());
+                }
+
+                if let Some(secret) = &self.secret {
+                    let signature = secret.sign(&state.bytes).to_proto()?;
+
+                    match &tx.body.as_ref().unwrap().data {
+                        Some(cryptoTransfer(data)) => {
+                            // Insert a signature for the operator if the operator
+                            // is sending any monies
+                            for transfer in &data.transfers.as_ref().unwrap().accountAmounts {
+                                if transfer.accountID.as_ref().unwrap() == &operator {
+                                    tx.sigs.as_mut().unwrap().sigs.push(signature.clone());
+                                }
+                            }
+                        }
+
+                        _ => {},
+                    }
+
+                    // Sign as the operator of the transaction
+                    tx.sigs.as_mut().unwrap().sigs.insert(0, signature);
+                }
+
+
+                match tx.mut_body().data {
+                    Some(cryptoDelete(ref mut data)) => {
+                        if !data.has_transferAccountID() {
+                            // default the transfer account ID to the operator of the transaction
+                            data.set_transferAccountID(operator);
+                        }
+                    }
+
+                    _ => {},
+                }
+
+                Ok(state)
+            },
 
             TransactionKind::Err(err) => Err(err),
 
