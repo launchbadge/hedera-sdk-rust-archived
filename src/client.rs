@@ -5,6 +5,7 @@ use itertools::Itertools;
 
 use crate::{
     claim::Claim,
+    crypto::SecretKey,
     id::{ContractId, FileId},
     proto::{
         CryptoService_grpc::CryptoServiceClient, FileService_grpc::FileServiceClient,
@@ -13,7 +14,7 @@ use crate::{
     query::{
         Query, QueryCryptoGetAccountBalance, QueryCryptoGetClaim, QueryCryptoGetInfo,
         QueryFileGetContents, QueryFileGetInfo, QueryGetTransactionReceipt,
-        QueryTransactionGetRecord
+        QueryTransactionGetRecord,
     },
     transaction::{
         Transaction, TransactionContractCall, TransactionContractCreate, TransactionContractUpdate,
@@ -21,7 +22,6 @@ use crate::{
         TransactionCryptoTransfer, TransactionCryptoUpdate, TransactionFileAppend,
         TransactionFileCreate, TransactionFileDelete,
     },
-    crypto::SecretKey,
     AccountId, AccountInfo, FileInfo, TransactionId, TransactionReceipt, TransactionRecord,
 };
 
@@ -31,7 +31,7 @@ pub struct ClientBuilder<'a> {
     address: &'a str,
     node: Option<AccountId>,
     operator: Option<AccountId>,
-    operator_secret: Option<SecretKey>
+    operator_secret: Option<SecretKey>,
 }
 
 pub struct Client {
@@ -57,7 +57,6 @@ impl<'a> ClientBuilder<'a> {
     }
 
     pub fn build(self) -> Result<Client, Error> {
-
         let mut client = Client::new(&self.address)?;
 
         if let Some(node) = self.node {
@@ -70,12 +69,11 @@ impl<'a> ClientBuilder<'a> {
 
         Ok(client)
     }
-
 }
 
 impl Client {
     pub fn builder(address: &str) -> ClientBuilder {
-        ClientBuilder{
+        ClientBuilder {
             address,
             node: None,
             operator: None,
@@ -83,7 +81,7 @@ impl Client {
         }
     }
 
-    pub(crate) fn new(address: impl AsRef<str>) -> Result<Self, Error> {
+    pub fn new(address: impl AsRef<str>) -> Result<Self, Error> {
         let address = address.as_ref();
         let (host, port) = address.split(':').next_tuple().ok_or_else(|| {
             format_err!("failed to parse 'host:port' from address: {:?}", address)
@@ -113,7 +111,7 @@ impl Client {
             operator_secret: None,
             crypto,
             file,
-            contract
+            contract,
         })
     }
 
@@ -125,7 +123,11 @@ impl Client {
     }
 
     #[inline]
-    pub(crate) fn set_operator(&mut self, operator: AccountId, operator_secret: SecretKey) -> &mut Self {
+    pub(crate) fn set_operator(
+        &mut self,
+        operator: AccountId,
+        operator_secret: SecretKey,
+    ) -> &mut Self {
         self.operator = Some(operator);
         self.operator_secret = Some(Arc::new(operator_secret));
 

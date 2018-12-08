@@ -256,6 +256,12 @@ impl<T> Transaction<T, TransactionRaw> {
 
         if let Some(secret) = &self.secret {
             let signature = secret.sign(&state.bytes).to_proto().unwrap();
+
+            if !tx.has_sigs() {
+                // If .sign was never called this will be still need to be initialized
+                tx.set_sigs(proto::BasicTypes::SignatureList::new());
+            }
+
             let signatures = &mut tx.sigs.as_mut().unwrap().sigs;
 
             signatures.insert(0, signature);

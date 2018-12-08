@@ -14,11 +14,10 @@ fn main() -> Result<(), Error> {
 
     let operator = env::var("OPERATOR")?.parse()?;
     let operator_secret: SecretKey = env::var("OPERATOR_SECRET")?.parse()?;
+    let node = "0:0:3".parse()?;
     let contents = "Hello World!";
 
-    let client = Client::builder("testnet.hedera.com:50001")
-        .node("0:0:3".parse()?)
-        .build()?;
+    let client = Client::new("testnet.hedera.com:50001")?;
 
     //
     // Create (empty) File
@@ -28,10 +27,9 @@ fn main() -> Result<(), Error> {
         .create_file()
         .expires_at(Utc::now() + Duration::minutes(10))
         .key(operator_secret.public())
-        .operator(operator)
+        .operator(operator, operator_secret.clone())
         .node(node)
         .memo("[hedera-sdk-rust][example] create_file : create")
-        .sign(&operator_secret)
         .sign(&operator_secret)
         .execute()?;
 
@@ -61,10 +59,9 @@ fn main() -> Result<(), Error> {
     let id = client
         .file(file)
         .append(contents.as_bytes().to_vec())
-        .operator(operator)
+        .operator(operator, operator_secret.clone())
         .node(node)
         .memo("[hedera-sdk-rust][example] create_file : append")
-        .sign(&operator_secret)
         .sign(&operator_secret)
         .execute()?;
 
@@ -101,11 +98,10 @@ fn main() -> Result<(), Error> {
         .payment(
             client
                 .transfer_crypto()
-                .operator(operator)
+                .operator(operator, operator_secret.clone())
                 .node(node)
                 .transfer(node, file_contents_cost as i64)
                 .transfer(operator, -(file_contents_cost as i64))
-                .sign(&operator_secret)
                 .sign(&operator_secret),
         )?
         .get()?;
@@ -133,11 +129,10 @@ fn main() -> Result<(), Error> {
         .payment(
             client
                 .transfer_crypto()
-                .operator(operator)
+                .operator(operator, operator_secret.clone())
                 .node(node)
                 .transfer(node, file_info_cost as i64)
                 .transfer(operator, -(file_info_cost as i64))
-                .sign(&operator_secret)
                 .sign(&operator_secret),
         )?
         .get()?;

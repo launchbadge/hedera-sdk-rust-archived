@@ -27,10 +27,9 @@ fn main() -> Result<(), Error> {
         .create_account()
         .key(public)
         .initial_balance(10)
-        .operator(operator)
+        .operator(operator, operator_secret)
         .node(node)
         .memo("[hedera-sdk-rust][example]")
-        .sign(&operator_secret)
         .execute()?;
 
     println!("created account; transaction = {}", id);

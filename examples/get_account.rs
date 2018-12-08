@@ -1,11 +1,12 @@
 use failure::Error;
 use hedera::Client;
+use hedera::SecretKey;
 use std::env;
 use std::{thread::sleep, time::Duration};
 
 fn main() -> Result<(), Error> {
     let operator = env::var("OPERATOR")?.parse()?;
-    let operator_secret = env::var("OPERATOR_SECRET")?.parse()?;
+    let operator_secret: SecretKey = env::var("OPERATOR_SECRET")?.parse()?;
     let node = "0:0:3".parse()?;
 
     let client = Client::new("testnet.hedera.com:50001")?;
@@ -48,11 +49,10 @@ fn main() -> Result<(), Error> {
         .payment(
             client
                 .transfer_crypto()
-                .operator(operator)
+                .operator(operator, operator_secret.clone())
                 .node(node)
                 .transfer(node, info_cost as i64)
                 .transfer(operator, -(info_cost as i64))
-                .sign(&operator_secret)
                 .sign(&operator_secret),
         )?
         .get()?;

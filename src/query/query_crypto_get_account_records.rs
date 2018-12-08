@@ -21,7 +21,9 @@ impl QueryInner for QueryCryptoGetAccountRecords {
     type Response = Vec<TransactionRecord>;
 
     fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
-        response.take_cryptoGetAccountRecords().take_records()
+        response
+            .take_cryptoGetAccountRecords()
+            .take_records()
             .into_iter()
             .map(TryInto::try_into)
             .collect::<Result<Vec<_>, _>>()

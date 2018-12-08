@@ -52,12 +52,14 @@ impl<T> Query<T> {
 
     pub fn get(&mut self) -> Result<T, Error> {
         let mut response = self.send()?;
-        match take_header(&mut response).get_nodeTransactionPrecheckCode().into() {
+        match take_header(&mut response)
+            .get_nodeTransactionPrecheckCode()
+            .into()
+        {
             PreCheckCode::Ok => self.inner.get(response),
 
             // todo: error out that payment was expected
             // PreCheckCode::InvalidTransaction if self.payment.is_none() =>
-
             code => Err(ErrorKind::PreCheck(code))?,
         }
     }
