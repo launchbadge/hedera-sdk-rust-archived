@@ -51,6 +51,7 @@ impl TryFrom<proto::CryptoGetInfo::CryptoGetInfoResponse_AccountInfo> for Accoun
     }
 }
 
+#[derive(Debug)]
 pub struct ContractInfo {
     pub contract_id: ContractId,
     pub account_id: AccountId,
@@ -85,6 +86,7 @@ impl TryFrom<proto::ContractGetInfo::ContractGetInfoResponse_ContractInfo> for C
     }
 }
 
+#[derive(Debug)]
 pub struct FileInfo {
     pub file_id: FileId,
     pub size: i64,
