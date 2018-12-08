@@ -1,7 +1,7 @@
 use crate::{proto, AccountId, ContractId, FileId, TransactionStatus};
 
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TransactionReceipt {
     pub status: TransactionStatus,
     pub account_id: Option<Box<AccountId>>,
