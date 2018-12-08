@@ -1,11 +1,11 @@
 use crate::proto::{self, ToProto};
 use ed25519_dalek;
-use failure::{bail, err_msg, Error};
+use failure::{bail, err_msg, Error, SyncFailure};
 use failure_derive::Fail;
 use hex;
 use num::BigUint;
 use once_cell::{sync::Lazy, sync_lazy};
-use rand::{thread_rng, CryptoRng, Rng};
+use rand::SeedableRng;
 use sha2::Sha512;
 use simple_asn1::{
     der_decode, der_encode, oid, to_der, ASN1Block, ASN1Class, ASN1DecodeErr, ASN1EncodeErr,
@@ -16,9 +16,8 @@ use std::{
     str::FromStr,
 };
 use try_from::TryFrom;
-use bip39::Mnemonic;
-use bip39::Language;
-use bip39::MnemonicType;
+use bip39::{Mnemonic, Language, MnemonicType};
+use rand::rngs::StdRng;
 
 // Types used for (de-)serializing public and secret keys from ASN.1 byte
 // streams.
@@ -371,31 +370,29 @@ pub struct SecretKey(ed25519_dalek::SecretKey);
 
 impl SecretKey {
 
-    /// Generate a `SecretKey` and corresponding bip39 mnemonic phrase with custom password from
-    /// cryptographically secure random number generator
-    pub fn generate_with_passphrase(password: &str) -> (Self, String) {
-        Self::generate_from(&mut thread_rng(), password)
-    }
-
-    /// Generate a `SecretKey` and corresponding bip39 mnemonic phrase from cryptographically
+    /// Generate a `SecretKey` from a bip39 mnemonic phrase generated using a cryptographically
     /// secure random number generator
-    pub fn generate() -> (Self, String) {
-        Self::generate_with_passphrase("")
-    }
+    pub fn generate(password: &str) -> (Self, String) {
 
-    /// Generate a `SecretKey` and corresponding bip39 mnemonic phrase from cryptographically secure
-    /// random number generator.
-    pub fn generate_from<R: CryptoRng + Rng>(rng: &mut R, password: &str) -> (Self, String) {
-        let secret = SecretKey(ed25519_dalek::SecretKey::generate(rng));
+        let mnemonic = Mnemonic::new(
+            MnemonicType::Type24Words,
+            Language::English,
+            password
+        ).unwrap();
 
-        // this should not fail since only legitimate keys can be passed to it
-        let mnemonic = Mnemonic::from_entropy(
-            &secret.to_bytes()[16..48],
-            MnemonicType::for_key_size(256).unwrap(),
-            Language::English, password)
-            .unwrap();
+        let secret = Self::generate_with_mnemonic(&mnemonic);
 
         (secret, mnemonic.get_string())
+    }
+
+    fn generate_with_mnemonic(mnemonic: &Mnemonic) -> SecretKey {
+        let mut seed: [u8; 32] = Default::default();
+
+        seed.copy_from_slice(&mnemonic.as_seed().as_bytes()[0..32]);
+
+        let mut rng = StdRng::from_seed(seed);
+
+        SecretKey(ed25519_dalek::SecretKey::generate(&mut rng))
     }
 
     /// Construct a `SecretKey` from a slice of bytes.
@@ -427,24 +424,13 @@ impl SecretKey {
         )?))
     }
 
-    // Return a key from a provided mnemonic and the password (by default "")
-    pub fn from_mnemonic(mnemonic: &str, passphrase: &str ) -> Result<Self, Error> {
-        let mnemonic = match Mnemonic::from_string(mnemonic, Language::English, passphrase){
-            Ok(m) => m,
-            Err(e) => bail!("{:?}", e)
-        };
+    // Return a key generated from a provided bip39 mnemonic and the password (by default "")
+    pub fn from_mnemonic(mnemonic: &str, password: &str ) -> Result<Self, Error> {
 
-        Self::from_bytes(mnemonic.as_entropy())
-    }
+        let mnemonic = Mnemonic::from_string(mnemonic, Language::English, password)
+            .map_err(SyncFailure::new)?;
 
-    // generate a bip39 mnemonic from the key given a password
-    pub fn to_mnemonic(&self, password: &str) -> String {
-        // this should not fail since only legitimate values are being passed to it
-        Mnemonic::from_entropy(
-            &self.to_bytes()[16..48],
-            MnemonicType::for_key_size( 256).unwrap(),
-            Language::English, password)
-            .unwrap().get_string()
+        Ok(Self::generate_with_mnemonic(&mnemonic))
     }
 
     /// Format a `SecretKey` as a vec of bytes in ASN.1 format.
@@ -604,7 +590,7 @@ mod tests {
 
     #[test]
     fn test_generate() -> Result<(), Error> {
-        let key = SecretKey::generate();
+        let (key, mnemonic) = SecretKey::generate("");
         let signature = key.sign(MESSAGE.as_bytes());
         let verified = key.public().verify(MESSAGE.as_bytes(), &signature)?;
 
