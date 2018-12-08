@@ -10,7 +10,6 @@ fn main() -> Result<(), Error> {
     let node = "0:0:3".parse()?;
 
     let client = Client::builder("testnet.hedera.com:50001")
-        .node(node)
         .operator(operator, operator_secret.clone())
         .build()?;
 

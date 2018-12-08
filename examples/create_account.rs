@@ -22,7 +22,6 @@ fn main() -> Result<(), Error> {
 
     let client = Client::builder("testnet.hedera.com:50001")
         .operator(operator, operator_secret)
-        .node(node)
         .build()?;
 
     // Create our account

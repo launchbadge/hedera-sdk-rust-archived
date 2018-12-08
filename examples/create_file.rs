@@ -18,7 +18,6 @@ fn main() -> Result<(), Error> {
     let contents = "Hello World!";
 
     let client = Client::builder("testnet.hedera.com:50001")
-        .node(node)
         .operator(operator, operator_secret.clone())
         .build()?;
 

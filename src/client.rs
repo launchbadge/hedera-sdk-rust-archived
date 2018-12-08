@@ -105,8 +105,15 @@ impl Client {
         let file = Arc::new(FileServiceClient::with_client(inner.clone()));
         let contract = Arc::new(SmartContractServiceClient::with_client(inner.clone()));
 
+        // Default the node to what we know every testnet is on
+        let node = if address.starts_with("testnet.") {
+            Some(AccountId { shard: 0, realm: 0, account: 3 })
+        } else {
+            None
+        };
+
         Ok(Self {
-            node: None,
+            node,
             operator: None,
             operator_secret: None,
             crypto,
