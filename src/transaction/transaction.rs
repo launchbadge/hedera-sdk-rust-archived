@@ -220,7 +220,9 @@ impl<T: 'static> Transaction<T, TransactionRaw> {
             //  - owner of _thing_ being created
             //  - # correspond to transfer
 
-            if (has_secret || signatures.len() >= 1) && (kind == Some(FileCreate) || kind == Some(FileAppend)) {
+            if (has_secret || signatures.len() >= 1)
+                && (kind == Some(FileCreate) || kind == Some(FileAppend))
+            {
                 // IF we are on signature #1 and we operating on a file or contract,
                 // place the signature into a signature list
 
@@ -321,13 +323,12 @@ impl<T: 'static, S: 'static> Transaction<T, S> {
                             }
                         }
 
-                        _ => {},
+                        _ => {}
                     }
 
                     // Sign as the operator of the transaction
                     tx.sigs.as_mut().unwrap().sigs.insert(0, signature);
                 }
-
 
                 match tx.mut_body().data {
                     Some(cryptoDelete(ref mut data)) => {
@@ -337,11 +338,11 @@ impl<T: 'static, S: 'static> Transaction<T, S> {
                         }
                     }
 
-                    _ => {},
+                    _ => {}
                 }
 
                 Ok(state)
-            },
+            }
 
             TransactionKind::Err(err) => Err(err),
 

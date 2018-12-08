@@ -16,10 +16,6 @@ fn main() -> Result<(), Error> {
     // We need the secret key for the operator
     let operator_secret = env::var("OPERATOR_SECRET")?.parse()?;
 
-    // Node is the account of the node we are sending the transaction to
-    // This should be provided
-    let node = "0:0:3".parse()?;
-
     let client = Client::builder("testnet.hedera.com:50001")
         .operator(operator, operator_secret)
         .build()?;
@@ -36,8 +32,6 @@ fn main() -> Result<(), Error> {
 
     // If we got here we know we passed pre-check
     // Depending on your requirements that may be enough for some kinds of transactions
-
-    println!("wait for 2s... ");
     sleep(Duration::from_secs(2));
 
     // Get the receipt and check the status to prove it was successful

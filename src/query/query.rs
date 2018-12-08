@@ -1,3 +1,4 @@
+use crate::SecretKey;
 use crate::{
     proto::{
         self,
@@ -9,10 +10,12 @@ use crate::{
         ToProto,
     },
     transaction::{Transaction, TransactionCryptoTransfer},
-    Client, ErrorKind, PreCheckCode,
+    AccountId, Client, ErrorKind, PreCheckCode,
 };
 use failure::Error;
 use std::sync::Arc;
+use std::thread::sleep;
+use std::time::Duration;
 
 #[doc(hidden)]
 pub trait QueryInner {
@@ -27,6 +30,10 @@ pub struct Query<T> {
     file_service: Arc<FileServiceClient>,
     kind: proto::QueryHeader::ResponseType,
     payment: Option<proto::Transaction::Transaction>,
+    secret: Option<Arc<SecretKey>>,
+    operator: Option<AccountId>,
+    node: Option<AccountId>,
+    attempt: u64,
     inner: Box<dyn QueryInner<Response = T>>,
 }
 
@@ -38,6 +45,10 @@ impl<T> Query<T> {
             crypto_service: client.crypto.clone(),
             contract_service: client.contract.clone(),
             file_service: client.file.clone(),
+            node: client.node.clone(),
+            operator: client.operator.clone(),
+            secret: client.operator_secret.clone(),
+            attempt: 0,
             inner: Box::new(inner),
         }
     }
@@ -52,42 +63,69 @@ impl<T> Query<T> {
 
     pub fn get(&mut self) -> Result<T, Error> {
         let mut response = self.send()?;
-        match take_header(&mut response)
-            .get_nodeTransactionPrecheckCode()
-            .into()
-        {
+        let header = take_header(&mut response);
+        match header.get_nodeTransactionPrecheckCode().into() {
             PreCheckCode::Ok => self.inner.get(response),
 
-            // todo: error out that payment was expected
-            // PreCheckCode::InvalidTransaction if self.payment.is_none() =>
-            code => Err(ErrorKind::PreCheck(code))?,
+            PreCheckCode::Busy if self.attempt < 5 => {
+                self.attempt += 1;
+                sleep(Duration::from_secs(self.attempt * 2));
+                self.get()
+            }
+
+            PreCheckCode::InvalidTransaction if self.payment.is_none() => {
+                if self.operator.is_some() && self.node.is_some() && self.secret.is_some() {
+                    let cost = header.get_cost();
+                    let operator = self.operator.clone();
+                    let node = self.node.clone();
+                    let operator_secret = self.secret.clone();
+
+                    self.payment = Some(
+                        TransactionCryptoTransfer::new(&Client {
+                            node,
+                            operator,
+                            operator_secret,
+                            crypto: self.crypto_service.clone(),
+                            file: self.file_service.clone(),
+                            contract: self.contract_service.clone(),
+                        })
+                        .transfer(*node.as_ref().unwrap(), cost as i64)
+                        .transfer(*operator.as_ref().unwrap(), -(cost as i64))
+                        .build()
+                        .take_raw()?
+                        .tx,
+                    );
+
+                    // Wait 1s before trying again
+                    sleep(Duration::from_secs(1));
+
+                    return self.get();
+                } else {
+                    // Requires monies and we don't have anything defaulted
+                    // todo: return a more specific error
+                    return Err(ErrorKind::PreCheck(PreCheckCode::InvalidTransaction))?;
+                }
+            }
+
+            code => return Err(ErrorKind::PreCheck(code))?,
         }
     }
 
     pub fn cost(&mut self) -> Result<u64, Error> {
-        use self::proto::Response::Response_oneof_response::*;
-
         // NOTE: This isn't the most ideal way to switch response types..
         self.kind = proto::QueryHeader::ResponseType::COST_ANSWER;
-        let response = self.send()?;
+        let mut response = self.send()?;
 
-        // Why is the cost field inside the specific answer type field in the proto ?
-        // Maybe send up a question later.
-
-        let header = match response.response {
-            Some(cryptogetAccountBalance(mut res)) => res.take_header(),
-            Some(transactionGetReceipt(mut res)) => res.take_header(),
-            Some(cryptoGetInfo(mut res)) => res.take_header(),
-            Some(fileGetInfo(mut res)) => res.take_header(),
-            Some(fileGetContents(mut res)) => res.take_header(),
-            Some(transactionGetRecord(mut res)) => res.take_header(),
-            Some(cryptoGetAccountRecords(mut res)) => res.take_header(),
-
-            _ => unreachable!(),
-        };
-
+        let header = take_header(&mut response);
         match header.get_nodeTransactionPrecheckCode().into() {
             PreCheckCode::Ok | PreCheckCode::InvalidTransaction => Ok(header.get_cost()),
+
+            PreCheckCode::Busy if self.attempt < 5 => {
+                self.attempt += 1;
+                sleep(Duration::from_secs(self.attempt * 2));
+                self.cost()
+            }
+
             code => Err(ErrorKind::PreCheck(code))?,
         }
     }
@@ -96,30 +134,20 @@ impl<T> Query<T> {
         use self::proto::Query::Query_oneof_query::*;
 
         let query: proto::Query::Query = self.to_proto()?;
-
         log::trace!("sent: {:#?}", query);
 
         let o = grpc::RequestOptions::default();
-
         let response = match query.query {
             Some(cryptogetAccountBalance(_)) => self.crypto_service.crypto_get_balance(o, query),
-
             Some(transactionGetReceipt(_)) => {
                 self.crypto_service.get_transaction_receipts(o, query)
             }
-
             Some(cryptoGetInfo(_)) => self.crypto_service.get_account_info(o, query),
-
             Some(fileGetInfo(_)) => self.file_service.get_file_info(o, query),
-
             Some(fileGetContents(_)) => self.file_service.get_file_content(o, query),
-
             Some(transactionGetRecord(_)) => self.crypto_service.get_tx_record_by_tx_id(o, query),
-
             Some(cryptoGetAccountRecords(_)) => self.crypto_service.get_account_records(o, query),
-
             Some(contractGetInfo(_)) => self.contract_service.get_contract_info(o, query),
-
             Some(contractGetBytecode(_)) => self.contract_service.contract_get_bytecode(o, query),
 
             _ => unreachable!(),

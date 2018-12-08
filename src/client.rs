@@ -107,7 +107,11 @@ impl Client {
 
         // Default the node to what we know every testnet is on
         let node = if address.starts_with("testnet.") {
-            Some(AccountId { shard: 0, realm: 0, account: 3 })
+            Some(AccountId {
+                shard: 0,
+                realm: 0,
+                account: 3,
+            })
         } else {
             None
         };

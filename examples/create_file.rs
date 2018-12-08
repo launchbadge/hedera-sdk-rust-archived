@@ -4,20 +4,15 @@ use hedera::{Client, SecretKey, TransactionStatus};
 use std::str::from_utf8;
 use std::{env, thread::sleep, time::Duration as StdDuration};
 
-// todo: default query payments (within reason)
 // todo: default file owner
 
 fn main() -> Result<(), Error> {
-    pretty_env_logger::try_init()?;
-
     let operator = env::var("OPERATOR")?.parse()?;
     let operator_secret: SecretKey = env::var("OPERATOR_SECRET")?.parse()?;
-    let node = "0:0:3".parse()?;
     let contents = "Hello World!";
 
     let client = Client::builder("testnet.hedera.com:50001")
         .operator(operator, operator_secret.clone())
-        .node(node)
         .build()?;
 
     //
@@ -63,8 +58,8 @@ fn main() -> Result<(), Error> {
         .execute()?;
 
     println!("added content to file; transaction = {}", id);
-    println!("wait 5s ...");
-    sleep(StdDuration::from_secs(5));
+    println!("wait 2s ...");
+    sleep(StdDuration::from_secs(2));
 
     // Pull the receipt; just to be sure it was successful
     let receipt = client.transaction(id).receipt().get()?;
@@ -75,31 +70,14 @@ fn main() -> Result<(), Error> {
         ))?;
     }
 
-    println!("wait 10s ...");
-    sleep(StdDuration::from_secs(10));
-
     //
     // Read the file content
     //
 
     let file_contents_cost = client.file(file).contents().cost()?;
-
     println!("cost:file.contents = {} tinybars", file_contents_cost);
 
-    println!("wait 2s ...");
-    sleep(StdDuration::from_secs(2));
-
-    let file_contents = client
-        .file(file)
-        .contents()
-        .payment(
-            client
-                .transfer_crypto()
-                .transfer(node, file_contents_cost as i64)
-                .transfer(operator, -(file_contents_cost as i64)),
-        )?
-        .get()?;
-
+    let file_contents = client.file(file).contents().get()?;
     println!("file.contents = {:?}", file_contents);
     println!("file.contents = {:?}", from_utf8(&*file_contents)?);
 
@@ -107,27 +85,10 @@ fn main() -> Result<(), Error> {
     // Get more file information
     //
 
-    println!("wait 2s ...");
-    sleep(StdDuration::from_secs(2));
-
     let file_info_cost = client.file(file).info().cost()?;
-
     println!("cost:file.info = {} tinybars", file_info_cost);
 
-    println!("wait 2s ...");
-    sleep(StdDuration::from_secs(2));
-
-    let file_info = client
-        .file(file)
-        .info()
-        .payment(
-            client
-                .transfer_crypto()
-                .transfer(node, file_info_cost as i64)
-                .transfer(operator, -(file_info_cost as i64)),
-        )?
-        .get()?;
-
+    let file_info = client.file(file).info().get()?;
     println!("file.info = {:#?}", file_info);
 
     Ok(())
