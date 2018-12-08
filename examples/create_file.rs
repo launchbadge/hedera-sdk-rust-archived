@@ -5,8 +5,6 @@ use std::str::from_utf8;
 use std::{env, thread::sleep, time::Duration as StdDuration};
 
 // todo: default query payments (within reason)
-// todo: default operator
-// todo: default node
 // todo: default file owner
 
 fn main() -> Result<(), Error> {
@@ -19,6 +17,7 @@ fn main() -> Result<(), Error> {
 
     let client = Client::builder("testnet.hedera.com:50001")
         .operator(operator, operator_secret.clone())
+        .node(node)
         .build()?;
 
     //
@@ -97,8 +96,7 @@ fn main() -> Result<(), Error> {
             client
                 .transfer_crypto()
                 .transfer(node, file_contents_cost as i64)
-                .transfer(operator, -(file_contents_cost as i64))
-                .sign(&operator_secret),
+                .transfer(operator, -(file_contents_cost as i64)),
         )?
         .get()?;
 
@@ -126,8 +124,7 @@ fn main() -> Result<(), Error> {
             client
                 .transfer_crypto()
                 .transfer(node, file_info_cost as i64)
-                .transfer(operator, -(file_info_cost as i64))
-                .sign(&operator_secret),
+                .transfer(operator, -(file_info_cost as i64)),
         )?
         .get()?;
 

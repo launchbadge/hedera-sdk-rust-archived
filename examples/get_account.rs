@@ -11,6 +11,7 @@ fn main() -> Result<(), Error> {
 
     let client = Client::builder("testnet.hedera.com:50001")
         .operator(operator, operator_secret.clone())
+        .node(node)
         .build()?;
 
     // Get the cost for getting the balance
@@ -52,8 +53,7 @@ fn main() -> Result<(), Error> {
             client
                 .transfer_crypto()
                 .transfer(node, info_cost as i64)
-                .transfer(operator, -(info_cost as i64))
-                .sign(&operator_secret),
+                .transfer(operator, -(info_cost as i64)),
         )?
         .get()?;
 
