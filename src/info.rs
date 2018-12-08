@@ -9,7 +9,7 @@ pub struct AccountInfo {
     pub account_id: AccountId,
     pub contract_account_id: String,
     pub deleted: bool,
-    pub proxy_account_id: AccountId,
+    pub proxy_account_id: Option<AccountId>,
     pub proxy_fraction: i32,
     pub proxy_received: i64,
     pub key: PublicKey,
@@ -32,7 +32,11 @@ impl TryFrom<proto::CryptoGetInfo::CryptoGetInfoResponse_AccountInfo> for Accoun
             account_id: info.take_accountID().into(),
             contract_account_id: info.take_contractAccountID(),
             deleted: info.get_deleted(),
-            proxy_account_id: info.take_proxyAccountID().into(),
+            proxy_account_id: if info.has_proxyAccountID() {
+                Some(info.take_proxyAccountID().into())
+            } else {
+                None
+            },
             proxy_fraction: info.get_proxyFraction(),
             proxy_received: info.get_proxyReceived(),
             key: info.take_key().try_into()?,
