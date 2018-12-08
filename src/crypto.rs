@@ -348,7 +348,14 @@ impl TryFrom<proto::BasicTypes::Key> for PublicKey {
 
     fn try_from(mut key: proto::BasicTypes::Key) -> Result<Self, Self::Err> {
         if key.has_ed25519() {
-            Self::from_bytes(hex::decode(key.take_ed25519())?)
+            let bytes = key.take_ed25519();
+            if bytes.len() == 64 {
+                // This is hex-encoded
+                // CryptoGetInfo returns the public key like this
+                Self::from_bytes(hex::decode(&bytes)?)
+            } else {
+                Self::from_bytes(bytes)
+            }
         } else {
             Err(err_msg("Only ed25519 public keys are currently supported"))
         }
