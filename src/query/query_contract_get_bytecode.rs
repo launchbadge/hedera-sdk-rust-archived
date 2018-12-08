@@ -19,10 +19,7 @@ impl QueryInner for QueryContractGetBytecode {
     type Response = Vec<u8>;
 
     fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
-        let mut response = response.take_contractGetBytecodeResponse();
-        let header = response.take_header();
-
-        try_precheck!(header).map(move |_| response.take_bytecode())
+        Ok(response.take_contractGetBytecodeResponse().take_bytecode())
     }
 
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error> {

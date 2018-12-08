@@ -20,10 +20,7 @@ impl QueryInner for QueryContractGetRecords {
     type Response = Vec<TransactionRecord>;
 
     fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
-        let mut response = response.take_contractGetRecordsResponse();
-        let header = response.take_header();
-
-        try_precheck!(header).and_then(move |_| response.try_into())
+        response.take_contractGetRecordsResponse().try_into()
     }
 
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error> {

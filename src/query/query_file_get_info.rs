@@ -20,10 +20,7 @@ impl QueryInner for QueryFileGetInfo {
     type Response = FileInfo;
 
     fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
-        let mut response = response.take_fileGetInfo();
-        let header = response.take_header();
-
-        try_precheck!(header).and_then(move |_| response.take_fileInfo().try_into())
+        response.take_fileGetInfo().take_fileInfo().try_into()
     }
 
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error> {

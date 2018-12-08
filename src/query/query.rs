@@ -8,9 +8,8 @@ use crate::{
         SmartContractService_grpc::{SmartContractService, SmartContractServiceClient},
         ToProto,
     },
-    ErrorKind, PreCheckCode,
     transaction::{Transaction, TransactionCryptoTransfer},
-    Client,
+    Client, ErrorKind, PreCheckCode,
 };
 use failure::Error;
 use std::sync::Arc;
@@ -52,7 +51,15 @@ impl<T> Query<T> {
     }
 
     pub fn get(&mut self) -> Result<T, Error> {
-        self.inner.get(self.send()?)
+        let mut response = self.send()?;
+        match take_header(&mut response).get_nodeTransactionPrecheckCode().into() {
+            PreCheckCode::Ok => self.inner.get(response),
+
+            // todo: error out that payment was expected
+            // PreCheckCode::InvalidTransaction if self.payment.is_none() =>
+
+            code => Err(ErrorKind::PreCheck(code))?,
+        }
     }
 
     pub fn cost(&mut self) -> Result<u64, Error> {
@@ -138,5 +145,33 @@ impl<T> ToProto<proto::Query::Query> for Query<T> {
         query.query = Some(self.inner.to_query_proto(header)?);
 
         Ok(query)
+    }
+}
+
+// this is needed because some times a query is responded to with the wrong
+// envelope type when an error occurs; this ensures we can get the error
+pub(crate) fn take_header(
+    response: &mut proto::Response::Response,
+) -> proto::ResponseHeader::ResponseHeader {
+    use self::proto::Response::Response_oneof_response::*;
+
+    match &mut response.response {
+        Some(getByKey(ref mut res)) => res.take_header(),
+        Some(getBySolidityID(ref mut res)) => res.take_header(),
+        Some(contractCallLocal(ref mut res)) => res.take_header(),
+        Some(contractGetBytecodeResponse(ref mut res)) => res.take_header(),
+        Some(contractGetInfo(ref mut res)) => res.take_header(),
+        Some(contractGetRecordsResponse(ref mut res)) => res.take_header(),
+        Some(cryptogetAccountBalance(ref mut res)) => res.take_header(),
+        Some(cryptoGetAccountRecords(ref mut res)) => res.take_header(),
+        Some(cryptoGetInfo(ref mut res)) => res.take_header(),
+        Some(cryptoGetClaim(ref mut res)) => res.take_header(),
+        Some(cryptoGetProxyStakers(ref mut res)) => res.take_header(),
+        Some(fileGetContents(ref mut res)) => res.take_header(),
+        Some(fileGetInfo(ref mut res)) => res.take_header(),
+        Some(transactionGetReceipt(ref mut res)) => res.take_header(),
+        Some(transactionGetRecord(ref mut res)) => res.take_header(),
+
+        _ => unreachable!(),
     }
 }

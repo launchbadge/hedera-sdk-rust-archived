@@ -19,10 +19,7 @@ impl QueryInner for QueryGetTransactionReceipt {
     type Response = TransactionReceipt;
 
     fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
-        let mut response = response.take_transactionGetReceipt();
-        let header = response.take_header();
-
-        try_precheck!(header).map(move |_| response.take_receipt().into())
+        Ok(response.take_transactionGetReceipt().take_receipt().into())
     }
 
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error> {

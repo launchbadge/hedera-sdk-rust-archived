@@ -22,10 +22,7 @@ impl QueryInner for QueryCryptoGetClaim {
     type Response = Claim;
 
     fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
-        let mut response = response.take_cryptoGetClaim();
-        let header = response.take_header();
-
-        try_precheck!(header).and_then(move |_| response.take_claim().try_into())
+        response.take_cryptoGetClaim().take_claim().try_into()
     }
 
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error> {

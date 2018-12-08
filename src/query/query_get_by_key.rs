@@ -21,10 +21,7 @@ impl QueryInner for QueryGetByKey {
     type Response = Vec<Entity>;
 
     fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
-        let mut response = response.take_getByKey();
-        let header = response.take_header();
-
-        try_precheck!(header).and_then(move |_| try_into_entities(response.take_entities()))
+        try_into_entities(response.take_getByKey().take_entities())
     }
 
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error> {

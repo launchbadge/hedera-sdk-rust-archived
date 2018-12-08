@@ -19,10 +19,7 @@ impl QueryInner for QueryCryptoGetAccountBalance {
     type Response = u64;
 
     fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
-        let mut response = response.take_cryptogetAccountBalance();
-        let header = response.take_header();
-
-        try_precheck!(header).map(move |_| response.get_balance())
+        Ok(response.take_cryptogetAccountBalance().get_balance())
     }
 
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error> {
