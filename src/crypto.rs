@@ -16,6 +16,9 @@ use std::{
     str::FromStr,
 };
 use try_from::TryFrom;
+use bip39::Mnemonic;
+use bip39::Language;
+use bip39::MnemonicType;
 
 // Types used for (de-)serializing public and secret keys from ASN.1 byte
 // streams.
@@ -367,16 +370,32 @@ impl TryFrom<proto::BasicTypes::Key> for PublicKey {
 pub struct SecretKey(ed25519_dalek::SecretKey);
 
 impl SecretKey {
-    /// Generate a `SecretKey` from cryptographically secure random number
-    /// generator.
-    pub fn generate() -> Self {
-        Self::generate_from(&mut thread_rng())
+
+    /// Generate a `SecretKey` and corresponding bip39 mnemonic phrase with custom password from
+    /// cryptographically secure random number generator
+    pub fn generate_with_passphrase(password: &str) -> (Self, String) {
+        Self::generate_from(&mut thread_rng(), password)
     }
 
-    /// Generate a `SecretKey` from cryptographically secure random number
-    /// generator.
-    pub fn generate_from<R: CryptoRng + Rng>(rng: &mut R) -> Self {
-        SecretKey(ed25519_dalek::SecretKey::generate(rng))
+    /// Generate a `SecretKey` and corresponding bip39 mnemonic phrase from cryptographically
+    /// secure random number generator
+    pub fn generate() -> (Self, String) {
+        Self::generate_with_passphrase("")
+    }
+
+    /// Generate a `SecretKey` and corresponding bip39 mnemonic phrase from cryptographically secure
+    /// random number generator.
+    pub fn generate_from<R: CryptoRng + Rng>(rng: &mut R, password: &str) -> (Self, String) {
+        let secret = SecretKey(ed25519_dalek::SecretKey::generate(rng));
+
+        // this should not fail since only legitimate keys can be passed to it
+        let mnemonic = Mnemonic::from_entropy(
+            secret.to_bytes().as_slice(),
+            MnemonicType::for_key_size(32).unwrap(),
+            Language::English, password)
+            .unwrap();
+
+        (secret, mnemonic.get_string())
     }
 
     /// Construct a `SecretKey` from a slice of bytes.
@@ -406,6 +425,26 @@ impl SecretKey {
         Ok(SecretKey(ed25519_dalek::SecretKey::from_bytes(
             &info.private_key[2..],
         )?))
+    }
+
+    // Return a key from a provided mnemonic and the password (by default "")
+    pub fn from_mnemonic(mnemonic: &str, passphrase: &str ) -> Result<Self, Error> {
+        let mnemonic = match Mnemonic::from_string(mnemonic, Language::English, passphrase){
+            Ok(m) => m,
+            Err(e) => bail!("{:?}", e)
+        };
+
+        Self::from_bytes(mnemonic.as_entropy())
+    }
+
+    // generate a bip39 mnemonic from the key given a password
+    pub fn to_mnemonic(&self, password: &str) -> String {
+        // this should not fail since only legitimate keys can be passed to it
+        Mnemonic::from_entropy(
+            self.to_bytes().as_slice(),
+            MnemonicType::for_key_size(32).unwrap(),
+            Language::English, password)
+            .unwrap().get_string()
     }
 
     /// Format a `SecretKey` as a vec of bytes in ASN.1 format.
