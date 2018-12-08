@@ -390,8 +390,8 @@ impl SecretKey {
 
         // this should not fail since only legitimate keys can be passed to it
         let mnemonic = Mnemonic::from_entropy(
-            secret.to_bytes().as_slice(),
-            MnemonicType::for_key_size(32).unwrap(),
+            &secret.to_bytes()[16..48],
+            MnemonicType::for_key_size(256).unwrap(),
             Language::English, password)
             .unwrap();
 
@@ -439,10 +439,10 @@ impl SecretKey {
 
     // generate a bip39 mnemonic from the key given a password
     pub fn to_mnemonic(&self, password: &str) -> String {
-        // this should not fail since only legitimate keys can be passed to it
+        // this should not fail since only legitimate values are being passed to it
         Mnemonic::from_entropy(
-            self.to_bytes().as_slice(),
-            MnemonicType::for_key_size(32).unwrap(),
+            &self.to_bytes()[16..48],
+            MnemonicType::for_key_size( 256).unwrap(),
             Language::English, password)
             .unwrap().get_string()
     }
