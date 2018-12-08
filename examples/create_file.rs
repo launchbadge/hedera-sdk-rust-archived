@@ -17,7 +17,10 @@ fn main() -> Result<(), Error> {
     let node = "0:0:3".parse()?;
     let contents = "Hello World!";
 
-    let client = Client::new("testnet.hedera.com:50001")?;
+    let client = Client::builder("testnet.hedera.com:50001")
+        .node(node)
+        .operator(operator, operator_secret.clone())
+        .build()?;
 
     //
     // Create (empty) File
@@ -27,8 +30,6 @@ fn main() -> Result<(), Error> {
         .create_file()
         .expires_at(Utc::now() + Duration::minutes(10))
         .key(operator_secret.public())
-        .operator(operator, operator_secret.clone())
-        .node(node)
         .memo("[hedera-sdk-rust][example] create_file : create")
         .sign(&operator_secret)
         .execute()?;
@@ -59,8 +60,6 @@ fn main() -> Result<(), Error> {
     let id = client
         .file(file)
         .append(contents.as_bytes().to_vec())
-        .operator(operator, operator_secret.clone())
-        .node(node)
         .memo("[hedera-sdk-rust][example] create_file : append")
         .sign(&operator_secret)
         .execute()?;
@@ -98,8 +97,6 @@ fn main() -> Result<(), Error> {
         .payment(
             client
                 .transfer_crypto()
-                .operator(operator, operator_secret.clone())
-                .node(node)
                 .transfer(node, file_contents_cost as i64)
                 .transfer(operator, -(file_contents_cost as i64))
                 .sign(&operator_secret),
@@ -129,8 +126,6 @@ fn main() -> Result<(), Error> {
         .payment(
             client
                 .transfer_crypto()
-                .operator(operator, operator_secret.clone())
-                .node(node)
                 .transfer(node, file_info_cost as i64)
                 .transfer(operator, -(file_info_cost as i64))
                 .sign(&operator_secret),

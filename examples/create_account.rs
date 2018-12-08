@@ -20,16 +20,17 @@ fn main() -> Result<(), Error> {
     // This should be provided
     let node = "0:0:3".parse()?;
 
-    let client = Client::new("testnet.hedera.com:50001")?;
+    let client = Client::builder("testnet.hedera.com:50001")
+        .operator(operator, operator_secret)
+        .node(node)
+        .build()?;
 
     // Create our account
     let id = client
         .create_account()
         .key(public)
         .initial_balance(10)
-        .operator(operator, operator_secret)
-        .node(node)
-        .memo("[hedera-sdk-rust][example]")
+        .memo("[hedera-sdk-rust][example] create_account")
         .execute()?;
 
     println!("created account; transaction = {}", id);

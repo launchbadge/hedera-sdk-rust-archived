@@ -9,7 +9,10 @@ fn main() -> Result<(), Error> {
     let operator_secret: SecretKey = env::var("OPERATOR_SECRET")?.parse()?;
     let node = "0:0:3".parse()?;
 
-    let client = Client::new("testnet.hedera.com:50001")?;
+    let client = Client::builder("testnet.hedera.com:50001")
+        .node(node)
+        .operator(operator, operator_secret.clone())
+        .build()?;
 
     // Get the cost for getting the balance
 
@@ -49,8 +52,6 @@ fn main() -> Result<(), Error> {
         .payment(
             client
                 .transfer_crypto()
-                .operator(operator, operator_secret.clone())
-                .node(node)
                 .transfer(node, info_cost as i64)
                 .transfer(operator, -(info_cost as i64))
                 .sign(&operator_secret),
