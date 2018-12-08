@@ -37,7 +37,7 @@ pub struct ClientBuilder<'a> {
 pub struct Client {
     pub(crate) node: Option<AccountId>,
     pub(crate) operator: Option<AccountId>,
-    pub(crate) operator_secret: Option<SecretKey>,
+    pub(crate) operator_secret: Arc<Option<SecretKey>>,
     pub(crate) crypto: Arc<CryptoServiceClient>,
     pub(crate) file: Arc<FileServiceClient>,
     pub(crate) contract: Arc<SmartContractServiceClient>,
@@ -106,7 +106,7 @@ impl Client {
         Ok(Self {
             node: None,
             operator: None,
-            operator_secret: None,
+            operator_secret: Arc::new(None),
             crypto,
             file,
             contract
@@ -123,7 +123,7 @@ impl Client {
     #[inline]
     pub(crate) fn set_operator(&mut self, operator: AccountId, operator_secret: SecretKey) -> &mut Self {
         self.operator = Some(operator);
-        self.operator_secret = Some(operator_secret);
+        self.operator_secret = Arc::new(Some(operator_secret));
 
         self
     }

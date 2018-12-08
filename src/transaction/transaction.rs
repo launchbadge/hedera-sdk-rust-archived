@@ -49,7 +49,7 @@ pub struct Transaction<T, S = TransactionBuilder<T>> {
     crypto_service: Arc<CryptoServiceClient>,
     file_service: Arc<FileServiceClient>,
     contract_service: Arc<SmartContractServiceClient>,
-    secret: Option<SecretKey>,
+    secret: Arc<Option<SecretKey>>,
     kind: TransactionKind<T>,
     phantom: PhantomData<S>,
 }
@@ -59,18 +59,13 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
     where
         T: Object + ToProto<proto::Transaction::TransactionBody_oneof_data> + 'static,
     {
-        let id = match client.operator {
-            Some(operator_id) => Some(TransactionId::new(operator_id)),
-            None => None
-        };
-
         Self {
             crypto_service: client.crypto.clone(),
             file_service: client.file.clone(),
             contract_service: client.contract.clone(),
             secret: client.operator_secret.clone(),
             kind: TransactionKind::Builder(TransactionBuilder {
-                id,
+                id: client.operator.map(TransactionId::new),
                 node: client.node.clone(),
                 memo: None,
                 inner: Box::<T>::new(inner) as Box<dyn Object>,
@@ -90,13 +85,11 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
         self
     }
 
-    pub fn operator(&mut self, id: AccountId) -> &mut Self {
+    pub fn operator(&mut self, id: AccountId, secret: SecretKey) -> &mut Self {
         if let Some(state) = self.as_builder() {
             state.id = Some(TransactionId::new(id));
         }
-
-        // invalidate the default secret if it exists
-        self.secret = None;
+        self.secret = Arc::new(Some(secret));
 
         self
     }
@@ -224,7 +217,7 @@ impl<T> Transaction<T, TransactionRaw> {
             //  - owner of _thing_ being created
             //  - # correspond to transfer
 
-            if signatures.len() >= 1 && (kind == Some(FileCreate) || kind == Some(FileAppend)) {
+            if kind == Some(FileCreate) || kind == Some(FileAppend) {
                 // IF we are on signature #1 and we operating on a file or contract,
                 // place the signature into a signature list
 
@@ -259,16 +252,13 @@ impl<T> Transaction<T, TransactionRaw> {
 
         let o = grpc::RequestOptions::default();
 
-        // if the default operator wasn't changed,
-        // sign and insert the signature at the top of the list
-        if let Some(secret) = &self.secret {
-            let signature = secret.sign(&state.bytes).to_proto().unwrap();
+        // sign as the operator
 
-            // note: this cannot fail
+        if let Some(secret) = self.secret.as_ref(){
+            let signature = secret.sign(&state.bytes).to_proto().unwrap();
             let signatures = &mut tx.sigs.as_mut().unwrap().sigs;
 
-            signatures.insert(0, signature)
-
+            signatures.insert(0, signature);
         }
 
         // note: cannot fail
