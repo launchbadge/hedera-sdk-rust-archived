@@ -49,6 +49,7 @@ pub struct Transaction<T, S = TransactionBuilder<T>> {
     crypto_service: Arc<CryptoServiceClient>,
     file_service: Arc<FileServiceClient>,
     contract_service: Arc<SmartContractServiceClient>,
+    secret: Option<Arc<SecretKey>>,
     kind: TransactionKind<T>,
     phantom: PhantomData<S>,
 }
@@ -62,9 +63,10 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
             crypto_service: client.crypto.clone(),
             file_service: client.file.clone(),
             contract_service: client.contract.clone(),
+            secret: client.operator_secret.clone(),
             kind: TransactionKind::Builder(TransactionBuilder {
-                id: None,
-                node: None,
+                id: client.operator.map(TransactionId::new),
+                node: client.node.clone(),
                 memo: None,
                 inner: Box::<T>::new(inner) as Box<dyn Object>,
                 fee: 10,
@@ -83,10 +85,11 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
         self
     }
 
-    pub fn operator(&mut self, id: AccountId) -> &mut Self {
+    pub fn operator(&mut self, id: AccountId, secret: SecretKey) -> &mut Self {
         if let Some(state) = self.as_builder() {
             state.id = Some(TransactionId::new(id));
         }
+        self.secret = Some(Arc::new(secret));
 
         self
     }
@@ -214,7 +217,7 @@ impl<T> Transaction<T, TransactionRaw> {
             //  - owner of _thing_ being created
             //  - # correspond to transfer
 
-            if signatures.len() >= 1 && (kind == Some(FileCreate) || kind == Some(FileAppend)) {
+            if kind == Some(FileCreate) || kind == Some(FileAppend) {
                 // IF we are on signature #1 and we operating on a file or contract,
                 // place the signature into a signature list
 
@@ -248,6 +251,15 @@ impl<T> Transaction<T, TransactionRaw> {
         log::trace!(target: "hedera::transaction", "sent: {:#?}", tx);
 
         let o = grpc::RequestOptions::default();
+
+        // sign as the operator
+
+        if let Some(secret) = &self.secret {
+            let signature = secret.sign(&state.bytes).to_proto().unwrap();
+            let signatures = &mut tx.sigs.as_mut().unwrap().sigs;
+
+            signatures.insert(0, signature);
+        }
 
         // note: cannot fail
         let id = tx

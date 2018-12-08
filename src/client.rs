@@ -13,7 +13,7 @@ use crate::{
     query::{
         Query, QueryCryptoGetAccountBalance, QueryCryptoGetClaim, QueryCryptoGetInfo,
         QueryFileGetContents, QueryFileGetInfo, QueryGetTransactionReceipt,
-        QueryTransactionGetRecord,
+        QueryTransactionGetRecord
     },
     transaction::{
         Transaction, TransactionContractCall, TransactionContractCreate, TransactionContractUpdate,
@@ -21,19 +21,69 @@ use crate::{
         TransactionCryptoUpdate, TransactionFileAppend, TransactionFileCreate,
         TransactionFileDelete, TransactionCryptoTransfer,
     },
+    crypto::SecretKey,
     AccountId, AccountInfo, FileInfo, TransactionId, TransactionReceipt, TransactionRecord,
 };
 
 use grpc::ClientStub;
 
+pub struct ClientBuilder<'a> {
+    address: &'a str,
+    node: Option<AccountId>,
+    operator: Option<AccountId>,
+    operator_secret: Option<SecretKey>
+}
+
 pub struct Client {
+    pub(crate) node: Option<AccountId>,
+    pub(crate) operator: Option<AccountId>,
+    pub(crate) operator_secret: Option<Arc<SecretKey>>,
     pub(crate) crypto: Arc<CryptoServiceClient>,
     pub(crate) file: Arc<FileServiceClient>,
     pub(crate) contract: Arc<SmartContractServiceClient>,
 }
 
+impl<'a> ClientBuilder<'a> {
+    pub fn node(mut self, node: AccountId) -> Self {
+        self.node = Some(node);
+        self
+    }
+
+    pub fn operator(mut self, operator: AccountId, operator_secret: SecretKey) -> Self {
+        self.operator = Some(operator);
+        self.operator_secret = Some(operator_secret);
+
+        self
+    }
+
+    pub fn build(self) -> Result<Client, Error> {
+
+        let mut client = Client::new(&self.address)?;
+
+        if let Some(node) = self.node {
+            client.set_node(node);
+        }
+
+        if let (Some(operator), Some(secret)) = (self.operator, self.operator_secret) {
+            client.set_operator(operator, secret);
+        }
+
+        Ok(client)
+    }
+
+}
+
 impl Client {
-    pub fn new(address: impl AsRef<str>) -> Result<Self, Error> {
+    pub fn builder(address: &str) -> ClientBuilder {
+        ClientBuilder{
+            address,
+            node: None,
+            operator: None,
+            operator_secret: None,
+        }
+    }
+
+    pub(crate) fn new(address: impl AsRef<str>) -> Result<Self, Error> {
         let address = address.as_ref();
         let (host, port) = address.split(':').next_tuple().ok_or_else(|| {
             format_err!("failed to parse 'host:port' from address: {:?}", address)
@@ -54,16 +104,32 @@ impl Client {
         )?);
 
         let crypto = Arc::new(CryptoServiceClient::with_client(inner.clone()));
-
         let file = Arc::new(FileServiceClient::with_client(inner.clone()));
-
-        let contract = Arc::new(SmartContractServiceClient::with_client(inner));
+        let contract = Arc::new(SmartContractServiceClient::with_client(inner.clone()));
 
         Ok(Self {
+            node: None,
+            operator: None,
+            operator_secret: None,
             crypto,
             file,
-            contract,
+            contract
         })
+    }
+
+    #[inline]
+    pub(crate) fn set_node(&mut self, node: AccountId) -> &mut Self {
+        self.node = Some(node);
+
+        self
+    }
+
+    #[inline]
+    pub(crate) fn set_operator(&mut self, operator: AccountId, operator_secret: SecretKey) -> &mut Self {
+        self.operator = Some(operator);
+        self.operator_secret = Some(Arc::new(operator_secret));
+
+        self
     }
 
     #[inline]
