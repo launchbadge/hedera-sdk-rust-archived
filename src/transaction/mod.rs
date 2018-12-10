@@ -21,5 +21,6 @@ pub use self::{
     transaction_crypto_add_claim::*, transaction_crypto_create::*, transaction_crypto_delete::*,
     transaction_crypto_delete_claim::*, transaction_crypto_transfer::*,
     transaction_crypto_update::*, transaction_file_append::*, transaction_file_create::*,
-    transaction_file_delete::*, transaction_file_update::*
+    transaction_file_delete::*, transaction_file_update::*, transaction_admin_recover::*,
+    transaction_admin_delete::*
 };
