@@ -10,7 +10,7 @@ use try_from::TryInto;
 
 #[repr(C)]
 #[derive(Debug)]
-pub struct Timestamp(pub(crate) i64, pub(crate) i32);
+pub(crate) struct Timestamp(pub(crate) i64, pub(crate) i32);
 
 impl From<Timestamp> for DateTime<Utc> {
     fn from(Timestamp(seconds, nanos): Timestamp) -> Self {
