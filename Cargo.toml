@@ -31,6 +31,7 @@ httpbis = "0.7.0"
 log = "0.4.6"
 try_from = "0.3.2"
 bip39 = "0.5.1"
+rand_chacha = "0.1.0"
 
 [build-dependencies]
 protoc-rust-grpc = "0.6.1"

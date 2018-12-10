@@ -6,7 +6,8 @@ use failure_derive::Fail;
 use hex;
 use num::BigUint;
 use once_cell::{sync::Lazy, sync_lazy};
-use rand::{rngs::StdRng, SeedableRng};
+use rand_chacha::ChaChaRng;
+use rand::SeedableRng;
 use sha2::Sha512;
 use simple_asn1::{
     der_decode, der_encode, oid, to_der, ASN1Block, ASN1Class, ASN1DecodeErr, ASN1EncodeErr,
@@ -368,8 +369,10 @@ impl TryFrom<proto::BasicTypes::Key> for PublicKey {
 pub struct SecretKey(ed25519_dalek::SecretKey);
 
 impl SecretKey {
-    /// Generate a `SecretKey` from a bip39 mnemonic phrase generated using a cryptographically
-    /// secure random number generator
+    /// Generate a `SecretKey` with a BIP-39 mnemonic using a cryptographically
+    /// secure random number generator.
+    ///
+    /// The `password` is required with the mnemonic to reproduce the secret key.
     pub fn generate(password: &str) -> (Self, String) {
         let mnemonic =
             Mnemonic::new(MnemonicType::Type24Words, Language::English, password).unwrap();
@@ -381,11 +384,9 @@ impl SecretKey {
 
     fn generate_with_mnemonic(mnemonic: &Mnemonic) -> SecretKey {
         let mut seed: [u8; 32] = Default::default();
-
         seed.copy_from_slice(&mnemonic.as_seed().as_bytes()[0..32]);
 
-        let mut rng = StdRng::from_seed(seed);
-
+        let mut rng = ChaChaRng::from_seed(seed);
         SecretKey(ed25519_dalek::SecretKey::generate(&mut rng))
     }
 
@@ -418,7 +419,7 @@ impl SecretKey {
         )?))
     }
 
-    // Return a key generated from a provided bip39 mnemonic and the password (by default "")
+    /// Re-construct a `SecretKey` from the supplied mnemonic and password.
     pub fn from_mnemonic(mnemonic: &str, password: &str) -> Result<Self, Error> {
         let mnemonic = Mnemonic::from_string(mnemonic, Language::English, password)
             .map_err(SyncFailure::new)?;
@@ -457,6 +458,7 @@ impl SecretKey {
 }
 
 impl Clone for SecretKey {
+    #[inline]
     fn clone(&self) -> Self {
         Self::from_bytes(self.0.as_bytes()).unwrap()
     }
@@ -474,6 +476,7 @@ impl FromStr for SecretKey {
 }
 
 impl Debug for SecretKey {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "\"{}\"", self)
     }
@@ -481,6 +484,7 @@ impl Debug for SecretKey {
 
 /// Format a `SecretKey` as a hex representation of its bytes in ASN.1 format.
 impl Display for SecretKey {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&hex::encode(&self.to_bytes()))
     }
@@ -492,6 +496,7 @@ pub struct Signature(ed25519_dalek::Signature);
 
 impl Signature {
     /// Construct a `Signature` from a slice of bytes.
+    #[inline]
     pub fn from_bytes(bytes: impl AsRef<[u8]>) -> Result<Self, Error> {
         Ok(Signature(ed25519_dalek::Signature::from_bytes(
             bytes.as_ref(),
@@ -583,7 +588,7 @@ mod tests {
 
     #[test]
     fn test_generate() -> Result<(), Error> {
-        let (key, mnemonic) = SecretKey::generate("");
+        let (key, _mnemonic) = SecretKey::generate("");
         let signature = key.sign(MESSAGE.as_bytes());
         let verified = key.public().verify(MESSAGE.as_bytes(), &signature)?;
 
@@ -602,6 +607,16 @@ mod tests {
 
         assert_eq!(public_key1, public_key2);
         assert_eq!(secret_key1.0.as_bytes(), secret_key2.0.as_bytes());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_reconstruct() -> Result<(), Error> {
+        let (secret1, mnemonic) = SecretKey::generate("this-is-not-a-password");
+        let secret2 = SecretKey::from_mnemonic(&mnemonic, "this-is-not-a-password")?;
+
+        assert_eq!(secret1.to_bytes(), secret2.to_bytes());
 
         Ok(())
     }

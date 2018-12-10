@@ -3,7 +3,7 @@ use hedera::{Client, SecretKey, TransactionStatus};
 use std::{env, thread::sleep, time::Duration};
 
 fn main() -> Result<(), Error> {
-    let secret = SecretKey::generate();
+    let (secret, _) = SecretKey::generate("");
     let public = secret.public();
 
     println!("secret = {}", secret);
