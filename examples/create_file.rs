@@ -1,8 +1,7 @@
 use chrono::{Duration, Utc};
 use failure::{format_err, Error};
 use hedera::{Client, SecretKey, TransactionStatus};
-use std::str::from_utf8;
-use std::{env, thread::sleep, time::Duration as StdDuration};
+use std::{env, str::from_utf8, thread::sleep, time::Duration as StdDuration};
 
 // todo: default file owner
 

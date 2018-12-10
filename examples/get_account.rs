@@ -1,6 +1,5 @@
 use failure::Error;
-use hedera::Client;
-use hedera::SecretKey;
+use hedera::{Client, SecretKey};
 use std::env;
 
 fn main() -> Result<(), Error> {

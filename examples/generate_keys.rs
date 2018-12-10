@@ -7,5 +7,4 @@ fn main() {
     println!("secret = {}", secret);
     println!("mnemonic = {}", mnemonic);
     println!("public = {}", public);
-
 }

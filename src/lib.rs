@@ -33,7 +33,6 @@ pub use self::{
     response::PreCheckCode,
     transaction_id::TransactionId,
     transaction_receipt::TransactionReceipt,
-    transaction_record::TransactionRecord,
-    transaction_record::TransactionRecordBody,
+    transaction_record::{TransactionRecord, TransactionRecordBody},
     transaction_status::TransactionStatus,
 };

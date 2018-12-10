@@ -1,11 +1,12 @@
 use crate::proto::{self, ToProto};
+use bip39::{Language, Mnemonic, MnemonicType};
 use ed25519_dalek;
 use failure::{bail, err_msg, Error, SyncFailure};
 use failure_derive::Fail;
 use hex;
 use num::BigUint;
 use once_cell::{sync::Lazy, sync_lazy};
-use rand::SeedableRng;
+use rand::{rngs::StdRng, SeedableRng};
 use sha2::Sha512;
 use simple_asn1::{
     der_decode, der_encode, oid, to_der, ASN1Block, ASN1Class, ASN1DecodeErr, ASN1EncodeErr,
@@ -16,8 +17,6 @@ use std::{
     str::FromStr,
 };
 use try_from::TryFrom;
-use bip39::{Mnemonic, Language, MnemonicType};
-use rand::rngs::StdRng;
 
 // Types used for (de-)serializing public and secret keys from ASN.1 byte
 // streams.
@@ -369,16 +368,11 @@ impl TryFrom<proto::BasicTypes::Key> for PublicKey {
 pub struct SecretKey(ed25519_dalek::SecretKey);
 
 impl SecretKey {
-
     /// Generate a `SecretKey` from a bip39 mnemonic phrase generated using a cryptographically
     /// secure random number generator
     pub fn generate(password: &str) -> (Self, String) {
-
-        let mnemonic = Mnemonic::new(
-            MnemonicType::Type24Words,
-            Language::English,
-            password
-        ).unwrap();
+        let mnemonic =
+            Mnemonic::new(MnemonicType::Type24Words, Language::English, password).unwrap();
 
         let secret = Self::generate_with_mnemonic(&mnemonic);
 
@@ -425,8 +419,7 @@ impl SecretKey {
     }
 
     // Return a key generated from a provided bip39 mnemonic and the password (by default "")
-    pub fn from_mnemonic(mnemonic: &str, password: &str ) -> Result<Self, Error> {
-
+    pub fn from_mnemonic(mnemonic: &str, password: &str) -> Result<Self, Error> {
         let mnemonic = Mnemonic::from_string(mnemonic, Language::English, password)
             .map_err(SyncFailure::new)?;
 

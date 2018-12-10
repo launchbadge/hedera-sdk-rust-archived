@@ -1,4 +1,3 @@
-use crate::SecretKey;
 use crate::{
     proto::{
         self,
@@ -10,12 +9,10 @@ use crate::{
         ToProto,
     },
     transaction::{Transaction, TransactionCryptoTransfer},
-    AccountId, Client, ErrorKind, PreCheckCode,
+    AccountId, Client, ErrorKind, PreCheckCode, SecretKey,
 };
 use failure::Error;
-use std::sync::Arc;
-use std::thread::sleep;
-use std::time::Duration;
+use std::{sync::Arc, thread::sleep, time::Duration};
 
 #[doc(hidden)]
 pub trait QueryInner {
