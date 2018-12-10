@@ -1,5 +1,4 @@
 use crate::{
-    claim::Claim,
     crypto::SecretKey,
     id::{ContractId, FileId},
     proto::{
@@ -17,7 +16,7 @@ use crate::{
         TransactionCryptoTransfer, TransactionCryptoUpdate, TransactionFileAppend,
         TransactionFileCreate, TransactionFileDelete,
     },
-    AccountId, AccountInfo, FileInfo, TransactionId, TransactionReceipt, TransactionRecord,
+    AccountId, TransactionId,
 };
 use failure::{err_msg, format_err, Error};
 use grpc::ClientStub;
@@ -29,13 +28,13 @@ pub struct ClientBuilder<'a> {
     address: &'a str,
     node: Option<AccountId>,
     operator: Option<AccountId>,
-    operator_secret: Option<Arc<dyn Fn() -> Result<SecretKey, Error>>>,
+    operator_secret: Option<Arc<dyn Fn() -> Result<SecretKey, Error> + Send + Sync>>,
 }
 
 pub struct Client {
     pub(crate) node: Option<AccountId>,
     pub(crate) operator: Option<AccountId>,
-    pub(crate) operator_secret: Option<Arc<dyn Fn() -> Result<SecretKey, Error>>>,
+    pub(crate) operator_secret: Option<Arc<dyn Fn() -> Result<SecretKey, Error> + Send + Sync>>,
     pub(crate) crypto: Arc<CryptoServiceClient>,
     pub(crate) file: Arc<FileServiceClient>,
     pub(crate) contract: Arc<SmartContractServiceClient>,
@@ -47,7 +46,11 @@ impl<'a> ClientBuilder<'a> {
         self
     }
 
-    pub fn operator<R, E>(mut self, operator: AccountId, secret: impl Fn() -> R + 'static) -> Self
+    pub fn operator<R, E>(
+        mut self,
+        operator: AccountId,
+        secret: impl Fn() -> R + Send + Sync + 'static,
+    ) -> Self
     where
         E: fmt::Debug + fmt::Display + Send + Sync + 'static,
         R: TryInto<SecretKey, Err = E>,
@@ -135,8 +138,11 @@ impl Client {
     }
 
     #[inline]
-    pub fn set_operator<R, E>(&mut self, operator: AccountId, secret: impl Fn() -> R + 'static)
-    where
+    pub fn set_operator<R, E>(
+        &mut self,
+        operator: AccountId,
+        secret: impl Fn() -> R + Send + Sync + 'static,
+    ) where
         E: fmt::Debug + fmt::Display + Send + Sync + 'static,
         R: TryInto<SecretKey, Err = E>,
     {
@@ -195,13 +201,13 @@ pub struct PartialAccountMessage<'a>(&'a Client, AccountId);
 impl<'a> PartialAccountMessage<'a> {
     /// Get the balance of a crypto-currency account.
     #[inline]
-    pub fn balance(self) -> Query<u64> {
+    pub fn balance(self) -> Query<QueryCryptoGetAccountBalance> {
         QueryCryptoGetAccountBalance::new(self.0, self.1)
     }
 
     /// Get all the information about an account, including the balance.
     #[inline]
-    pub fn info(self) -> Query<AccountInfo> {
+    pub fn info(self) -> Query<QueryCryptoGetInfo> {
         QueryCryptoGetInfo::new(self.0, self.1)
     }
 
@@ -236,7 +242,7 @@ impl<'a> PartialAccountClaimMessage<'a> {
     }
 
     #[inline]
-    pub fn get(self) -> Query<Claim> {
+    pub fn get(self) -> Query<QueryCryptoGetClaim> {
         QueryCryptoGetClaim::new((self.0).0, (self.0).1, self.1)
     }
 }
@@ -255,12 +261,12 @@ impl<'a> PartialFileMessage<'a> {
     }
 
     #[inline]
-    pub fn info(self) -> Query<FileInfo> {
+    pub fn info(self) -> Query<QueryFileGetInfo> {
         QueryFileGetInfo::new(self.0, self.1)
     }
 
     #[inline]
-    pub fn contents(self) -> Query<Vec<u8>> {
+    pub fn contents(self) -> Query<QueryFileGetContents> {
         QueryFileGetContents::new(self.0, self.1)
     }
 }
@@ -287,7 +293,7 @@ impl<'a> PartialTransactionMessage<'a> {
     /// Once a transaction reaches consensus, then information about whether it succeeded or
     /// failed will be available until the end of the receipt period.
     #[inline]
-    pub fn receipt(self) -> Query<TransactionReceipt> {
+    pub fn receipt(self) -> Query<QueryGetTransactionReceipt> {
         QueryGetTransactionReceipt::new(self.0, self.1)
     }
 
@@ -296,7 +302,7 @@ impl<'a> PartialTransactionMessage<'a> {
     /// If the transaction requested a record, then the record lasts for one hour, and a state
     /// proof is available for it.
     #[inline]
-    pub fn record(self) -> Query<TransactionRecord> {
+    pub fn record(self) -> Query<QueryTransactionGetRecord> {
         QueryTransactionGetRecord::new(self.0, self.1)
     }
 }

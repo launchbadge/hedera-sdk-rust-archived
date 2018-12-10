@@ -2,7 +2,10 @@ use crate::{
     crypto::PublicKey,
     entity::try_into_entities,
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
-    query::{Query, QueryInner},
+    query::{
+        query::{QueryResponse, ToQueryProto},
+        Query,
+    },
     Client, Entity,
 };
 use failure::Error;
@@ -12,18 +15,20 @@ pub struct QueryGetByKey {
 }
 
 impl QueryGetByKey {
-    pub fn new(client: &Client, key: PublicKey) -> Query<Vec<Entity>> {
+    pub fn new(client: &Client, key: PublicKey) -> Query<Self> {
         Query::new(client, Self { key })
     }
 }
 
-impl QueryInner for QueryGetByKey {
+impl QueryResponse for QueryGetByKey {
     type Response = Vec<Entity>;
 
-    fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
+    fn get(mut response: proto::Response::Response) -> Result<Self::Response, Error> {
         try_into_entities(response.take_getByKey().take_entities())
     }
+}
 
+impl ToQueryProto for QueryGetByKey {
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error> {
         let mut query = proto::GetByKey::GetByKeyQuery::new();
         query.set_header(header);

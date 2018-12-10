@@ -1,6 +1,9 @@
 use crate::{
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
-    query::{Query, QueryInner},
+    query::{
+        query::{QueryResponse, ToQueryProto},
+        Query,
+    },
     AccountId, AccountInfo, Client,
 };
 use failure::Error;
@@ -11,18 +14,20 @@ pub struct QueryCryptoGetInfo {
 }
 
 impl QueryCryptoGetInfo {
-    pub fn new(client: &Client, account: AccountId) -> Query<AccountInfo> {
+    pub fn new(client: &Client, account: AccountId) -> Query<Self> {
         Query::new(client, Self { account })
     }
 }
 
-impl QueryInner for QueryCryptoGetInfo {
+impl QueryResponse for QueryCryptoGetInfo {
     type Response = AccountInfo;
 
-    fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
+    fn get(mut response: proto::Response::Response) -> Result<Self::Response, Error> {
         response.take_cryptoGetInfo().take_accountInfo().try_into()
     }
+}
 
+impl ToQueryProto for QueryCryptoGetInfo {
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error> {
         let mut query = proto::CryptoGetInfo::CryptoGetInfoQuery::new();
         query.set_header(header);

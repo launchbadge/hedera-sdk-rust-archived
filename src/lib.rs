@@ -1,3 +1,4 @@
+#![feature(async_await, await_macro, futures_api)]
 #![warn(clippy::pedantic, future_incompatible, unreachable_pub)]
 #![allow(clippy::stutter, clippy::new_ret_no_self, clippy::module_inception)]
 
@@ -36,3 +37,10 @@ pub use self::{
     transaction_record::{TransactionRecord, TransactionRecordBody},
     transaction_status::TransactionStatus,
 };
+
+use once_cell::{sync::Lazy, sync_lazy};
+use parking_lot::Mutex;
+use tokio::runtime::Runtime;
+
+// Used to provide a blocking API for Query and Transaction execution
+static RUNTIME: Lazy<Mutex<Runtime>> = sync_lazy! { Mutex::new(Runtime::new().unwrap()) };

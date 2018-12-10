@@ -374,15 +374,14 @@ impl SecretKey {
     ///
     /// The `password` is required with the mnemonic to reproduce the secret key.
     pub fn generate(password: &str) -> (Self, String) {
-        let mnemonic =
-            Mnemonic::new(MnemonicType::Words24, Language::English);
+        let mnemonic = Mnemonic::new(MnemonicType::Words24, Language::English);
 
         let secret = Self::generate_with_mnemonic(&mnemonic, password);
 
         (secret, mnemonic.into_phrase())
     }
 
-    fn generate_with_mnemonic(mnemonic: &Mnemonic, password: &str) -> SecretKey {
+    fn generate_with_mnemonic(mnemonic: &Mnemonic, password: &str) -> Self {
         let mut seed: [u8; 32] = Default::default();
 
         seed.copy_from_slice(&Seed::new(&mnemonic, password).as_bytes()[0..32]);
@@ -479,7 +478,7 @@ impl<E> TryFrom<Result<SecretKey, E>> for SecretKey {
     type Err = E;
 
     #[inline]
-    fn try_from(res: Result<SecretKey, E>) -> Result<SecretKey, Self::Err> {
+    fn try_from(res: Result<Self, E>) -> Result<Self, Self::Err> {
         res
     }
 }
@@ -491,7 +490,7 @@ where
     type Err = Error;
 
     #[inline]
-    fn try_from(res: Result<String, E>) -> Result<SecretKey, Error> {
+    fn try_from(res: Result<String, E>) -> Result<Self, Error> {
         res.map_err(err_msg)?.parse()
     }
 }

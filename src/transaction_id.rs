@@ -88,9 +88,9 @@ impl ToProto<proto::BasicTypes::TransactionID> for TransactionId {
 
 #[cfg(test)]
 mod tests {
-    use failure::Error;
-    use crate::{timestamp::Timestamp, AccountId};
     use super::TransactionId;
+    use crate::{timestamp::Timestamp, AccountId};
+    use failure::Error;
 
     #[test]
     fn test_display() {

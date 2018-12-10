@@ -1,7 +1,10 @@
 use crate::{
     id::ContractId,
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
-    query::{Query, QueryInner},
+    query::{
+        query::{QueryResponse, ToQueryProto},
+        Query,
+    },
     Client, TransactionId, TransactionRecord,
 };
 use failure::Error;
@@ -54,21 +57,23 @@ pub struct QueryTransactionGetRecord {
 }
 
 impl QueryTransactionGetRecord {
-    pub fn new(client: &Client, transaction: TransactionId) -> Query<TransactionRecord> {
+    pub fn new(client: &Client, transaction: TransactionId) -> Query<Self> {
         Query::new(client, Self { transaction })
     }
 }
 
-impl QueryInner for QueryTransactionGetRecord {
+impl QueryResponse for QueryTransactionGetRecord {
     type Response = TransactionRecord;
 
-    fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
+    fn get(mut response: proto::Response::Response) -> Result<Self::Response, Error> {
         response
             .take_transactionGetRecord()
             .take_transactionRecord()
             .try_into()
     }
+}
 
+impl ToQueryProto for QueryTransactionGetRecord {
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error> {
         let mut query = proto::TransactionGetRecord::TransactionGetRecordQuery::new();
         query.set_header(header);

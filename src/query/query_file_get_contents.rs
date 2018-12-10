@@ -1,7 +1,10 @@
 use crate::{
     id::FileId,
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
-    query::{Query, QueryInner},
+    query::{
+        query::{QueryResponse, ToQueryProto},
+        Query,
+    },
     Client,
 };
 use failure::Error;
@@ -22,21 +25,23 @@ pub struct QueryFileGetContents {
 }
 
 impl QueryFileGetContents {
-    pub fn new(client: &Client, file: FileId) -> Query<Vec<u8>> {
+    pub fn new(client: &Client, file: FileId) -> Query<Self> {
         Query::new(client, Self { file })
     }
 }
 
-impl QueryInner for QueryFileGetContents {
+impl QueryResponse for QueryFileGetContents {
     type Response = Vec<u8>;
 
-    fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
+    fn get(mut response: proto::Response::Response) -> Result<Self::Response, Error> {
         response
             .take_fileGetContents()
             .take_fileContents()
             .try_into()
     }
+}
 
+impl ToQueryProto for QueryFileGetContents {
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error> {
         let mut query = proto::FileGetContents::FileGetContentsQuery::new();
         query.set_header(header);

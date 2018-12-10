@@ -12,30 +12,62 @@ use crate::{
     AccountId, Client, ErrorKind, PreCheckCode, SecretKey,
 };
 use failure::Error;
-use std::{sync::Arc, thread::sleep, time::Duration};
+use futures::{Future, TryFutureExt};
+use std::{
+    marker::PhantomData,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
+    thread::sleep,
+    time::Duration,
+};
+use tokio::await;
+use tokio_async_await::compat::backward::Compat;
 
-#[doc(hidden)]
-pub trait QueryInner {
-    type Response;
-    fn get(&self, response: proto::Response::Response) -> Result<Self::Response, Error>;
+pub(crate) trait ToQueryProto {
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error>;
 }
 
-pub struct Query<T> {
+#[doc(hidden)]
+pub trait QueryResponse {
+    type Response: Send;
+
+    fn get(response: proto::Response::Response) -> Result<Self::Response, Error>;
+}
+
+impl QueryResponse for () {
+    type Response = ();
+
+    fn get(_: proto::Response::Response) -> Result<(), Error> {
+        Ok(())
+    }
+}
+
+pub struct Query<T>
+where
+    T: QueryResponse + Send + Sync + 'static,
+{
     crypto_service: Arc<CryptoServiceClient>,
     contract_service: Arc<SmartContractServiceClient>,
     file_service: Arc<FileServiceClient>,
     kind: proto::QueryHeader::ResponseType,
     payment: Option<proto::Transaction::Transaction>,
-    secret: Option<Arc<dyn Fn() -> Result<SecretKey, Error>>>,
+    secret: Option<Arc<dyn Fn() -> Result<SecretKey, Error> + Send + Sync>>,
     operator: Option<AccountId>,
     node: Option<AccountId>,
-    attempt: u64,
-    inner: Box<dyn QueryInner<Response = T>>,
+    inner: Box<dyn ToQueryProto + Send + Sync>,
+    phantom: PhantomData<T>,
 }
 
-impl<T> Query<T> {
-    pub(crate) fn new<U: QueryInner<Response = T> + 'static>(client: &Client, inner: U) -> Self {
+impl<T> Query<T>
+where
+    T: QueryResponse + Send + Sync + 'static,
+{
+    pub(crate) fn new(client: &Client, inner: T) -> Self
+    where
+        T: ToQueryProto,
+    {
         Self {
             kind: proto::QueryHeader::ResponseType::ANSWER_ONLY,
             payment: None,
@@ -45,8 +77,8 @@ impl<T> Query<T> {
             node: client.node,
             operator: client.operator,
             secret: client.operator_secret.clone(),
-            attempt: 0,
             inner: Box::new(inner),
+            phantom: PhantomData,
         }
     }
 
@@ -58,108 +90,147 @@ impl<T> Query<T> {
         Ok(self)
     }
 
-    pub fn get(&mut self) -> Result<T, Error> {
-        let mut response = self.send()?;
-        let header = take_header(&mut response);
-        match header.get_nodeTransactionPrecheckCode().into() {
-            PreCheckCode::Ok => self.inner.get(response),
+    pub fn get_async(&mut self) -> impl Future<Output = Result<T::Response, Error>> {
+        self.send()
+            .and_then(move |(_, response)| futures::future::ready(T::get(response)))
+    }
 
-            PreCheckCode::Busy if self.attempt < 5 => {
-                self.attempt += 1;
-                sleep(Duration::from_secs(self.attempt * 2));
-                self.get()
-            }
+    pub fn get(&mut self) -> Result<T::Response, Error> {
+        crate::RUNTIME
+            .lock()
+            .block_on(Compat::new(self.get_async()))
+    }
 
-            PreCheckCode::InvalidTransaction if self.payment.is_none() => {
-                if self.operator.is_some() && self.node.is_some() && self.secret.is_some() {
-                    let cost = header.get_cost();
-                    let operator = self.operator;
-                    let node = self.node;
-                    let operator_secret = self.secret.clone();
-
-                    self.payment = Some(
-                        TransactionCryptoTransfer::new(&Client {
-                            node,
-                            operator,
-                            operator_secret,
-                            crypto: self.crypto_service.clone(),
-                            file: self.file_service.clone(),
-                            contract: self.contract_service.clone(),
-                        })
-                        .transfer(*node.as_ref().unwrap(), cost as i64)
-                        .transfer(*operator.as_ref().unwrap(), -(cost as i64))
-                        .build()
-                        .take_raw()?
-                        .tx,
-                    );
-
-                    // Wait 1s before trying again
-                    sleep(Duration::from_secs(1));
-
-                    self.get()
-                } else {
-                    // Requires monies and we don't have anything defaulted
-                    // todo: return a more specific error
-                    Err(ErrorKind::PreCheck(PreCheckCode::InvalidTransaction))?
-                }
-            }
-
-            code => Err(ErrorKind::PreCheck(code))?,
-        }
+    pub fn cost_async(&mut self) -> impl Future<Output = Result<u64, Error>> {
+        // NOTE: This isn't the most ideal way to switch response types..
+        self.kind = proto::QueryHeader::ResponseType::COST_ANSWER;
+        self.send().map_ok(|(header, _)| header.get_cost())
     }
 
     pub fn cost(&mut self) -> Result<u64, Error> {
-        // NOTE: This isn't the most ideal way to switch response types..
-        self.kind = proto::QueryHeader::ResponseType::COST_ANSWER;
-        let mut response = self.send()?;
-
-        let header = take_header(&mut response);
-        match header.get_nodeTransactionPrecheckCode().into() {
-            PreCheckCode::Ok | PreCheckCode::InvalidTransaction => Ok(header.get_cost()),
-
-            PreCheckCode::Busy if self.attempt < 5 => {
-                self.attempt += 1;
-                sleep(Duration::from_secs(self.attempt * 2));
-                self.cost()
-            }
-
-            code => Err(ErrorKind::PreCheck(code))?,
-        }
+        crate::RUNTIME
+            .lock()
+            .block_on(Compat::new(self.cost_async()))
     }
 
-    fn send(&self) -> Result<proto::Response::Response, Error> {
+    fn send(
+        &mut self,
+    ) -> impl Future<
+        Output = Result<
+            (
+                proto::ResponseHeader::ResponseHeader,
+                proto::Response::Response,
+            ),
+            Error,
+        >,
+    > {
         use self::proto::Query::Query_oneof_query::*;
 
-        let query: proto::Query::Query = self.to_proto()?;
-        log::trace!("sent: {:#?}", query);
+        let kind = self.kind;
+        let attempt = AtomicUsize::new(0);
+        let crypto = self.crypto_service.clone();
+        let file = self.file_service.clone();
+        let contract = self.contract_service.clone();
+        let node = self.node.take();
+        let operator = self.operator.take();
+        let operator_secret = self.secret.take();
+        let mut query_res: Option<Result<proto::Query::Query, _>> = Some(self.to_proto());
+        let payment = self.payment.take();
 
-        let o = grpc::RequestOptions::default();
-        let response = match query.query {
-            Some(cryptogetAccountBalance(_)) => self.crypto_service.crypto_get_balance(o, query),
-            Some(transactionGetReceipt(_)) => {
-                self.crypto_service.get_transaction_receipts(o, query)
+        async move {
+            #[allow(clippy::never_loop)]
+            loop {
+                break if let Some(Ok(query)) = &query_res {
+                    if attempt.load(Ordering::SeqCst) == 0 {
+                        log::trace!("sent: {:#?}", query);
+                    }
+
+                    let query = query.clone();
+                    let o = grpc::RequestOptions::default();
+                    let response = match query.query {
+                        Some(cryptogetAccountBalance(_)) => crypto.crypto_get_balance(o, query),
+                        Some(cryptoGetInfo(_)) => crypto.get_account_info(o, query),
+                        Some(fileGetInfo(_)) => file.get_file_info(o, query),
+                        Some(fileGetContents(_)) => file.get_file_content(o, query),
+                        Some(transactionGetRecord(_)) => crypto.get_tx_record_by_tx_id(o, query),
+                        Some(cryptoGetAccountRecords(_)) => crypto.get_account_records(o, query),
+                        Some(contractGetInfo(_)) => contract.get_contract_info(o, query),
+                        Some(contractGetBytecode(_)) => contract.contract_get_bytecode(o, query),
+                        Some(transactionGetReceipt(_)) => crypto.get_transaction_receipts(o, query),
+
+                        _ => unreachable!(),
+                    };
+
+                    let mut response = await!(response.drop_metadata())?;
+                    log::trace!("recv: {:#?}", response);
+
+                    let header = take_header(&mut response);
+                    match header.get_nodeTransactionPrecheckCode().into() {
+                        PreCheckCode::Busy if attempt.load(Ordering::SeqCst) < 5 => {
+                            let attempt = attempt.fetch_add(1, Ordering::SeqCst) + 1;
+                            sleep(Duration::from_secs((attempt * 2) as u64));
+                            continue;
+                        }
+
+                        PreCheckCode::InvalidTransaction => {
+                            if kind == proto::QueryHeader::ResponseType::COST_ANSWER {
+                                // Invalid is _okay_ if we're asking for cost
+                                Ok((header, response))
+                            } else if payment.is_none() {
+                                if operator.is_some() && node.is_some() && operator_secret.is_some()
+                                {
+                                    let cost = header.get_cost();
+                                    let payment = TransactionCryptoTransfer::new(&Client {
+                                        node,
+                                        operator,
+                                        operator_secret: operator_secret.clone(),
+                                        crypto: crypto.clone(),
+                                        file: file.clone(),
+                                        contract: contract.clone(),
+                                    })
+                                    .transfer(*node.as_ref().unwrap(), cost as i64)
+                                    .transfer(*operator.as_ref().unwrap(), -(cost as i64))
+                                    .build()
+                                    .take_raw()?
+                                    .tx;
+
+                                    if let Some(Ok(ref mut query)) = &mut query_res {
+                                        mut_header(query).set_payment(payment);
+                                    }
+
+                                    // Wait 1s before trying again
+                                    sleep(Duration::from_secs(1));
+
+                                    continue;
+                                } else {
+                                    // Requires monies and we don't have anything defaulted
+                                    // todo: return a more specific error
+                                    Err(ErrorKind::PreCheck(PreCheckCode::InvalidTransaction)
+                                        .into())
+                                }
+                            } else {
+                                Err(ErrorKind::PreCheck(PreCheckCode::InvalidTransaction).into())
+                            }
+                        }
+
+                        PreCheckCode::Ok => Ok((header, response)),
+
+                        pre_check_code => Err(ErrorKind::PreCheck(pre_check_code))?,
+                    }
+                } else if let Some(Err(error)) = query_res {
+                    Err(error)
+                } else {
+                    unreachable!()
+                };
             }
-            Some(cryptoGetInfo(_)) => self.crypto_service.get_account_info(o, query),
-            Some(fileGetInfo(_)) => self.file_service.get_file_info(o, query),
-            Some(fileGetContents(_)) => self.file_service.get_file_content(o, query),
-            Some(transactionGetRecord(_)) => self.crypto_service.get_tx_record_by_tx_id(o, query),
-            Some(cryptoGetAccountRecords(_)) => self.crypto_service.get_account_records(o, query),
-            Some(contractGetInfo(_)) => self.contract_service.get_contract_info(o, query),
-            Some(contractGetBytecode(_)) => self.contract_service.contract_get_bytecode(o, query),
-
-            _ => unreachable!(),
-        };
-
-        // TODO: Implement async
-        let response = response.wait_drop_metadata()?;
-
-        log::trace!("recv: {:#?}", response);
-
-        Ok(response)
+        }
     }
 }
 
-impl<T> ToProto<proto::Query::Query> for Query<T> {
+impl<T> ToProto<proto::Query::Query> for Query<T>
+where
+    T: QueryResponse + Send + Sync + 'static,
+{
     fn to_proto(&self) -> Result<proto::Query::Query, Error> {
         let mut header = proto::QueryHeader::QueryHeader::new();
         header.set_responseType(self.kind);
@@ -199,6 +270,32 @@ pub(crate) fn take_header(
         Some(transactionGetReceipt(ref mut res)) => res.take_header(),
         Some(transactionGetRecord(ref mut res)) => res.take_header(),
 
-        _ => unreachable!(),
+        None => unreachable!(),
+    }
+}
+
+// this is needed because some times a query header needs to be adjusted
+// after construction
+pub(crate) fn mut_header(query: &mut proto::Query::Query) -> &mut proto::QueryHeader::QueryHeader {
+    use self::proto::Query::Query_oneof_query::*;
+
+    match &mut query.query {
+        Some(getByKey(ref mut res)) => res.mut_header(),
+        Some(getBySolidityID(ref mut res)) => res.mut_header(),
+        Some(contractCallLocal(ref mut res)) => res.mut_header(),
+        Some(contractGetBytecode(ref mut res)) => res.mut_header(),
+        Some(contractGetInfo(ref mut res)) => res.mut_header(),
+        Some(ContractGetRecords(ref mut res)) => res.mut_header(),
+        Some(cryptogetAccountBalance(ref mut res)) => res.mut_header(),
+        Some(cryptoGetAccountRecords(ref mut res)) => res.mut_header(),
+        Some(cryptoGetInfo(ref mut res)) => res.mut_header(),
+        Some(cryptoGetClaim(ref mut res)) => res.mut_header(),
+        Some(cryptoGetProxyStakers(ref mut res)) => res.mut_header(),
+        Some(fileGetContents(ref mut res)) => res.mut_header(),
+        Some(fileGetInfo(ref mut res)) => res.mut_header(),
+        Some(transactionGetReceipt(ref mut res)) => res.mut_header(),
+        Some(transactionGetRecord(ref mut res)) => res.mut_header(),
+
+        None => unreachable!(),
     }
 }

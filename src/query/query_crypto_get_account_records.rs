@@ -1,7 +1,10 @@
 use crate::{
     id::AccountId,
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
-    query::{Query, QueryInner},
+    query::{
+        query::{QueryResponse, ToQueryProto},
+        Query,
+    },
     Client, TransactionRecord,
 };
 use failure::Error;
@@ -12,15 +15,15 @@ pub struct QueryCryptoGetAccountRecords {
 }
 
 impl QueryCryptoGetAccountRecords {
-    pub fn new(client: &Client, account: AccountId) -> Query<Vec<TransactionRecord>> {
+    pub fn new(client: &Client, account: AccountId) -> Query<Self> {
         Query::new(client, Self { account })
     }
 }
 
-impl QueryInner for QueryCryptoGetAccountRecords {
+impl QueryResponse for QueryCryptoGetAccountRecords {
     type Response = Vec<TransactionRecord>;
 
-    fn get(&self, mut response: proto::Response::Response) -> Result<Self::Response, Error> {
+    fn get(mut response: proto::Response::Response) -> Result<Self::Response, Error> {
         response
             .take_cryptoGetAccountRecords()
             .take_records()
@@ -28,7 +31,9 @@ impl QueryInner for QueryCryptoGetAccountRecords {
             .map(TryInto::try_into)
             .collect::<Result<Vec<_>, _>>()
     }
+}
 
+impl ToQueryProto for QueryCryptoGetAccountRecords {
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error> {
         let mut query = proto::CryptoGetAccountRecords::CryptoGetAccountRecordsQuery::new();
         query.set_header(header);

@@ -11,9 +11,12 @@ use crate::{
     AccountId, Client, TransactionId,
 };
 use failure::Error;
+use futures::{future, Future, TryFutureExt};
 use protobuf::Message;
 use query_interface::Object;
 use std::{any::Any, marker::PhantomData, mem::swap, sync::Arc, time::Duration};
+use tokio::await;
+use tokio_async_await::compat::backward::Compat;
 
 pub struct TransactionBuilder<T> {
     id: Option<TransactionId>,
@@ -49,7 +52,7 @@ pub struct Transaction<T, S = TransactionBuilder<T>> {
     crypto_service: Arc<CryptoServiceClient>,
     file_service: Arc<FileServiceClient>,
     contract_service: Arc<SmartContractServiceClient>,
-    secret: Option<Arc<dyn Fn() -> Result<SecretKey, Error>>>,
+    secret: Option<Arc<dyn Fn() -> Result<SecretKey, Error> + Send + Sync>>,
     kind: TransactionKind<T>,
     phantom: PhantomData<S>,
 }
@@ -127,8 +130,14 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
         self.build().sign(secret)
     }
 
+    pub fn execute_async(&mut self) -> impl Future<Output = Result<TransactionId, Error>> {
+        self.build().execute_async()
+    }
+
     pub fn execute(&mut self) -> Result<TransactionId, Error> {
-        self.build().execute()
+        crate::RUNTIME
+            .lock()
+            .block_on(Compat::new(self.execute_async()))
     }
 
     #[inline]
@@ -243,41 +252,51 @@ impl<T: 'static> Transaction<T, TransactionRaw> {
     }
 
     pub fn execute(&mut self) -> Result<TransactionId, Error> {
+        crate::RUNTIME
+            .lock()
+            .block_on(Compat::new(self.execute_async()))
+    }
+
+    pub fn execute_async(&mut self) -> impl Future<Output = Result<TransactionId, Error>> {
         use self::proto::Transaction::TransactionBody_oneof_data::*;
 
-        let state = self.take_raw()?;
-        let mut tx = state.tx;
+        let crypto = self.crypto_service.clone();
+        let file = self.file_service.clone();
+        let contract = self.contract_service.clone();
 
-        // note: cannot fail
-        let id = tx
-            .body
-            .as_ref()
-            .unwrap()
-            .transactionID
-            .as_ref()
-            .unwrap()
-            .clone();
+        future::ready(self.take_raw()).and_then(async move |state| {
+            let mut tx = state.tx;
 
-        log::trace!(target: "hedera::transaction", "sent: {:#?}", tx);
+            // note: cannot fail
+            let id = tx
+                .body
+                .as_ref()
+                .unwrap()
+                .transactionID
+                .as_ref()
+                .unwrap()
+                .clone();
 
-        let o = grpc::RequestOptions::default();
-        let response = match tx.mut_body().data {
-            Some(cryptoCreateAccount(_)) => self.crypto_service.create_account(o, tx),
-            Some(cryptoTransfer(_)) => self.crypto_service.crypto_transfer(o, tx),
-            Some(cryptoDeleteClaim(_)) => self.crypto_service.delete_claim(o, tx),
-            Some(cryptoDelete(_)) => self.crypto_service.crypto_delete(o, tx),
-            Some(fileCreate(_)) => self.file_service.create_file(o, tx),
-            Some(fileAppend(_)) => self.file_service.append_content(o, tx),
-            Some(contractCreateInstance(_)) => self.contract_service.create_contract(o, tx),
+            log::trace!(target: "hedera::transaction", "sent: {:#?}", tx);
 
-            _ => unimplemented!(),
-        };
+            let o = grpc::RequestOptions::default();
+            let response = match tx.mut_body().data {
+                Some(cryptoCreateAccount(_)) => crypto.create_account(o, tx),
+                Some(cryptoTransfer(_)) => crypto.crypto_transfer(o, tx),
+                Some(cryptoDeleteClaim(_)) => crypto.delete_claim(o, tx),
+                Some(cryptoDelete(_)) => crypto.crypto_delete(o, tx),
+                Some(fileCreate(_)) => file.create_file(o, tx),
+                Some(fileAppend(_)) => file.append_content(o, tx),
+                Some(contractCreateInstance(_)) => contract.create_contract(o, tx),
 
-        // TODO: Implement async
-        let response = response.wait_drop_metadata()?;
-        log::trace!("recv: {:#?}", response);
+                _ => unimplemented!(),
+            };
 
-        try_precheck!(response).map(|_| id.into())
+            let response = await!(response.drop_metadata())?;
+            log::trace!("recv: {:#?}", response);
+
+            try_precheck!(response).map(|_| id.into())
+        })
     }
 }
 
