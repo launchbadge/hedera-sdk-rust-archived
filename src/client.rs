@@ -1,8 +1,3 @@
-use std::{sync::Arc, time::Duration};
-
-use failure::{format_err, Error};
-use itertools::Itertools;
-
 use crate::{
     claim::Claim,
     crypto::SecretKey,
@@ -24,20 +19,23 @@ use crate::{
     },
     AccountId, AccountInfo, FileInfo, TransactionId, TransactionReceipt, TransactionRecord,
 };
-
+use failure::{err_msg, format_err, Error};
 use grpc::ClientStub;
+use itertools::Itertools;
+use std::{fmt, sync::Arc, time::Duration};
+use try_from::TryInto;
 
 pub struct ClientBuilder<'a> {
     address: &'a str,
     node: Option<AccountId>,
     operator: Option<AccountId>,
-    operator_secret: Option<SecretKey>,
+    operator_secret: Option<Arc<dyn Fn() -> Result<SecretKey, Error>>>,
 }
 
 pub struct Client {
     pub(crate) node: Option<AccountId>,
     pub(crate) operator: Option<AccountId>,
-    pub(crate) operator_secret: Option<Arc<SecretKey>>,
+    pub(crate) operator_secret: Option<Arc<dyn Fn() -> Result<SecretKey, Error>>>,
     pub(crate) crypto: Arc<CryptoServiceClient>,
     pub(crate) file: Arc<FileServiceClient>,
     pub(crate) contract: Arc<SmartContractServiceClient>,
@@ -49,9 +47,13 @@ impl<'a> ClientBuilder<'a> {
         self
     }
 
-    pub fn operator(mut self, operator: AccountId, operator_secret: SecretKey) -> Self {
+    pub fn operator<R, E>(mut self, operator: AccountId, secret: impl Fn() -> R + 'static) -> Self
+    where
+        E: fmt::Debug + fmt::Display + Send + Sync + 'static,
+        R: TryInto<SecretKey, Err = E>,
+    {
         self.operator = Some(operator);
-        self.operator_secret = Some(operator_secret);
+        self.operator_secret = Some(Arc::new(move || secret().try_into().map_err(err_msg)));
 
         self
     }
@@ -64,7 +66,8 @@ impl<'a> ClientBuilder<'a> {
         }
 
         if let (Some(operator), Some(secret)) = (self.operator, self.operator_secret) {
-            client.set_operator(operator, secret);
+            client.operator = Some(operator);
+            client.operator_secret = Some(secret);
         }
 
         Ok(client)
@@ -127,22 +130,18 @@ impl Client {
     }
 
     #[inline]
-    pub(crate) fn set_node(&mut self, node: AccountId) -> &mut Self {
+    pub fn set_node(&mut self, node: AccountId) {
         self.node = Some(node);
-
-        self
     }
 
     #[inline]
-    pub(crate) fn set_operator(
-        &mut self,
-        operator: AccountId,
-        operator_secret: SecretKey,
-    ) -> &mut Self {
+    pub fn set_operator<R, E>(&mut self, operator: AccountId, secret: impl Fn() -> R + 'static)
+    where
+        E: fmt::Debug + fmt::Display + Send + Sync + 'static,
+        R: TryInto<SecretKey, Err = E>,
+    {
         self.operator = Some(operator);
-        self.operator_secret = Some(Arc::new(operator_secret));
-
-        self
+        self.operator_secret = Some(Arc::new(move || secret().try_into().map_err(err_msg)));
     }
 
     #[inline]

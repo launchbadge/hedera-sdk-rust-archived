@@ -6,8 +6,8 @@ use failure_derive::Fail;
 use hex;
 use num::BigUint;
 use once_cell::{sync::Lazy, sync_lazy};
-use rand_chacha::ChaChaRng;
 use rand::SeedableRng;
+use rand_chacha::ChaChaRng;
 use sha2::Sha512;
 use simple_asn1::{
     der_decode, der_encode, oid, to_der, ASN1Block, ASN1Class, ASN1DecodeErr, ASN1EncodeErr,
@@ -472,6 +472,36 @@ impl FromStr for SecretKey {
     #[inline]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::from_bytes(&hex::decode(s.as_bytes())?)
+    }
+}
+
+impl<E> TryFrom<Result<SecretKey, E>> for SecretKey {
+    type Err = E;
+
+    #[inline]
+    fn try_from(res: Result<SecretKey, E>) -> Result<SecretKey, Self::Err> {
+        res
+    }
+}
+
+impl<E> TryFrom<Result<String, E>> for SecretKey
+where
+    E: Sync + Send + 'static + fmt::Debug + fmt::Display,
+{
+    type Err = Error;
+
+    #[inline]
+    fn try_from(res: Result<String, E>) -> Result<SecretKey, Error> {
+        res.map_err(err_msg)?.parse()
+    }
+}
+
+impl TryFrom<SecretKey> for SecretKey {
+    type Err = Error;
+
+    #[inline]
+    fn try_from(self_: Self) -> Result<Self, Error> {
+        Ok(self_)
     }
 }
 

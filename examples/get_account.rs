@@ -1,13 +1,11 @@
 use failure::Error;
-use hedera::{Client, SecretKey};
+use hedera::Client;
 use std::env;
 
 fn main() -> Result<(), Error> {
     let operator = env::var("OPERATOR")?.parse()?;
-    let operator_secret: SecretKey = env::var("OPERATOR_SECRET")?.parse()?;
-
     let client = Client::builder("testnet.hedera.com:50001")
-        .operator(operator, operator_secret)
+        .operator(operator, || env::var("OPERATOR_SECRET"))
         .build()?;
 
     // Get the cost for getting the balance

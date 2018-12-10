@@ -12,12 +12,8 @@ fn main() -> Result<(), Error> {
     // Operator is the account that sends the transaction to the network
     // This account is charged for the transaction fee
     let operator = "0:0:2".parse()?;
-
-    // We need the secret key for the operator
-    let operator_secret = env::var("OPERATOR_SECRET")?.parse()?;
-
     let client = Client::builder("testnet.hedera.com:50001")
-        .operator(operator, operator_secret)
+        .operator(operator, || env::var("OPERATOR_SECRET"))
         .build()?;
 
     // Create our account

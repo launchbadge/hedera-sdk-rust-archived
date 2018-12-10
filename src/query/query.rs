@@ -27,7 +27,7 @@ pub struct Query<T> {
     file_service: Arc<FileServiceClient>,
     kind: proto::QueryHeader::ResponseType,
     payment: Option<proto::Transaction::Transaction>,
-    secret: Option<Arc<SecretKey>>,
+    secret: Option<Arc<dyn Fn() -> Result<SecretKey, Error>>>,
     operator: Option<AccountId>,
     node: Option<AccountId>,
     attempt: u64,

@@ -49,7 +49,7 @@ pub struct Transaction<T, S = TransactionBuilder<T>> {
     crypto_service: Arc<CryptoServiceClient>,
     file_service: Arc<FileServiceClient>,
     contract_service: Arc<SmartContractServiceClient>,
-    secret: Option<Arc<SecretKey>>,
+    secret: Option<Arc<dyn Fn() -> Result<SecretKey, Error>>>,
     kind: TransactionKind<T>,
     phantom: PhantomData<S>,
 }
@@ -310,7 +310,7 @@ impl<T: 'static, S: 'static> Transaction<T, S> {
                 }
 
                 if let Some(secret) = &self.secret {
-                    let signature = secret.sign(&state.bytes).to_proto()?;
+                    let signature = secret()?.sign(&state.bytes).to_proto()?;
 
                     match &tx.body.as_ref().unwrap().data {
                         Some(cryptoTransfer(data)) => {

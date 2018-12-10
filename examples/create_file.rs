@@ -10,9 +10,8 @@ fn main() -> Result<(), Error> {
     let operator_secret: SecretKey = env::var("OPERATOR_SECRET")?.parse()?;
     let contents = "Hello World!";
 
-    let client = Client::builder("testnet.hedera.com:50001")
-        .operator(operator, operator_secret.clone())
-        .build()?;
+    let mut client = Client::new("testnet.hedera.com:50001")?;
+    client.set_operator(operator, || env::var("OPERATOR_SECRET"));
 
     //
     // Create (empty) File
