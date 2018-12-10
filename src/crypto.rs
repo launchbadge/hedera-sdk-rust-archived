@@ -1,7 +1,7 @@
 use crate::proto::{self, ToProto};
-use bip39::{Language, Mnemonic, MnemonicType};
+use bip39::{Language, Mnemonic, MnemonicType, Seed};
 use ed25519_dalek;
-use failure::{bail, err_msg, Error, SyncFailure};
+use failure::{bail, err_msg, Error};
 use failure_derive::Fail;
 use hex;
 use num::BigUint;
@@ -375,16 +375,17 @@ impl SecretKey {
     /// The `password` is required with the mnemonic to reproduce the secret key.
     pub fn generate(password: &str) -> (Self, String) {
         let mnemonic =
-            Mnemonic::new(MnemonicType::Type24Words, Language::English, password).unwrap();
+            Mnemonic::new(MnemonicType::Words24, Language::English);
 
-        let secret = Self::generate_with_mnemonic(&mnemonic);
+        let secret = Self::generate_with_mnemonic(&mnemonic, password);
 
-        (secret, mnemonic.get_string())
+        (secret, mnemonic.into_phrase())
     }
 
-    fn generate_with_mnemonic(mnemonic: &Mnemonic) -> SecretKey {
+    fn generate_with_mnemonic(mnemonic: &Mnemonic, password: &str) -> SecretKey {
         let mut seed: [u8; 32] = Default::default();
-        seed.copy_from_slice(&mnemonic.as_seed().as_bytes()[0..32]);
+
+        seed.copy_from_slice(&Seed::new(&mnemonic, password).as_bytes()[0..32]);
 
         let mut rng = ChaChaRng::from_seed(seed);
         SecretKey(ed25519_dalek::SecretKey::generate(&mut rng))
@@ -421,10 +422,9 @@ impl SecretKey {
 
     /// Re-construct a `SecretKey` from the supplied mnemonic and password.
     pub fn from_mnemonic(mnemonic: &str, password: &str) -> Result<Self, Error> {
-        let mnemonic = Mnemonic::from_string(mnemonic, Language::English, password)
-            .map_err(SyncFailure::new)?;
+        let mnemonic = Mnemonic::from_phrase(mnemonic, Language::English)?;
 
-        Ok(Self::generate_with_mnemonic(&mnemonic))
+        Ok(Self::generate_with_mnemonic(&mnemonic, password))
     }
 
     /// Format a `SecretKey` as a vec of bytes in ASN.1 format.
