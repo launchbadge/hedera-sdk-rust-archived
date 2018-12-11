@@ -8,17 +8,17 @@ use crate::{
 };
 use failure::Error;
 
-pub struct QueryGetTransactionReceipt {
+pub struct QueryTransactionGetReceipt {
     transaction_id: TransactionId,
 }
 
-impl QueryGetTransactionReceipt {
+impl QueryTransactionGetReceipt {
     pub fn new(client: &Client, transaction_id: TransactionId) -> Query<Self> {
         Query::new(client, Self { transaction_id })
     }
 }
 
-impl QueryResponse for QueryGetTransactionReceipt {
+impl QueryResponse for QueryTransactionGetReceipt {
     type Response = TransactionReceipt;
 
     fn get(mut response: proto::Response::Response) -> Result<Self::Response, Error> {
@@ -26,7 +26,7 @@ impl QueryResponse for QueryGetTransactionReceipt {
     }
 }
 
-impl ToQueryProto for QueryGetTransactionReceipt {
+impl ToQueryProto for QueryTransactionGetReceipt {
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error> {
         let mut query = proto::TransactionGetReceipt::TransactionGetReceiptQuery::new();
         query.set_header(header);

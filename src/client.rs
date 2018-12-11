@@ -7,7 +7,7 @@ use crate::{
     },
     query::{
         Query, QueryCryptoGetAccountBalance, QueryCryptoGetClaim, QueryCryptoGetInfo,
-        QueryFileGetContents, QueryFileGetInfo, QueryGetTransactionReceipt,
+        QueryFileGetContents, QueryFileGetInfo, QueryTransactionGetReceipt,
         QueryTransactionGetRecord,
     },
     transaction::{
@@ -293,8 +293,8 @@ impl<'a> PartialTransactionMessage<'a> {
     /// Once a transaction reaches consensus, then information about whether it succeeded or
     /// failed will be available until the end of the receipt period.
     #[inline]
-    pub fn receipt(self) -> Query<QueryGetTransactionReceipt> {
-        QueryGetTransactionReceipt::new(self.0, self.1)
+    pub fn receipt(self) -> Query<QueryTransactionGetReceipt> {
+        QueryTransactionGetReceipt::new(self.0, self.1)
     }
 
     /// Get the record for a transaction.
