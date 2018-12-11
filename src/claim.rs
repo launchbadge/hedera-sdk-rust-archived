@@ -14,23 +14,6 @@ pub struct Claim {
     pub keys: Vec<PublicKey>,
 }
 
-impl Claim {
-    pub fn new(account: AccountId, hash: Vec<u8>) -> Self {
-        debug_assert!(hash.len() == 48);
-        Self {
-            account,
-            hash,
-            keys: Vec::new(),
-        }
-    }
-
-    #[inline]
-    pub fn key(&mut self, key: PublicKey) -> &mut Self {
-        self.keys.push(key);
-        self
-    }
-}
-
 impl TryFrom<proto::CryptoAddClaim::Claim> for Claim {
     type Err = Error;
 
