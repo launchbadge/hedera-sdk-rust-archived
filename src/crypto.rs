@@ -252,7 +252,7 @@ impl FromASN1 for PrivateKeyInfo {
 
 /// An ed25519 public key.
 #[repr(C)]
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Copy)]
 pub struct PublicKey(ed25519_dalek::PublicKey);
 
 impl PublicKey {
