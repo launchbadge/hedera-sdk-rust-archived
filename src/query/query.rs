@@ -9,7 +9,7 @@ use crate::{
         ToProto,
     },
     transaction::{Transaction, TransactionCryptoTransfer},
-    AccountId, Client, ErrorKind, PreCheckCode, SecretKey,
+    AccountId, Client, ErrorKind, Status, SecretKey,
 };
 use failure::Error;
 use futures::{Future, TryFutureExt};
@@ -166,13 +166,13 @@ where
 
                     let header = take_header(&mut response);
                     match header.get_nodeTransactionPrecheckCode().into() {
-                        PreCheckCode::Busy if attempt.load(Ordering::SeqCst) < 5 => {
+                        Status::Busy if attempt.load(Ordering::SeqCst) < 5 => {
                             let attempt = attempt.fetch_add(1, Ordering::SeqCst) + 1;
                             sleep(Duration::from_secs((attempt * 2) as u64));
                             continue;
                         }
 
-                        PreCheckCode::InvalidTransaction => {
+                        Status::MissingQueryHeader => {
                             if kind == proto::QueryHeader::ResponseType::COST_ANSWER {
                                 // Invalid is _okay_ if we're asking for cost
                                 Ok((header, response))
@@ -205,15 +205,15 @@ where
                                 } else {
                                     // Requires monies and we don't have anything defaulted
                                     // todo: return a more specific error
-                                    Err(ErrorKind::PreCheck(PreCheckCode::InvalidTransaction)
+                                    Err(ErrorKind::PreCheck(Status::MissingQueryHeader)
                                         .into())
                                 }
                             } else {
-                                Err(ErrorKind::PreCheck(PreCheckCode::InvalidTransaction).into())
+                                unreachable!()
                             }
                         }
 
-                        PreCheckCode::Ok => Ok((header, response)),
+                        Status::Ok => Ok((header, response)),
 
                         pre_check_code => Err(ErrorKind::PreCheck(pre_check_code))?,
                     }
@@ -269,6 +269,7 @@ pub(crate) fn take_header(
         Some(fileGetInfo(ref mut res)) => res.take_header(),
         Some(transactionGetReceipt(ref mut res)) => res.take_header(),
         Some(transactionGetRecord(ref mut res)) => res.take_header(),
+        Some(transactionGetFastRecord(ref mut res)) => res.take_header(),
 
         None => unreachable!(),
     }
@@ -295,6 +296,7 @@ pub(crate) fn mut_header(query: &mut proto::Query::Query) -> &mut proto::QueryHe
         Some(fileGetInfo(ref mut res)) => res.mut_header(),
         Some(transactionGetReceipt(ref mut res)) => res.mut_header(),
         Some(transactionGetRecord(ref mut res)) => res.mut_header(),
+        Some(transactionGetFastRecord(ref mut res)) => res.mut_header(),
 
         None => unreachable!(),
     }

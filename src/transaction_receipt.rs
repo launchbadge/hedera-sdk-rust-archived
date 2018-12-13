@@ -1,9 +1,9 @@
-use crate::{proto, AccountId, ContractId, FileId, TransactionStatus};
+use crate::{proto, AccountId, ContractId, FileId, Status};
 
 #[repr(C)]
 #[derive(Debug, Clone)]
 pub struct TransactionReceipt {
-    pub status: TransactionStatus,
+    pub status: Status,
     pub account_id: Option<Box<AccountId>>,
     pub contract_id: Option<Box<ContractId>>,
     pub file_id: Option<Box<FileId>>,

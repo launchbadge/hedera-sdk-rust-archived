@@ -15,13 +15,12 @@ mod id;
 mod info;
 mod proto;
 pub mod query;
-mod response;
+mod status;
 mod timestamp;
 pub mod transaction;
 mod transaction_id;
 mod transaction_receipt;
 mod transaction_record;
-mod transaction_status;
 
 pub use self::{
     claim::Claim,
@@ -31,11 +30,10 @@ pub use self::{
     error::ErrorKind,
     id::*,
     info::{AccountInfo, ContractInfo, FileInfo},
-    response::PreCheckCode,
+    status::Status,
     transaction_id::TransactionId,
     transaction_receipt::TransactionReceipt,
     transaction_record::{TransactionRecord, TransactionRecordBody},
-    transaction_status::TransactionStatus,
 };
 
 use once_cell::{sync::Lazy, sync_lazy};
