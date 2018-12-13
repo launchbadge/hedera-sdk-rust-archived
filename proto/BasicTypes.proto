@@ -44,8 +44,8 @@ message ContractID {
 
 /* The ID for a transaction. This is used for retrieving receipts and records for a transaction, for appending to a file right after creating it, for instantiating a smart contract with bytecode in a file just created, and internally by the network for detecting when duplicate transactions are submitted. A user might get a transaction processed faster by submitting it to N nodes, each with a different node account, but all with the same TransactionID. Then, the transaction will take effect when the first of all those nodes submits the transaction and it reaches consensus. The other transactions will not take effect. So this could make the transaction take effect faster, if any given node might be slow. However, the full transaction fee is charged for each transaction, so the total fee is N times as much if the transaction is sent to N nodes. */
 message TransactionID {
-    AccountID accountID = 2; //the account that paid for this transaction
     Timestamp transactionValidStart = 1; // the transaction is invalid if consensusTimestamp < transactionID.transactionStartValid
+    AccountID accountID = 2; //the account that paid for this transaction
 }
 
 /* A Key can be a public key from one of the three supported systems (ed25519, RSA-3072,  ECDSA with p384). Or, it can be the ID of a smart contract instance, which is authorized to act as if it had a key. If an account has an ed25519 key associated with it, then the corresponding private key must sign any transaction to transfer cryptocurrency out of it. And similarly for RSA and ECDSA.
@@ -184,6 +184,3 @@ message NodeAddress {
 message NodeAddressBook {
     repeated NodeAddress nodeAddress = 1;
 }
-	
-	
-
