@@ -223,28 +223,6 @@ impl<T: 'static> Transaction<T, TransactionRaw> {
 
             // note: this cannot fail
             let signatures = &mut state.tx.sigs.as_mut().unwrap().sigs;
-
-            // signature #0 is for operator
-            // signature #1 is for:
-            //  - owner of _thing_ being created
-            //  - # correspond to transfer
-
-            if (has_secret || signatures.len() >= 1)
-                && (kind == Some(FileCreate) || kind == Some(FileAppend))
-            {
-                // IF we are on signature #1 and we operating on a file or contract,
-                // place the signature into a signature list
-
-                let mut sig = proto::BasicTypes::Signature::new();
-                sig.signature = signature.signature;
-
-                let mut sigs = proto::BasicTypes::SignatureList::new();
-                sigs.sigs.push(sig);
-
-                signature = proto::BasicTypes::Signature::new();
-                signature.set_signatureList(sigs);
-            }
-
             signatures.push(signature);
         }
 
