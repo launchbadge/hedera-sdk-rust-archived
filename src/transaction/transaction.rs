@@ -72,7 +72,7 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
                 node: client.node,
                 memo: None,
                 inner: Box::<T>::new(inner) as Box<dyn Object>,
-                fee: 10,
+                fee: 100_000,
                 generate_record: false,
                 phantom: PhantomData,
             }),
