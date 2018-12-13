@@ -6,6 +6,8 @@ use std::{env, thread::sleep, time::Duration};
 use tokio::{await, run_async};
 
 async fn main_() -> Result<(), Error> {
+    pretty_env_logger::try_init()?;
+
     let (secret, _) = SecretKey::generate("");
     let public = secret.public();
 
@@ -16,6 +18,7 @@ async fn main_() -> Result<(), Error> {
     // This account is charged for the transaction fee
     let operator = "0:0:2".parse()?;
     let client = Client::builder("testnet.hedera.com:50001")
+        .node("0:0:3".parse()?)
         .operator(operator, || env::var("OPERATOR_SECRET"))
         .build()?;
 
@@ -23,7 +26,7 @@ async fn main_() -> Result<(), Error> {
     let id = await!(client
         .create_account()
         .key(public)
-        .initial_balance(10)
+        .initial_balance(5_000_000)
         .memo("[hedera-sdk-rust][example] create_account")
         .execute_async())?;
 

@@ -203,7 +203,25 @@ impl<T: 'static> Transaction<T, TransactionRaw> {
     pub fn sign(&mut self, secret: &SecretKey) -> &mut Self {
         if let Some(state) = self.as_raw() {
             // note: this cannot fail
-            let signature = secret.sign(&state.bytes).to_proto().unwrap();
+            let id = state
+                .tx
+                .body
+                .as_ref()
+                .unwrap()
+                .transactionID
+                .as_ref()
+                .unwrap()
+                .clone();
+
+            // note: this cannot fail
+            let operator = id.accountID.as_ref().unwrap().clone();
+
+            // HACK: If an accountNum is < 1000 pretend it has a slightly more complex key structure
+            let signature = if operator.get_accountNum() < 1000 {
+                (&[&secret.sign(&state.bytes)][..]).to_proto().unwrap()
+            } else {
+                secret.sign(&state.bytes).to_proto().unwrap()
+            };
 
             if !state.tx.has_sigs() {
                 state.tx.set_sigs(proto::BasicTypes::SignatureList::new());
@@ -295,7 +313,12 @@ impl<T: 'static, S: 'static> Transaction<T, S> {
                 }
 
                 if let Some(secret) = &self.secret {
-                    let signature = secret()?.sign(&state.bytes).to_proto()?;
+                    // HACK: If an accountNum is < 1000 pretend it has a slightly more complex key structure
+                    let signature = if operator.get_accountNum() < 1000 {
+                        (&[&secret()?.sign(&state.bytes)][..]).to_proto().unwrap()
+                    } else {
+                        secret()?.sign(&state.bytes).to_proto().unwrap()
+                    };
 
                     match &tx.body.as_ref().unwrap().data {
                         Some(cryptoTransfer(data)) => {

@@ -554,12 +554,20 @@ impl Display for Signature {
 
 impl ToProto<proto::BasicTypes::Signature> for Signature {
     fn to_proto(&self) -> Result<proto::BasicTypes::Signature, Error> {
-        let mut list = proto::BasicTypes::SignatureList::new();
-
         let mut signature = proto::BasicTypes::Signature::new();
         signature.set_ed25519(self.0.to_bytes().to_vec());
 
-        list.sigs.push(signature);
+        Ok(signature)
+    }
+}
+
+impl<'a> ToProto<proto::BasicTypes::Signature> for &'a [&'a Signature] {
+    fn to_proto(&self) -> Result<proto::BasicTypes::Signature, Error> {
+        let mut list = proto::BasicTypes::SignatureList::new();
+
+        for signature in self.iter() {
+            list.sigs.push(signature.to_proto()?);
+        }
 
         let mut wrapper = proto::BasicTypes::Signature::new();
         wrapper.set_signatureList(list);

@@ -9,7 +9,7 @@ use crate::{
         ToProto,
     },
     transaction::{Transaction, TransactionCryptoTransfer},
-    AccountId, Client, ErrorKind, Status, SecretKey,
+    AccountId, Client, ErrorKind, SecretKey, Status,
 };
 use failure::Error;
 use futures::{Future, TryFutureExt};
@@ -26,7 +26,9 @@ use tokio::await;
 use tokio_async_await::compat::backward::Compat;
 
 pub(crate) trait ToQueryProto {
-    fn is_free(&self) -> bool { false }
+    fn is_free(&self) -> bool {
+        false
+    }
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error>;
 }
 
@@ -129,7 +131,9 @@ where
                 .transfer(*self.node.as_ref().unwrap(), cost as i64)
                 .transfer(*self.operator.as_ref().unwrap(), -(cost as i64))
                 .build()
-                .take_raw().ok().map(|tx| tx.tx);
+                .take_raw()
+                .ok()
+                .map(|tx| tx.tx);
             }
         }
 

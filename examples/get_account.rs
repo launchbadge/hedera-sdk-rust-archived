@@ -3,8 +3,11 @@ use hedera::Client;
 use std::env;
 
 fn main() -> Result<(), Error> {
+    pretty_env_logger::try_init()?;
+
     let operator = env::var("OPERATOR")?.parse()?;
     let client = Client::builder("testnet.hedera.com:50001")
+        .node("0:0:3".parse()?)
         .operator(operator, || env::var("OPERATOR_SECRET"))
         .build()?;
 
