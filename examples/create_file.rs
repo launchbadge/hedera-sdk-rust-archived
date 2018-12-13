@@ -2,7 +2,7 @@
 use chrono::{Duration, Utc};
 use failure::{format_err, Error};
 use futures::FutureExt;
-use hedera::{Client, SecretKey, TransactionStatus};
+use hedera::{Client, SecretKey, Status};
 use std::{env, str::from_utf8, thread::sleep, time::Duration as StdDuration};
 use tokio::{await, run_async};
 
@@ -35,7 +35,7 @@ async fn main_() -> Result<(), Error> {
     //
 
     let receipt = await!(client.transaction(id).receipt().get_async())?;
-    if receipt.status != TransactionStatus::Success {
+    if receipt.status != Status::Success {
         return Err(format_err!(
             "transaction has a non-successful status: {:?}",
             receipt.status
@@ -62,7 +62,7 @@ async fn main_() -> Result<(), Error> {
 
     // Pull the receipt; just to be sure it was successful
     let receipt = await!(client.transaction(id).receipt().get_async())?;
-    if receipt.status != TransactionStatus::Success {
+    if receipt.status != Status::Success {
         return Err(format_err!(
             "transaction has a non-successful status: {:?}",
             receipt.status
