@@ -27,6 +27,10 @@ impl QueryResponse for QueryTransactionGetReceipt {
 }
 
 impl ToQueryProto for QueryTransactionGetReceipt {
+    fn is_free(&self) -> bool {
+        true
+    }
+
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error> {
         let mut query = proto::TransactionGetReceipt::TransactionGetReceiptQuery::new();
         query.set_header(header);

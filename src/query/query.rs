@@ -26,6 +26,7 @@ use tokio::await;
 use tokio_async_await::compat::backward::Compat;
 
 pub(crate) trait ToQueryProto {
+    fn is_free(&self) -> bool { false }
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error>;
 }
 
@@ -51,7 +52,6 @@ where
     crypto_service: Arc<CryptoServiceClient>,
     contract_service: Arc<SmartContractServiceClient>,
     file_service: Arc<FileServiceClient>,
-    kind: proto::QueryHeader::ResponseType,
     payment: Option<proto::Transaction::Transaction>,
     secret: Option<Arc<dyn Fn() -> Result<SecretKey, Error> + Send + Sync>>,
     operator: Option<AccountId>,
@@ -69,7 +69,6 @@ where
         T: ToQueryProto,
     {
         Self {
-            kind: proto::QueryHeader::ResponseType::ANSWER_ONLY,
             payment: None,
             crypto_service: client.crypto.clone(),
             contract_service: client.contract.clone(),
@@ -101,18 +100,6 @@ where
             .block_on(Compat::new(self.get_async()))
     }
 
-    pub fn cost_async(&mut self) -> impl Future<Output = Result<u64, Error>> {
-        // NOTE: This isn't the most ideal way to switch response types..
-        self.kind = proto::QueryHeader::ResponseType::COST_ANSWER;
-        self.send().map_ok(|(header, _)| header.get_cost())
-    }
-
-    pub fn cost(&mut self) -> Result<u64, Error> {
-        crate::RUNTIME
-            .lock()
-            .block_on(Compat::new(self.cost_async()))
-    }
-
     fn send(
         &mut self,
     ) -> impl Future<
@@ -126,16 +113,31 @@ where
     > {
         use self::proto::Query::Query_oneof_query::*;
 
-        let kind = self.kind;
+        if !self.inner.is_free() && self.payment.is_none() {
+            // Attach a payment transaction if this is a non-free query and we
+            // have payment details
+            if self.operator.is_some() && self.node.is_some() && self.secret.is_some() {
+                let cost = 100_000;
+                self.payment = TransactionCryptoTransfer::new(&Client {
+                    node: self.node.clone(),
+                    operator: self.operator.clone(),
+                    operator_secret: self.secret.clone(),
+                    crypto: self.crypto_service.clone(),
+                    file: self.file_service.clone(),
+                    contract: self.contract_service.clone(),
+                })
+                .transfer(*self.node.as_ref().unwrap(), cost as i64)
+                .transfer(*self.operator.as_ref().unwrap(), -(cost as i64))
+                .build()
+                .take_raw().ok().map(|tx| tx.tx);
+            }
+        }
+
         let attempt = AtomicUsize::new(0);
         let crypto = self.crypto_service.clone();
         let file = self.file_service.clone();
         let contract = self.contract_service.clone();
-        let node = self.node.take();
-        let operator = self.operator.take();
-        let operator_secret = self.secret.take();
-        let mut query_res: Option<Result<proto::Query::Query, _>> = Some(self.to_proto());
-        let payment = self.payment.take();
+        let query_res: Option<Result<proto::Query::Query, _>> = Some(self.to_proto());
 
         async move {
             #[allow(clippy::never_loop)]
@@ -172,47 +174,6 @@ where
                             continue;
                         }
 
-                        Status::MissingQueryHeader => {
-                            if kind == proto::QueryHeader::ResponseType::COST_ANSWER {
-                                // Invalid is _okay_ if we're asking for cost
-                                Ok((header, response))
-                            } else if payment.is_none() {
-                                if operator.is_some() && node.is_some() && operator_secret.is_some()
-                                {
-                                    let cost = header.get_cost();
-                                    let payment = TransactionCryptoTransfer::new(&Client {
-                                        node,
-                                        operator,
-                                        operator_secret: operator_secret.clone(),
-                                        crypto: crypto.clone(),
-                                        file: file.clone(),
-                                        contract: contract.clone(),
-                                    })
-                                    .transfer(*node.as_ref().unwrap(), cost as i64)
-                                    .transfer(*operator.as_ref().unwrap(), -(cost as i64))
-                                    .build()
-                                    .take_raw()?
-                                    .tx;
-
-                                    if let Some(Ok(ref mut query)) = &mut query_res {
-                                        mut_header(query).set_payment(payment);
-                                    }
-
-                                    // Wait 1s before trying again
-                                    sleep(Duration::from_secs(1));
-
-                                    continue;
-                                } else {
-                                    // Requires monies and we don't have anything defaulted
-                                    // todo: return a more specific error
-                                    Err(ErrorKind::PreCheck(Status::MissingQueryHeader)
-                                        .into())
-                                }
-                            } else {
-                                unreachable!()
-                            }
-                        }
-
                         Status::Ok => Ok((header, response)),
 
                         pre_check_code => Err(ErrorKind::PreCheck(pre_check_code))?,
@@ -233,10 +194,12 @@ where
 {
     fn to_proto(&self) -> Result<proto::Query::Query, Error> {
         let mut header = proto::QueryHeader::QueryHeader::new();
-        header.set_responseType(self.kind);
+        header.set_responseType(proto::QueryHeader::ResponseType::ANSWER_ONLY);
 
         if let Some(payment) = &self.payment {
             header.set_payment(payment.clone());
+        } else if !self.inner.is_free() {
+            return Err(ErrorKind::MissingField("payment"))?;
         }
 
         let mut query = proto::Query::Query::new();
@@ -270,33 +233,6 @@ pub(crate) fn take_header(
         Some(transactionGetReceipt(ref mut res)) => res.take_header(),
         Some(transactionGetRecord(ref mut res)) => res.take_header(),
         Some(transactionGetFastRecord(ref mut res)) => res.take_header(),
-
-        None => unreachable!(),
-    }
-}
-
-// this is needed because some times a query header needs to be adjusted
-// after construction
-pub(crate) fn mut_header(query: &mut proto::Query::Query) -> &mut proto::QueryHeader::QueryHeader {
-    use self::proto::Query::Query_oneof_query::*;
-
-    match &mut query.query {
-        Some(getByKey(ref mut res)) => res.mut_header(),
-        Some(getBySolidityID(ref mut res)) => res.mut_header(),
-        Some(contractCallLocal(ref mut res)) => res.mut_header(),
-        Some(contractGetBytecode(ref mut res)) => res.mut_header(),
-        Some(contractGetInfo(ref mut res)) => res.mut_header(),
-        Some(ContractGetRecords(ref mut res)) => res.mut_header(),
-        Some(cryptogetAccountBalance(ref mut res)) => res.mut_header(),
-        Some(cryptoGetAccountRecords(ref mut res)) => res.mut_header(),
-        Some(cryptoGetInfo(ref mut res)) => res.mut_header(),
-        Some(cryptoGetClaim(ref mut res)) => res.mut_header(),
-        Some(cryptoGetProxyStakers(ref mut res)) => res.mut_header(),
-        Some(fileGetContents(ref mut res)) => res.mut_header(),
-        Some(fileGetInfo(ref mut res)) => res.mut_header(),
-        Some(transactionGetReceipt(ref mut res)) => res.mut_header(),
-        Some(transactionGetRecord(ref mut res)) => res.mut_header(),
-        Some(transactionGetFastRecord(ref mut res)) => res.mut_header(),
 
         None => unreachable!(),
     }
