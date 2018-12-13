@@ -17,7 +17,7 @@ use std::{
     fmt::{self, Debug, Display},
     str::FromStr,
 };
-use try_from::TryFrom;
+use try_from::{TryFrom, TryInto};
 
 // Types used for (de-)serializing public and secret keys from ASN.1 byte
 // streams.
@@ -358,6 +358,8 @@ impl TryFrom<proto::BasicTypes::Key> for PublicKey {
             } else {
                 Self::from_bytes(bytes)
             }
+        } else if key.has_keyList() && key.get_keyList().keys.len() == 1 {
+            Ok(key.take_keyList().keys.remove(0).try_into()?)
         } else {
             Err(err_msg("Only ed25519 public keys are currently supported"))
         }
