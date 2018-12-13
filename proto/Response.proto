@@ -24,6 +24,7 @@ import "FileGetInfo.proto";
 
 import "TransactionGetReceipt.proto";
 import "TransactionGetRecord.proto";
+import "TransactionGetFastRecord.proto";
 
 /* A single response, which is returned from the node to the client, after the client sent the node a query. This includes all responses. */
 message Response {
@@ -47,5 +48,6 @@ message Response {
 
         TransactionGetReceiptResponse transactionGetReceipt = 14; // get a receipt for a transaction (lasts 180 seconds)
         TransactionGetRecordResponse transactionGetRecord = 15; // get a record for a transaction (lasts 1 hour)
+        TransactionGetFastRecordResponse transactionGetFastRecord = 16; // get a record for a transaction (lasts 180 seconds)
     }
 }

@@ -24,6 +24,7 @@ import "FileGetInfo.proto";
 
 import "TransactionGetReceipt.proto";
 import "TransactionGetRecord.proto";
+import "TransactionGetFastRecord.proto";
 
 /* A single query, which is sent from the client to the node. This includes all possible queries. */
 message Query {
@@ -46,5 +47,6 @@ message Query {
 
         TransactionGetReceiptQuery transactionGetReceipt = 14; // get a receipt for a transaction (lasts 180 seconds)
         TransactionGetRecordQuery transactionGetRecord = 15; // get a record for a transaction (lasts 1 hour)
+        TransactionGetFastRecordQuery transactionGetFastRecord = 16; // get a record for a transaction (lasts 180 seconds)
     }
 }
