@@ -73,9 +73,6 @@ async fn main_() -> Result<(), Error> {
     // Read the file content
     //
 
-    let file_contents_cost = await!(client.file(file).contents().cost_async())?;
-    println!("cost:file.contents = {} tinybars", file_contents_cost);
-
     let file_contents = await!(client.file(file).contents().get_async())?;
     println!("file.contents = {:?}", file_contents);
     println!("file.contents = {:?}", from_utf8(&*file_contents)?);
@@ -83,9 +80,6 @@ async fn main_() -> Result<(), Error> {
     //
     // Get more file information
     //
-
-    let file_info_cost = await!(client.file(file).info().cost_async())?;
-    println!("cost:file.info = {} tinybars", file_info_cost);
 
     let file_info = await!(client.file(file).info().get_async())?;
     println!("file.info = {:#?}", file_info);

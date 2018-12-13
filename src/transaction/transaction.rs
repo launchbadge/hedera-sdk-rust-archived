@@ -201,21 +201,9 @@ impl<T: 'static> Transaction<T, TransactionRaw> {
     }
 
     pub fn sign(&mut self, secret: &SecretKey) -> &mut Self {
-        use self::proto::{
-            BasicTypes::HederaFunctionality::*, Transaction::TransactionBody_oneof_data::*,
-        };
-
-        let has_secret = self.secret.is_some();
         if let Some(state) = self.as_raw() {
             // note: this cannot fail
-            let mut signature = secret.sign(&state.bytes).to_proto().unwrap();
-
-            // determine what kind of tx we have
-            let kind = match state.tx.body.as_ref().unwrap().data {
-                Some(fileCreate(_)) => Some(FileCreate),
-                Some(fileAppend(_)) => Some(FileAppend),
-                _ => None,
-            };
+            let signature = secret.sign(&state.bytes).to_proto().unwrap();
 
             if !state.tx.has_sigs() {
                 state.tx.set_sigs(proto::BasicTypes::SignatureList::new());

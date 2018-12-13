@@ -8,23 +8,14 @@ fn main() -> Result<(), Error> {
         .operator(operator, || env::var("OPERATOR_SECRET"))
         .build()?;
 
-    // Get the cost for getting the balance
-
-    let balance_cost = client.account(operator).balance().cost()?;
-    println!("cost:balance = {} tinybars", balance_cost);
-
     // Get _just_ the balance for the account first
+    // This costs 100,000 tinybar
 
     let balance = client.account(operator).balance().get()?;
     println!("balance = {} tinybars", balance);
 
-    // Get the full information for the account
-    // First we get how much this will cost
-
-    let info_cost = client.account(operator).info().cost()?;
-    println!("cost:info = {} tinybars", info_cost);
-
     // Now actually get the full information for the account
+    // This costs 100,000 tinybar
 
     let info = client.account(operator).info().get()?;
     println!("info = {:#?}", info);
