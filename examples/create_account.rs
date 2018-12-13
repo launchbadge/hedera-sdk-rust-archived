@@ -1,7 +1,7 @@
 #![feature(async_await, futures_api, await_macro)]
 use failure::{format_err, Error};
 use futures::FutureExt;
-use hedera::{Client, SecretKey, TransactionStatus};
+use hedera::{Client, SecretKey, Status};
 use std::{env, thread::sleep, time::Duration};
 use tokio::{await, run_async};
 
@@ -35,7 +35,7 @@ async fn main_() -> Result<(), Error> {
 
     // Get the receipt and check the status to prove it was successful
     let receipt = await!(client.transaction(id).receipt().get_async())?;
-    if receipt.status != TransactionStatus::Success {
+    if receipt.status != Status::Success {
         Err(format_err!(
             "transaction has a non-successful status: {:?}",
             receipt.status
