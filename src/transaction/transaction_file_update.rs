@@ -8,7 +8,7 @@ use chrono::{DateTime, Utc};
 use failure::Error;
 use protobuf::RepeatedField;
 use query_interface::{interfaces, vtable_for};
-use std::any::Any;
+use std::{any::Any, time::Duration};
 
 pub struct TransactionFileUpdate {
     id: FileId,
@@ -41,6 +41,11 @@ impl Transaction<TransactionFileUpdate> {
     pub fn expires_at(&mut self, expiration: DateTime<Utc>) -> &mut Self {
         self.inner().expiration_time = Some(expiration);
         self
+    }
+
+    #[inline]
+    pub fn expires_in(&mut self, duration: Duration) -> &mut Self {
+        self.expires_at(Utc::now() + chrono::Duration::from_std(duration).unwrap())
     }
 
     #[inline]
