@@ -48,6 +48,11 @@ impl Transaction<TransactionContractUpdate> {
     }
 
     #[inline]
+    pub fn expires_in(&mut self, duration: Duration) -> &mut Self {
+        self.expires_at(Utc::now() + chrono::Duration::from_std(duration).unwrap())
+    }
+
+    #[inline]
     pub fn admin_key(&mut self, key: PublicKey) -> &mut Self {
         self.inner().admin_key = Some(key);
         self

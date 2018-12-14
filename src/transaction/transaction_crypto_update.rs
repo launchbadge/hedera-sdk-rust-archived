@@ -84,9 +84,14 @@ impl Transaction<TransactionCryptoUpdate> {
     }
 
     #[inline]
-    pub fn expiration_time(&mut self, expiration_time: chrono::DateTime<Utc>) -> &mut Self {
-        self.inner().expiration_time = Some(expiration_time);
+    pub fn expires_at(&mut self, expiration: DateTime<Utc>) -> &mut Self {
+        self.inner().expiration_time = Some(expiration);
         self
+    }
+
+    #[inline]
+    pub fn expires_in(&mut self, duration: Duration) -> &mut Self {
+        self.expires_at(Utc::now() + chrono::Duration::from_std(duration).unwrap())
     }
 }
 
