@@ -30,7 +30,7 @@ query_interface = "0.3.5"
 httpbis = "0.7.0"
 log = "0.4.6"
 try_from = "0.3.2"
-bip39 = { git="https://github.com/QuestofIranon/bip39-rs.git" }
+bip39 = { git="https://github.com/QuestofIranon/bip39-rs.git", default-features = false }
 rand_chacha = "0.1.0"
 tokio-async-await = "0.1.4"
 tokio = { version = "0.1", features = [ "async-await-preview" ] }
