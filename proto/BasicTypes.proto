@@ -105,14 +105,14 @@ message SignatureList {
     repeated Signature sigs = 2; // each signature corresponds to a Key in the KeyList
 }
 
-/* The functionalities provided by hedera hashgraph */
+/* The functionality provided by hedera hashgraph */
 enum HederaFunctionality {
-    CryptoCreates = 0; // crypto create account
+    CryptoCreate = 0; // crypto create account
     CryptoTransfer = 1; // crypto transfer
     CryptoUpdate = 2; // crypto update account
     CryptoDelete = 3; // crypto delete account
     CryptoAddClaim = 4; // crypto add claim to the account
-    CryptoDeletClaim = 5; // crypto delete claim to the account
+    CryptoDeleteClaim = 5; // crypto delete claim to the account
     ContractCall = 6; // Smart Contract Call
     ContractCreate = 7; // Smart Contract Create Contract
     ContractUpdate = 8; // Smart Contract update contract
@@ -129,13 +129,11 @@ enum HederaFunctionality {
     GetBySolidityID = 19; // Smart Contract, get by solidity ID
     GetByKey = 20; // Smart Contract, get by key
     CryptoGetClaim = 21; // Crypto get the claim
-    CryptoGetStakers = 22; // Cryto, get the stakers for the node
+    CryptoGetStakers = 22; // Crypto, get the stakers for the node
     FileGetContents = 23; // File Operations get file contents
     FileGetInfo = 24; // File Operations get the info of the file
     TransactionGetRecord = 25; // Crypto get the transaction records
-    ContractGetRecords = 26;
-    CryptoCreate = 27;
-
+    ContractGetRecords = 26; // Contract get the transaction records
 }
 
 /* The different components used for fee calculation */
@@ -160,11 +158,11 @@ message TransactionFeeSchedule {
     FeeData feeData = 2; // the fee information about the query/data
 }
 
-/* The total fees charged for a trasansaction. It contains three parts namely nodedata, networkdata and servicedata */
+/* The total fees charged for a transaction. It contains three parts namely node data, network data and service data */
 message FeeData {
     FeeComponents nodedata = 1; // Fee charged by Node for this functionality
     FeeComponents networkdata = 2; // Fee charged for network operations by Hedera
-    FeeComponents servicedata = 3; // Fee charged for provding service by Hedera
+    FeeComponents servicedata = 3; // Fee charged for providing service by Hedera
 }
 
 /* The fee schedule for a specific hedera functionality and the time period this fee will be valid for the transaction */
@@ -184,3 +182,6 @@ message NodeAddress {
 message NodeAddressBook {
     repeated NodeAddress nodeAddress = 1;
 }
+	
+	
+
