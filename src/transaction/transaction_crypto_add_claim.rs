@@ -4,8 +4,7 @@ use crate::{
     id::AccountId,
     proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
     transaction::Transaction,
-    Client,
-    ErrorKind
+    Client
 };
 use failure::Error;
 use query_interface::{interfaces, vtable_for};
@@ -14,7 +13,7 @@ use std::any::Any;
 #[derive(Debug)]
 pub struct TransactionCryptoAddClaim {
     account: AccountId,
-    hash: Option<Vec<u8>>,
+    hash: Vec<u8>,
     keys: Vec<PublicKey>,
 }
 
@@ -24,12 +23,12 @@ interfaces!(
 );
 
 impl TransactionCryptoAddClaim {
-    pub fn new(client: &Client, account: AccountId) -> Transaction<Self> {
+    pub fn new(client: &Client, account: AccountId, hash: Vec<u8>) -> Transaction<Self> {
         Transaction::new(
             client,
             Self {
                 account,
-                hash: None,
+                hash,
                 keys: Vec::new(),
             },
         )
@@ -37,14 +36,9 @@ impl TransactionCryptoAddClaim {
 }
 
 impl Transaction<TransactionCryptoAddClaim> {
-    #[inline]
-    pub fn hash(&mut self, hash: Vec<u8>) -> &mut Self {
-        self.inner().hash = Some(hash);
-        self
-    }
 
     #[inline]
-    pub fn add_key(&mut self, key: PublicKey) -> &mut Self {
+    pub fn key(&mut self, key: PublicKey) -> &mut Self {
         self.inner().keys.push(key);
         self
     }
@@ -55,14 +49,9 @@ impl ToProto<TransactionBody_oneof_data> for TransactionCryptoAddClaim {
         let mut data = proto::CryptoAddClaim::CryptoAddClaimTransactionBody::new();
         data.set_accountID(self.account.to_proto()?);
 
-        let hash = match self.hash.clone() {
-            Some(hash) => hash,
-            None => Err(ErrorKind::MissingField("hash"))?
-        };
-
         let claim = Claim{
             account: self.account,
-            hash,
+            hash: self.hash.clone(),
             keys: self.keys.clone()
         };
 
