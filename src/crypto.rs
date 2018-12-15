@@ -66,8 +66,8 @@ impl FromASN1 for AlgorithmIdentifier {
     type Error = ASN1Error;
 
     fn from_asn1(v: &[ASN1Block]) -> Result<(Self, &[ASN1Block]), Self::Error> {
-        let algorithm = if let Some(ASN1Block::Sequence(_, _, blocks)) = v.get(0) {
-            if let Some(ASN1Block::ObjectIdentifier(_, _, id)) = blocks.get(0) {
+        let algorithm = if let Some(ASN1Block::Sequence(_, blocks)) = v.get(0) {
+            if let Some(ASN1Block::ObjectIdentifier(_, id)) = blocks.get(0) {
                 id
             } else {
                 return Err(ASN1Error::UnexpectedType {
@@ -106,24 +106,21 @@ struct SubjectPublicKeyInfo {
 impl ToASN1 for SubjectPublicKeyInfo {
     type Error = ASN1Error;
 
-    fn to_asn1_class(&self, c: ASN1Class) -> Result<Vec<ASN1Block>, Self::Error> {
+    fn to_asn1_class(&self, _c: ASN1Class) -> Result<Vec<ASN1Block>, Self::Error> {
         Ok(vec![ASN1Block::Sequence(
-            c,
             0,
             vec![
                 // AlgorithmIdentifier
                 ASN1Block::Sequence(
-                    c,
                     0,
                     vec![
                         // Algorithm
                         // FIXME: Rewrite or improve the ASN.1 lib to remove allocation requirement
-                        ASN1Block::ObjectIdentifier(c, 0, self.algorithm.algorithm.clone()),
+                        ASN1Block::ObjectIdentifier(0, self.algorithm.algorithm.clone()),
                     ],
                 ),
                 // subjectPublicKey
                 ASN1Block::BitString(
-                    c,
                     0,
                     self.subject_public_key.len() * 8,
                     // FIXME: Rewrite or improve the ASN.1 lib to remove allocation requirement
@@ -139,12 +136,12 @@ impl FromASN1 for SubjectPublicKeyInfo {
 
     fn from_asn1(v: &[ASN1Block]) -> Result<(Self, &[ASN1Block]), Self::Error> {
         let (algorithm, subject_public_key) =
-            if let Some(ASN1Block::Sequence(_, _, blocks)) = v.get(0) {
+            if let Some(ASN1Block::Sequence(_, blocks)) = v.get(0) {
                 // Parse: algorithm
                 let (algorithm, blocks): (AlgorithmIdentifier, _) = FromASN1::from_asn1(blocks)?;
 
                 // Parse: subject_public_key
-                if let Some(ASN1Block::BitString(_, _, _, bytes)) = blocks.get(0) {
+                if let Some(ASN1Block::BitString(_, _, bytes)) = blocks.get(0) {
                     (algorithm, bytes)
                 } else {
                     return Err(ASN1Error::UnexpectedType {
@@ -185,29 +182,26 @@ struct PrivateKeyInfo {
 impl ToASN1 for PrivateKeyInfo {
     type Error = ASN1Error;
 
-    fn to_asn1_class(&self, c: ASN1Class) -> Result<Vec<ASN1Block>, Self::Error> {
+    fn to_asn1_class(&self, _c: ASN1Class) -> Result<Vec<ASN1Block>, Self::Error> {
         Ok(vec![ASN1Block::Sequence(
-            c,
             0,
             vec![
                 // Version
-                ASN1Block::Integer(c, 0, 0.into()),
+                ASN1Block::Integer(0, 0.into()),
                 // AlgorithmIdentifier
                 ASN1Block::Sequence(
-                    c,
                     0,
                     vec![
                         // Algorithm
                         // FIXME: Rewrite or improve the ASN.1 lib to remove allocation requirement
-                        ASN1Block::ObjectIdentifier(c, 0, self.algorithm.algorithm.clone()),
+                        ASN1Block::ObjectIdentifier(0, self.algorithm.algorithm.clone()),
                     ],
                 ),
                 // PrivateKey
                 ASN1Block::OctetString(
-                    c,
                     0,
                     // FIXME: Rewrite or improve the ASN.1 lib to remove allocation requirement
-                    to_der(&ASN1Block::OctetString(c, 0, self.private_key.clone()))?,
+                    to_der(&ASN1Block::OctetString(0, self.private_key.clone()))?,
                 ),
             ],
         )])
@@ -218,12 +212,12 @@ impl FromASN1 for PrivateKeyInfo {
     type Error = ASN1Error;
 
     fn from_asn1(v: &[ASN1Block]) -> Result<(Self, &[ASN1Block]), Self::Error> {
-        let (algorithm, key) = if let Some(ASN1Block::Sequence(_, _, blocks)) = v.get(0) {
+        let (algorithm, key) = if let Some(ASN1Block::Sequence(_, blocks)) = v.get(0) {
             // Parse: algorithm
             let (algorithm, blocks): (AlgorithmIdentifier, _) = FromASN1::from_asn1(&blocks[1..])?;
 
             // Parse: subject_public_key
-            if let Some(ASN1Block::OctetString(_, _, bytes)) = blocks.get(0) {
+            if let Some(ASN1Block::OctetString(_, bytes)) = blocks.get(0) {
                 (algorithm, bytes)
             } else {
                 return Err(ASN1Error::UnexpectedType {
