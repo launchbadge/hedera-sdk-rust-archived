@@ -17,7 +17,7 @@ async fn main_() -> Result<(), Error> {
     // Operator is the account that sends the transaction to the network
     // This account is charged for the transaction fee
     let operator = "0:0:2".parse()?;
-    let client = Client::builder("testnet.hedera.com:50001")
+    let client = Client::builder("testnet.hedera.com:50003")
         .node("0:0:3".parse()?)
         .operator(operator, || env::var("OPERATOR_SECRET"))
         .build()?;
