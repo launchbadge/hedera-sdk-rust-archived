@@ -34,7 +34,7 @@ bip39 = "0.6.0-beta.1"
 rand_chacha = "0.1.0"
 tokio-async-await = "0.1.4"
 tokio = { version = "0.1.13", features = [ "async-await-preview" ] }
-futures = { version = "0.3.0-alpha.10", package = "futures-preview" }
+futures = { version = "0.3.0-alpha.11", package = "futures-preview" }
 
 [build-dependencies]
 protoc-rust-grpc = "0.6.1"
