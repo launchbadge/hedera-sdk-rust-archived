@@ -1,10 +1,10 @@
 use crate::{
-    crypto::PublicKey,
     claim::Claim,
+    crypto::PublicKey,
     id::AccountId,
     proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
     transaction::Transaction,
-    Client
+    Client,
 };
 use failure::Error;
 use query_interface::{interfaces, vtable_for};
@@ -36,7 +36,6 @@ impl TransactionCryptoAddClaim {
 }
 
 impl Transaction<TransactionCryptoAddClaim> {
-
     #[inline]
     pub fn key(&mut self, key: PublicKey) -> &mut Self {
         self.inner().keys.push(key);
@@ -49,10 +48,10 @@ impl ToProto<TransactionBody_oneof_data> for TransactionCryptoAddClaim {
         let mut data = proto::CryptoAddClaim::CryptoAddClaimTransactionBody::new();
         data.set_accountID(self.account.to_proto()?);
 
-        let claim = Claim{
+        let claim = Claim {
             account: self.account,
             hash: self.hash.clone(),
-            keys: self.keys.clone()
+            keys: self.keys.clone(),
         };
 
         data.set_claim(claim.to_proto()?);

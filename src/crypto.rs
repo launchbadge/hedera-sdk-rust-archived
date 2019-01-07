@@ -135,26 +135,26 @@ impl FromASN1 for SubjectPublicKeyInfo {
     type Error = ASN1Error;
 
     fn from_asn1(v: &[ASN1Block]) -> Result<(Self, &[ASN1Block]), Self::Error> {
-        let (algorithm, subject_public_key) =
-            if let Some(ASN1Block::Sequence(_, blocks)) = v.get(0) {
-                // Parse: algorithm
-                let (algorithm, blocks): (AlgorithmIdentifier, _) = FromASN1::from_asn1(blocks)?;
+        let (algorithm, subject_public_key) = if let Some(ASN1Block::Sequence(_, blocks)) = v.get(0)
+        {
+            // Parse: algorithm
+            let (algorithm, blocks): (AlgorithmIdentifier, _) = FromASN1::from_asn1(blocks)?;
 
-                // Parse: subject_public_key
-                if let Some(ASN1Block::BitString(_, _, bytes)) = blocks.get(0) {
-                    (algorithm, bytes)
-                } else {
-                    return Err(ASN1Error::UnexpectedType {
-                        expected: "BIT STRING",
-                        found: format!("{:?}", blocks.get(0)),
-                    });
-                }
+            // Parse: subject_public_key
+            if let Some(ASN1Block::BitString(_, _, bytes)) = blocks.get(0) {
+                (algorithm, bytes)
             } else {
                 return Err(ASN1Error::UnexpectedType {
-                    expected: "SEQUENCE",
-                    found: format!("{:?}", v.get(0)),
+                    expected: "BIT STRING",
+                    found: format!("{:?}", blocks.get(0)),
                 });
-            };
+            }
+        } else {
+            return Err(ASN1Error::UnexpectedType {
+                expected: "SEQUENCE",
+                found: format!("{:?}", v.get(0)),
+            });
+        };
 
         Ok((
             Self {
