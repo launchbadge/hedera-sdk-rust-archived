@@ -1,3 +1,24 @@
+mod query_contract_get_bytecode;
+mod query_contract_get_info;
+mod query_contract_get_records;
+mod query_crypto_get_account_balance;
+mod query_crypto_get_account_records;
+mod query_crypto_get_claim;
+mod query_crypto_get_info;
+mod query_file_get_contents;
+mod query_file_get_info;
+mod query_get_by_key;
+mod query_transaction_get_receipt;
+mod query_transaction_get_record;
+
+pub use self::{
+    query_contract_get_bytecode::*, query_contract_get_info::*,
+    query_contract_get_records::*, query_crypto_get_account_balance::*,
+    query_crypto_get_account_records::*, query_crypto_get_claim::*, query_crypto_get_info::*,
+    query_file_get_contents::*, query_file_get_info::*, query_get_by_key::*,
+    query_transaction_get_receipt::*, query_transaction_get_record::*,
+};
+
 use crate::{
     proto::{
         self,
@@ -48,8 +69,8 @@ impl QueryResponse for () {
 }
 
 pub struct Query<T>
-where
-    T: QueryResponse + Send + Sync + 'static,
+    where
+        T: QueryResponse + Send + Sync + 'static,
 {
     crypto_service: Arc<CryptoServiceClient>,
     contract_service: Arc<SmartContractServiceClient>,
@@ -63,12 +84,12 @@ where
 }
 
 impl<T> Query<T>
-where
-    T: QueryResponse + Send + Sync + 'static,
+    where
+        T: QueryResponse + Send + Sync + 'static,
 {
     pub(crate) fn new(client: &Client, inner: T) -> Self
-    where
-        T: ToQueryProto,
+        where
+            T: ToQueryProto,
     {
         Self {
             payment: None,
@@ -128,12 +149,12 @@ where
                     file: self.file_service.clone(),
                     contract: self.contract_service.clone(),
                 })
-                .transfer(*self.node.as_ref().unwrap(), cost as i64)
-                .transfer(*self.operator.as_ref().unwrap(), -(cost as i64))
-                .build()
-                .take_raw()
-                .ok()
-                .map(|tx| tx.tx);
+                    .transfer(*self.node.as_ref().unwrap(), cost as i64)
+                    .transfer(*self.operator.as_ref().unwrap(), -(cost as i64))
+                    .build()
+                    .take_raw()
+                    .ok()
+                    .map(|tx| tx.tx);
             }
         }
 
@@ -145,7 +166,7 @@ where
 
         async move {
             #[allow(clippy::never_loop)]
-            loop {
+                loop {
                 break if let Some(Ok(query)) = &query_res {
                     if attempt.load(Ordering::SeqCst) == 0 {
                         log::trace!("sent: {:#?}", query);
@@ -193,8 +214,8 @@ where
 }
 
 impl<T> ToProto<proto::Query::Query> for Query<T>
-where
-    T: QueryResponse + Send + Sync + 'static,
+    where
+        T: QueryResponse + Send + Sync + 'static,
 {
     fn to_proto(&self) -> Result<proto::Query::Query, Error> {
         let mut header = proto::QueryHeader::QueryHeader::new();

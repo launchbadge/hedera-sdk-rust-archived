@@ -1,3 +1,28 @@
+mod transaction_admin_delete;
+mod transaction_admin_recover;
+mod transaction_contract_call;
+mod transaction_contract_create;
+mod transaction_contract_update;
+mod transaction_crypto_add_claim;
+mod transaction_crypto_create;
+mod transaction_crypto_delete;
+mod transaction_crypto_delete_claim;
+mod transaction_crypto_transfer;
+mod transaction_crypto_update;
+mod transaction_file_append;
+mod transaction_file_create;
+mod transaction_file_delete;
+mod transaction_file_update;
+
+pub use self::{
+    transaction_admin_delete::*, transaction_admin_recover::*,
+    transaction_contract_call::*, transaction_contract_create::*, transaction_contract_update::*,
+    transaction_crypto_add_claim::*, transaction_crypto_create::*, transaction_crypto_delete::*,
+    transaction_crypto_delete_claim::*, transaction_crypto_transfer::*,
+    transaction_crypto_update::*, transaction_file_append::*, transaction_file_create::*,
+    transaction_file_delete::*, transaction_file_update::*,
+};
+
 use crate::{
     crypto::SecretKey,
     error::ErrorKind,
@@ -59,8 +84,8 @@ pub struct Transaction<T, S = TransactionBuilder<T>> {
 
 impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
     pub(crate) fn new(client: &Client, inner: T) -> Self
-    where
-        T: Object + ToProto<proto::Transaction::TransactionBody_oneof_data> + 'static,
+        where
+            T: Object + ToProto<proto::Transaction::TransactionBody_oneof_data> + 'static,
     {
         Self {
             crypto_service: client.crypto.clone(),
@@ -171,12 +196,12 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
             .inner
             .query_mut::<dyn Any>()
             .and_then(|inner| inner.downcast_mut())
-        {
-            Some(inner) => inner,
+            {
+                Some(inner) => inner,
 
-            // not possible in safe rust to get here
-            _ => unreachable!(),
-        }
+                // not possible in safe rust to get here
+                _ => unreachable!(),
+            }
     }
 }
 

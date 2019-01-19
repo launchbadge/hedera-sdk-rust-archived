@@ -1,7 +1,6 @@
 use crate::{
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
-    query::{
-        query::{QueryResponse, ToQueryProto},
+    query::{QueryResponse, ToQueryProto,
         Query,
     },
     Client, FileId, FileInfo,

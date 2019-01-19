@@ -1,8 +1,6 @@
 use crate::{
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
-    query::{
-        query::{QueryResponse, ToQueryProto},
-        Query,
+    query::{QueryResponse, ToQueryProto, Query,
     },
     AccountId, AccountInfo, Client,
 };
