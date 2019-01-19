@@ -2,9 +2,7 @@ use crate::{
     crypto::PublicKey,
     entity::try_into_entities,
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
-    query::{QueryResponse, ToQueryProto,
-        Query,
-    },
+    query::{Query, QueryResponse, ToQueryProto},
     Client, Entity,
 };
 use failure::Error;

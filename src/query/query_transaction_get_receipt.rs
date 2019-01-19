@@ -1,8 +1,6 @@
 use crate::{
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
-    query::{QueryResponse, ToQueryProto,
-        Query,
-    },
+    query::{Query, QueryResponse, ToQueryProto},
     Client, TransactionId, TransactionReceipt,
 };
 use failure::Error;

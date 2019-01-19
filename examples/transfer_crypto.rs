@@ -1,7 +1,7 @@
 #![feature(async_await, futures_api, await_macro)]
 use failure::{format_err, Error};
 use futures::FutureExt;
-use hedera::{Client, Status, AccountId};
+use hedera::{AccountId, Client, Status};
 use std::{env, thread::sleep, time::Duration};
 use tokio::{await, run_async};
 
