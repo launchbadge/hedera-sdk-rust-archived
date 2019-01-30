@@ -8,7 +8,6 @@ use num::BigUint;
 use once_cell::{sync::Lazy, sync_lazy};
 use rand::SeedableRng;
 use rand_chacha::ChaChaRng;
-use sha2::Sha512;
 use simple_asn1::{
     der_decode, der_encode, oid, to_der, ASN1Block, ASN1Class, ASN1DecodeErr, ASN1EncodeErr,
     FromASN1, ToASN1, OID,
@@ -294,7 +293,7 @@ impl PublicKey {
 
     /// Verify a signature on a message with this `PublicKey`.
     pub fn verify(&self, message: impl AsRef<[u8]>, signature: &Signature) -> Result<bool, Error> {
-        match self.0.verify::<Sha512>(message.as_ref(), &signature.0) {
+        match self.0.verify(message.as_ref(), &signature.0) {
             Ok(_) => Ok(true),
             Err(error) => {
                 if error.to_string() == "Verification equation was not satisfied" {
@@ -438,16 +437,15 @@ impl SecretKey {
     /// Derive a `PublicKey` from this `SecretKey`.
     #[inline]
     pub fn public(&self) -> PublicKey {
-        PublicKey(ed25519_dalek::PublicKey::from_secret::<Sha512>(&self.0))
+        PublicKey(ed25519_dalek::PublicKey::from(&self.0))
     }
 
     /// Sign a message with this `SecretKey`.
     #[inline]
     pub fn sign(&self, message: impl AsRef<[u8]>) -> Signature {
         Signature(
-            self.0
-                .expand::<Sha512>()
-                .sign::<Sha512>(message.as_ref(), &self.public().0),
+            ed25519_dalek::ExpandedSecretKey::from(&self.0)
+                .sign(message.as_ref(), &self.public().0),
         )
     }
 }

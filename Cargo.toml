@@ -11,30 +11,30 @@ authors = [
 ]
 
 [dependencies]
-ed25519-dalek = { version = "1.0.0-pre.0", default-features = false, features = [ "std", "nightly", "u64_backend" ] }
-rand = "0.6.1"
+ed25519-dalek = { version = "1.0.0-pre.1", default-features = false, features = [ "std", "nightly", "u64_backend" ] }
+rand = "0.6.5"
 sha2 = "0.8.0"
 hex = "0.3.2"
-failure = "0.1.3"
+failure = "0.1.5"
 simple_asn1 = "0.3.0"
-failure_derive = "0.1.3"
-once_cell = { version = "0.1.6", features = [ "parking_lot" ] }
+failure_derive = "0.1.5"
+once_cell = { version = "0.1.7", features = [ "parking_lot" ] }
 num = "0.2.0"
-protobuf = "2.2.0"
+protobuf = "2.3.0"
 itertools = "0.8.0"
 chrono = "0.4.6"
 futures01 = { version = "0.1.25", package = "futures" }
-parking_lot = "0.7.0"
+parking_lot = "0.7.1"
 grpc = "0.6.1"
 query_interface = "0.3.5"
 httpbis = "0.7.0"
 log = "0.4.6"
 try_from = "0.3.2"
 bip39 = "0.6.0-beta.1"
-rand_chacha = "0.1.0"
-tokio-async-await = "0.1.4"
+rand_chacha = "0.1.1"
+tokio-async-await = "0.1.5"
 tokio = { version = "0.1.13", features = [ "async-await-preview" ] }
-futures = { version = "0.3.0-alpha.11", package = "futures-preview" }
+futures = { version = "0.3.0-alpha.12", package = "futures-preview" }
 
 [build-dependencies]
 protoc-rust-grpc = "0.6.1"
