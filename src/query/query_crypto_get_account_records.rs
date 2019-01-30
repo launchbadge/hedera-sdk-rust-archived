@@ -1,10 +1,7 @@
 use crate::{
     id::AccountId,
     proto::{self, Query::Query_oneof_query, QueryHeader::QueryHeader, ToProto},
-    query::{
-        query::{QueryResponse, ToQueryProto},
-        Query,
-    },
+    query::{Query, QueryResponse, ToQueryProto},
     Client, TransactionRecord,
 };
 use failure::Error;
