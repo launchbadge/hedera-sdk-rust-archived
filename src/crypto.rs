@@ -244,7 +244,6 @@ impl FromASN1 for PrivateKeyInfo {
 }
 
 /// An ed25519 public key.
-#[repr(C)]
 #[derive(PartialEq, Clone)]
 pub struct PublicKey(ed25519_dalek::PublicKey);
 
@@ -278,8 +277,14 @@ impl PublicKey {
         )?))
     }
 
+    /// Return the `PublicKey` as raw bytes.
+    #[inline]
+    pub fn as_bytes(&self) -> &[u8; ed25519_dalek::PUBLIC_KEY_LENGTH] {
+        self.0.as_bytes()
+    }
+
     /// Format a `PublicKey` as a vec of bytes in ASN.1 format.
-    pub fn to_bytes(&self) -> Vec<u8> {
+    pub fn to_encoded_bytes(&self) -> Vec<u8> {
         der_encode(&SubjectPublicKeyInfo {
             algorithm: AlgorithmIdentifier {
                 algorithm: OID_ED25519.clone(),
@@ -326,14 +331,14 @@ impl Debug for PublicKey {
 /// Format a `PublicKey` as a hex representation of its bytes in ASN.1 format.
 impl Display for PublicKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&hex::encode(&self.to_bytes()))
+        f.write_str(&hex::encode(&self.to_encoded_bytes()))
     }
 }
 
 impl ToProto<proto::BasicTypes::Key> for PublicKey {
     fn to_proto(&self) -> Result<proto::BasicTypes::Key, Error> {
         let mut key = proto::BasicTypes::Key::new();
-        key.set_ed25519(self.0.to_bytes().to_vec());
+        key.set_ed25519(self.as_bytes().to_vec());
         Ok(key)
     }
 }
@@ -360,7 +365,6 @@ impl TryFrom<proto::BasicTypes::Key> for PublicKey {
 }
 
 /// An EdDSA secret key.
-#[repr(C)]
 pub struct SecretKey(ed25519_dalek::SecretKey);
 
 impl SecretKey {
@@ -421,8 +425,14 @@ impl SecretKey {
         Ok(Self::generate_with_mnemonic(&mnemonic, password))
     }
 
+    /// Return the `SecretKey` as raw bytes.
+    #[inline]
+    pub fn as_bytes(&self) -> &[u8; ed25519_dalek::PUBLIC_KEY_LENGTH] {
+        self.0.as_bytes()
+    }
+
     /// Format a `SecretKey` as a vec of bytes in ASN.1 format.
-    pub fn to_bytes(&self) -> Vec<u8> {
+    pub fn to_encoded_bytes(&self) -> Vec<u8> {
         der_encode(&PrivateKeyInfo {
             algorithm: AlgorithmIdentifier {
                 algorithm: OID_ED25519.clone(),
@@ -509,7 +519,7 @@ impl Debug for SecretKey {
 impl Display for SecretKey {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&hex::encode(&self.to_bytes()))
+        f.write_str(&hex::encode(&self.as_bytes()[..]))
     }
 }
 
@@ -524,6 +534,12 @@ impl Signature {
         Ok(Signature(ed25519_dalek::Signature::from_bytes(
             bytes.as_ref(),
         )?))
+    }
+
+    /// Return the `Signature` as raw bytes.
+    #[inline]
+    pub fn to_bytes(&self) -> [u8; ed25519_dalek::SIGNATURE_LENGTH] {
+        self.0.to_bytes()
     }
 }
 
@@ -540,14 +556,14 @@ impl FromStr for Signature {
 /// Format a `Signature` as a hex representation of its bytes.
 impl Display for Signature {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&hex::encode(&self.0.to_bytes()[..]))
+        f.write_str(&hex::encode(&self.to_bytes()[..]))
     }
 }
 
 impl ToProto<proto::BasicTypes::Signature> for Signature {
     fn to_proto(&self) -> Result<proto::BasicTypes::Signature, Error> {
         let mut signature = proto::BasicTypes::Signature::new();
-        signature.set_ed25519(self.0.to_bytes().to_vec());
+        signature.set_ed25519(self.to_bytes().to_vec());
 
         Ok(signature)
     }
@@ -645,7 +661,7 @@ mod tests {
         let secret_key2: SecretKey = secret_key1.to_string().parse()?;
 
         assert_eq!(public_key1, public_key2);
-        assert_eq!(secret_key1.0.as_bytes(), secret_key2.0.as_bytes());
+        assert_eq!(secret_key1.as_bytes(), secret_key2.as_bytes());
 
         Ok(())
     }
@@ -655,7 +671,7 @@ mod tests {
         let (secret1, mnemonic) = SecretKey::generate("this-is-not-a-password");
         let secret2 = SecretKey::from_mnemonic(&mnemonic, "this-is-not-a-password")?;
 
-        assert_eq!(secret1.to_bytes(), secret2.to_bytes());
+        assert_eq!(secret1.as_bytes(), secret2.as_bytes());
 
         Ok(())
     }
