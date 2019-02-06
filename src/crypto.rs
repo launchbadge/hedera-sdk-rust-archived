@@ -245,6 +245,7 @@ impl FromASN1 for PrivateKeyInfo {
 
 /// An ed25519 public key.
 #[derive(PartialEq, Clone)]
+#[repr(C)]
 pub struct PublicKey(ed25519_dalek::PublicKey);
 
 impl PublicKey {
@@ -365,6 +366,7 @@ impl TryFrom<proto::BasicTypes::Key> for PublicKey {
 }
 
 /// An EdDSA secret key.
+#[repr(C)]
 pub struct SecretKey(ed25519_dalek::SecretKey);
 
 impl SecretKey {
@@ -525,6 +527,7 @@ impl Display for SecretKey {
 
 /// An EdDSA signature.
 #[derive(Debug)]
+#[repr(C)]
 pub struct Signature(ed25519_dalek::Signature);
 
 impl Signature {
