@@ -521,7 +521,7 @@ impl Debug for SecretKey {
 impl Display for SecretKey {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&hex::encode(&self.as_bytes()[..]))
+        f.write_str(&hex::encode(&self.to_encoded_bytes()))
     }
 }
 
