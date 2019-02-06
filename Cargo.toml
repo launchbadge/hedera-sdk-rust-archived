@@ -33,7 +33,7 @@ try_from = "0.3.2"
 bip39 = "0.6.0-beta.1"
 rand_chacha = "0.1.1"
 tokio-async-await = "0.1.5"
-tokio = { version = "0.1.13", features = [ "async-await-preview" ] }
+tokio = { version = "0.1.15", features = [ "async-await-preview" ] }
 futures = { version = "0.3.0-alpha.12", package = "futures-preview" }
 
 [build-dependencies]
