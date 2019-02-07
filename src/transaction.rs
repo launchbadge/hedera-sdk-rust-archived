@@ -287,6 +287,7 @@ impl<T: 'static> Transaction<T, TransactionRaw> {
                 .clone();
 
             log::trace!(target: "hedera::transaction", "sent: {:#?}", tx);
+    println!("transaction is = {:#?}", tx);
 
             let o = grpc::RequestOptions::default();
             let response = match tx.mut_body().data {
@@ -355,6 +356,14 @@ impl<T: 'static, S: 'static> Transaction<T, S> {
                                     tx.sigs.as_mut().unwrap().sigs.push(signature.clone());
                                 }
                             }
+                        },
+                        Some(cryptoUpdateAccount(_data)) => {
+                            // Insert a signature to approve the account update
+                            tx.sigs.as_mut().unwrap().sigs.push(signature.clone());
+                        },
+                        Some(cryptoDelete(_data)) => {
+                            // Insert a signature to approve the account deletion
+                            tx.sigs.as_mut().unwrap().sigs.push(signature.clone());
                         }
 
                         _ => {}
