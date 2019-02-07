@@ -1,11 +1,13 @@
+use std::any::Any;
+
+use failure::Error;
+use query_interface::{interfaces, vtable_for};
+
 use crate::{
     proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
     transaction::Transaction,
     Client, FileId,
 };
-use failure::Error;
-use query_interface::{interfaces, vtable_for};
-use std::any::Any;
 
 pub struct TransactionFileAppend {
     id: FileId,
@@ -19,7 +21,13 @@ interfaces!(
 
 impl TransactionFileAppend {
     pub fn new(client: &Client, id: FileId, contents: Vec<u8>) -> Transaction<Self> {
-        Transaction::new(client, Self { id, contents })
+        Transaction::new(
+            client, 
+            Self { 
+                id, 
+                contents 
+            },
+        )
     }
 }
 
