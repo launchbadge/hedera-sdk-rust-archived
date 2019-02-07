@@ -27,6 +27,7 @@ async fn main_() -> Result<(), Error> {
         .auto_renew_period(Duration::from_secs(1000))
         // .expires_at(expiration: DateTime<Utc>)
         .expires_in(Duration::from_secs(2_592_000))
+        .sign(&env::var("OPERATOR_SECRET")?.parse()?) // sign as the owner of the account to approve the change
         .execute_async())?;
 
     println!("updating account; transaction = {}", id);
