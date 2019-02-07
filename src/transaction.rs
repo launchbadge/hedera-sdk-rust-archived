@@ -291,6 +291,7 @@ impl<T: 'static> Transaction<T, TransactionRaw> {
             let o = grpc::RequestOptions::default();
             let response = match tx.mut_body().data {
                 Some(cryptoCreateAccount(_)) => crypto.create_account(o, tx),
+                Some(cryptoUpdateAccount(_)) => crypto.update_account(o, tx),
                 Some(cryptoTransfer(_)) => crypto.crypto_transfer(o, tx),
                 Some(cryptoDeleteClaim(_)) => crypto.delete_claim(o, tx),
                 Some(cryptoDelete(_)) => crypto.crypto_delete(o, tx),
