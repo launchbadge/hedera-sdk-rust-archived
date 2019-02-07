@@ -163,6 +163,12 @@ impl Client {
         TransactionCryptoCreate::new(self)
     }
 
+    // Update an existing account
+    #[inline]
+    pub fn update_account(&self, id: AccountId) -> Transaction<TransactionCryptoUpdate> {
+        TransactionCryptoUpdate::new(self, id)
+    }
+
     #[inline]
     pub fn account(&self, id: AccountId) -> PartialAccountMessage<'_> {
         PartialAccountMessage(self, id)
