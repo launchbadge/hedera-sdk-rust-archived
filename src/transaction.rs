@@ -356,14 +356,6 @@ impl<T: 'static, S: 'static> Transaction<T, S> {
                                     tx.sigs.as_mut().unwrap().sigs.push(signature.clone());
                                 }
                             }
-                        },
-                        Some(cryptoUpdateAccount(_data)) => {
-                            // Insert a signature to approve the account update
-                            tx.sigs.as_mut().unwrap().sigs.push(signature.clone());
-                        },
-                        Some(cryptoDelete(_data)) => {
-                            // Insert a signature to approve the account deletion
-                            tx.sigs.as_mut().unwrap().sigs.push(signature.clone());
                         }
 
                         _ => {}
