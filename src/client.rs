@@ -191,6 +191,12 @@ impl Client {
         TransactionFileCreate::new(self)
     }
 
+    /// Append to an existing file.
+    #[inline]
+    pub fn append_file(&self, id: FileId, contents: Vec<u8>) -> Transaction<TransactionFileAppend> {
+        TransactionFileAppend::new(self, id, contents)
+    }
+
     #[inline]
     pub fn file(&self, id: FileId) -> PartialFileMessage<'_> {
         PartialFileMessage(self, id)
