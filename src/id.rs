@@ -20,7 +20,7 @@ macro_rules! define_id {
 
         impl std::fmt::Display for $name {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                write!(f, "{}:{}:{}", self.shard, self.realm, self.$field)
+                write!(f, "{}.{}.{}", self.shard, self.realm, self.$field)
             }
         }
 
