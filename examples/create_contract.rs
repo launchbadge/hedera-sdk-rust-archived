@@ -21,22 +21,20 @@ async fn main_() -> Result<(), Error> {
     let secret = SecretKey::from_str(&operator_secret)?;
     let public = secret.public();
 
-    // init some file contents
-
-    let file_contents_string = String::from("Hedera Hashgraph is great");
-    let file_contents_bytes = file_contents_string.into_bytes();
-
-    // Create a file
+    // Create a contract from an existing Hedera file
     let id = await!(client
-        .create_file()
-        .expires_in(Duration::from_secs(2_592_000))
-        .key(public)
-        .contents(file_contents_bytes)
-        .memo("[hedera-sdk-rust][example] create_file")
-        .sign(&env::var("OPERATOR_SECRET")?.parse()?) // sign as the owner of the file
+        .create_contract()
+        .file(file_id)
+        .gas(gas: i64)
+        .auto_renew_period(Duration::from_secs(2_592_000))
+        .constructor_parameters(params: Vec<u8>)
+        .memo("[hedera-sdk-rust][example] create_contract")
         .execute_async())?;
 
-    println!("creating file; transaction = {}", id);
+    println!("creating contract; transaction = {}", id);
+
+        // .initial_balance(balance: i64)
+        // .sign(&env::var("OPERATOR_SECRET")?.parse()?) // sign as the owner of the file
 
     // If we got here we know we passed pre-check
     // Depending on your requirements that may be enough for some kinds of transactions
@@ -51,8 +49,8 @@ async fn main_() -> Result<(), Error> {
         ))?;
     }
 
-    let file = receipt.file_id.unwrap();
-    println!("file ID = {}", file);
+    let file = receipt.contract_id.unwrap();
+    println!("contract ID = {}", contract);
 
     Ok(())
 }
