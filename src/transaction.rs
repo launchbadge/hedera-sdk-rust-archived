@@ -287,8 +287,7 @@ impl<T: 'static> Transaction<T, TransactionRaw> {
                 .clone();
 
             log::trace!(target: "hedera::transaction", "sent: {:#?}", tx);
-    println!("transaction is = {:#?}", tx);
-
+    
             let o = grpc::RequestOptions::default();
             let response = match tx.mut_body().data {
                 Some(cryptoCreateAccount(_)) => crypto.create_account(o, tx),
