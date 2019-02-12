@@ -180,6 +180,12 @@ impl Client {
         TransactionContractCreate::new(self)
     }
 
+    /// Call a contract function
+    #[inline]
+    pub fn call_contract(&self, id: ContractId) -> Transaction<TransactionContractCall> {
+        TransactionContractCall::new(self, id)
+    }
+
     #[inline]
     pub fn contract(&self, id: ContractId) -> PartialContractMessage<'_> {
         PartialContractMessage(self, id)

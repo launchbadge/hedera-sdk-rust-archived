@@ -13,7 +13,7 @@ use tokio::{await, run_async};
 // export NODE_PORT=node:port you're sending the transaction to (e.g. testnet.hedera.com:50003)
 // export NODE_ACCOUNT=node's account (e.g. 0.0.3)
 // export OPERATOR_SECRET=your private key (e.g. 302e020100300506032b657004220420aaeeb4f94573f3d13b4f0965d4e59d1cf30695d9d9788d25539f322bdf3a5edd)
-// export FILE_PATH=path to the file to get the data from on your machine (e.g. examples/Hedera.txt), note this is relative to the hedera-sdk-rust root
+// export FILE_PATH=path to the file to get the data from on your machine (e.g. examples/files/Hedera.txt), note this is relative to the hedera-sdk-rust root
 // then from the hedera-sdk-rust root run:
 // cargo run --example create_file_from_file
 
@@ -22,7 +22,7 @@ use tokio::{await, run_async};
 // set NODE_PORT=node:port you're sending the transaction to (e.g. testnet.hedera.com:50003)
 // set NODE_ACCOUNT=node's account (e.g. 0.0.3)
 // set OPERATOR_SECRET=your private key (e.g. 302e020100300506032b657004220420aaeeb4f94573f3d13b4f0965d4e59d1cf30695d9d9788d25539f322bdf3a5edd)
-// set FILE_PATH=path to the file to get the data from on your machine (e.g. examples/Hedera.txt), note this is relative to the hedera-sdk-rust root
+// set FILE_PATH=path to the file to get the data from on your machine (e.g. examples/files/Hedera.txt), note this is relative to the hedera-sdk-rust root
 // then from the hedera-sdk-rust root run:
 // cargo run --example create_file_from_file
 

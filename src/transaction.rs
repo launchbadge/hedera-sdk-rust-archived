@@ -298,6 +298,7 @@ impl<T: 'static> Transaction<T, TransactionRaw> {
                 Some(fileCreate(_)) => file.create_file(o, tx),
                 Some(fileAppend(_)) => file.append_content(o, tx),
                 Some(contractCreateInstance(_)) => contract.create_contract(o, tx),
+                Some(contractCall(_)) => contract.contract_call_method(o, tx),
 
                 _ => unimplemented!(),
             };
@@ -462,6 +463,8 @@ impl<T> ToProto<proto::Transaction::TransactionBody> for TransactionBuilder<T> {
         } else {
             String::new()
         });
+
+        println!("txBody = {:?}", body);
 
         Ok(body)
     }

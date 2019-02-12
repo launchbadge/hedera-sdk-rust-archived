@@ -6,33 +6,56 @@ use std::{env, thread::sleep, time::Duration};
 use std::str::FromStr;
 use tokio::{await, run_async};
 
+// This example creates a new smart contract from an existing Hedera file
+
+// to invoke from unix/macOs terminal
+// export OPERATOR=The account ID executing the transaction (e.g. 0.0.2)
+// export NODE_PORT=node:port you're sending the transaction to (e.g. testnet.hedera.com:50003)
+// export NODE_ACCOUNT=node's account (e.g. 0.0.3)
+// export OPERATOR_SECRET=your private key (e.g. 302e020100300506032b657004220420aaeeb4f94573f3d13b4f0965d4e59d1cf30695d9d9788d25539f322bdf3a5edd)
+// export FILE_ID=Hedera file ID containing the smart contract byte code (e.g. 0.0.1032)
+// export GAS=gas limit for creating the smart contract in tinybar (e.g. 1000000)
+// then from the hedera-sdk-rust root run:
+// cargo run --example create_contract
+
+// to invoke from windows command line
+// set OPERATOR=The account ID executing the transaction (e.g. 0.0.2)
+// set NODE_PORT=node:port you're sending the transaction to (e.g. testnet.hedera.com:50003)
+// set NODE_ACCOUNT=node's account (e.g. 0.0.3)
+// set OPERATOR_SECRET=your private key (e.g. 302e020100300506032b657004220420aaeeb4f94573f3d13b4f0965d4e59d1cf30695d9d9788d25539f322bdf3a5edd)
+// set FILE_ID=Hedera file ID containing the smart contract byte code (e.g. 0.0.1032)
+// set GAS=gas limit for creating the smart contract in tinybar (e.g. 1000000)
+// then from the hedera-sdk-rust root run:
+// cargo run --example create_contract
+
 async fn main_() -> Result<(), Error> {
     pretty_env_logger::try_init()?;
 
     // Operator is the account that sends the transaction to the network
     // This account is charged for the transaction fee
-    let operator = "0:0:2".parse()?;
-    let client = Client::builder("testnet.hedera.com:50003")
-        .node("0:0:3".parse()?)
+    let operator = env::var("OPERATOR")?.parse()?;
+    let node_port : String = env::var("NODE_PORT")?;
+    let client = Client::builder(&node_port)
+        .node(env::var("NODE_ACCOUNT")?.parse()?)
         .operator(operator, || env::var("OPERATOR_SECRET"))
         .build()?;
 
     let operator_secret : String = env::var("OPERATOR_SECRET")?;
-    let secret = SecretKey::from_str(&operator_secret)?;
-    let public = secret.public();
+    let file_id = env::var("FILE_ID")?.parse()?;
+    let gas = env::var("GAS")?.parse::<i64>()?;
 
     // Create a contract from an existing Hedera file
     let id = await!(client
         .create_contract()
         .file(file_id)
-        .gas(gas: i64)
+        .gas(gas)
         .auto_renew_period(Duration::from_secs(2_592_000))
-        .constructor_parameters(params: Vec<u8>)
         .memo("[hedera-sdk-rust][example] create_contract")
         .execute_async())?;
 
     println!("creating contract; transaction = {}", id);
 
+        //.constructor_parameters(params: Vec<u8>)
         // .initial_balance(balance: i64)
         // .sign(&env::var("OPERATOR_SECRET")?.parse()?) // sign as the owner of the file
 
@@ -49,8 +72,12 @@ async fn main_() -> Result<(), Error> {
         ))?;
     }
 
-    let file = receipt.contract_id.unwrap();
+    let contract = receipt.contract_id.unwrap();
+    
     println!("contract ID = {}", contract);
+    println!("Run these (OS Depending) to run further contract examples");
+    println!("export CONTRACT_ID={}", contract);
+    println!("set CONTRACT_ID={}", contract);
 
     Ok(())
 }

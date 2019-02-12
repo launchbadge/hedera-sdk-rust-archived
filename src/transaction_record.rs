@@ -5,8 +5,7 @@ use try_from::{TryFrom, TryInto};
 
 #[derive(Debug, Clone)]
 pub enum TransactionRecordBody {
-    ContractCall(ContractFunctionResult),
-    ContractCreate(ContractFunctionResult),
+    ContractResult(ContractFunctionResult),
     Transfer(Vec<(AccountId, i64)>),
 }
 
@@ -36,9 +35,9 @@ impl TryFrom<proto::TransactionRecord::TransactionRecord> for TransactionRecord 
             transaction_fee: record.get_transactionFee(),
             body: {
                 if record.has_contractCallResult() {
-                    TransactionRecordBody::ContractCall(record.take_contractCallResult().into())
+                    TransactionRecordBody::ContractResult(record.take_contractCallResult().into())
                 } else if record.has_contractCreateResult() {
-                    TransactionRecordBody::ContractCreate(record.take_contractCreateResult().into())
+                    TransactionRecordBody::ContractResult(record.take_contractCreateResult().into())
                 } else if record.has_transferList() {
                     TransactionRecordBody::Transfer(record.take_transferList().into())
                 } else {
