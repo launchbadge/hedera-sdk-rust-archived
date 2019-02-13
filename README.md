@@ -34,7 +34,7 @@ Following the instructions below should help you to reach the position where you
 
 ## Developer Rewards
 
-Developers who create Hedera accounts and test their applications on our testnet are offered the opportunity to earn real mainnet __ℏ__ ([__hbars__](#a-hbar)) based upon that testing activity. The SDKs are intended to facilitate application development and encourage such testing. See the [Hedera Account][03-02-hedera-acct] section for further details.
+Developers who create Hedera accounts and test their applications on our testnet will be offered the opportunity to earn real mainnet __ℏ__ ([__hbars__](#a-hbar)) based upon that testing activity. The SDKs are intended to facilitate application development and encourage such testing. See the [Hedera Account][03-02-hedera-acct] section for further details.
 
 > <a id="a-hbar">**Hbars**:</a>
 >
