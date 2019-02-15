@@ -53,6 +53,7 @@ async fn main_() -> Result<(), Error> {
         .expires_in(Duration::from_secs(2_592_000))
         .key(public)
         .contents(file_contents_bytes)
+        .generate_record(true)
         .memo("[hedera-sdk-rust][example] create_file")
         .sign(&env::var("OPERATOR_SECRET")?.parse()?) // sign as the owner of the file
         .execute_async())?;
@@ -64,20 +65,31 @@ async fn main_() -> Result<(), Error> {
     sleep(Duration::from_secs(2));
 
     // Get the receipt and check the status to prove it was successful
-    let receipt = await!(client.transaction(id).receipt().get_async())?;
-    if receipt.status != Status::Success {
+//    let receipt = await!(client.transaction(id).receipt().get_async())?;
+//    if receipt.status != Status::Success {
+//        Err(format_err!(
+//            "transaction has a non-successful status: {:?}",
+//            receipt.status
+//        ))?;
+//    }
+//
+//    let file = receipt.file_id.unwrap();
+//    println!("file ID = {}", file);
+//    println!("Run these (OS Depending) to run further file examples");
+//    println!("export FILE_ID={}", file);
+//    println!("set FILE_ID={}", file);
+//
+//    sleep(Duration::from_secs(5));
+
+    // get the record from the contract call and extract the result
+    let record = await!(client.transaction(id).record().get_async())?;
+    if record.receipt.status != Status::Success {
         Err(format_err!(
             "transaction has a non-successful status: {:?}",
-            receipt.status
+            record.receipt.status
         ))?;
     }
 
-    let file = receipt.file_id.unwrap();
-    println!("file ID = {}", file);
-    println!("Run these (OS Depending) to run further file examples");
-    println!("export FILE_ID={}", file);
-    println!("set FILE_ID={}", file);
-    
     Ok(())
 }
 

@@ -16,7 +16,7 @@ pub struct TransactionRecord {
     pub consensus_timestamp: Option<DateTime<Utc>>,
     pub memo: String,
     pub transaction_fee: u64,
-    pub body: TransactionRecordBody,
+    pub body: Option<TransactionRecordBody>,
 }
 
 impl TryFrom<proto::TransactionRecord::TransactionRecord> for TransactionRecord {
@@ -35,13 +35,14 @@ impl TryFrom<proto::TransactionRecord::TransactionRecord> for TransactionRecord 
             transaction_fee: record.get_transactionFee(),
             body: {
                 if record.has_contractCallResult() {
-                    TransactionRecordBody::ContractResult(record.take_contractCallResult().into())
+                    Some(TransactionRecordBody::ContractResult(record.take_contractCallResult().into()))
                 } else if record.has_contractCreateResult() {
-                    TransactionRecordBody::ContractResult(record.take_contractCreateResult().into())
+                    Some(TransactionRecordBody::ContractResult(record.take_contractCreateResult().into()))
                 } else if record.has_transferList() {
-                    TransactionRecordBody::Transfer(record.take_transferList().into())
+                    Some(TransactionRecordBody::Transfer(record.take_transferList().into()))
                 } else {
-                    Err(err_msg("transaction record contained no body"))?
+                    //Err(err_msg("transaction record contained no body"))?
+                    None
                 }
             },
         })
