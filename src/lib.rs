@@ -33,7 +33,7 @@ pub use self::{
     status::Status,
     transaction_id::TransactionId,
     transaction_receipt::TransactionReceipt,
-    transaction_record::{TransactionRecord, TransactionRecordBody},
+    transaction_record::TransactionRecord,
 };
 
 use once_cell::{sync::Lazy, sync_lazy};

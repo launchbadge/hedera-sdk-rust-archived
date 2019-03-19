@@ -1,13 +1,7 @@
-use crate::{id::AccountId, proto, query::ContractFunctionResult, TransactionReceipt};
+use crate::{id::AccountId, id:: ContractId, proto, query::ContractFunctionResult, TransactionReceipt, proto::CryptoTransfer::TransferList};
 use chrono::{DateTime, Utc};
 use failure::{err_msg, Error};
 use try_from::{TryFrom, TryInto};
-
-#[derive(Debug, Clone)]
-pub enum TransactionRecordBody {
-    ContractResult(ContractFunctionResult),
-    Transfer(Vec<(AccountId, i64)>),
-}
 
 #[derive(Debug, Clone)]
 pub struct TransactionRecord {
@@ -16,7 +10,8 @@ pub struct TransactionRecord {
     pub consensus_timestamp: Option<DateTime<Utc>>,
     pub memo: String,
     pub transaction_fee: u64,
-    pub body: Option<TransactionRecordBody>,
+    pub contract_function_result: Option<ContractFunctionResult>,
+    pub transfers: Option<TransferList>,
 }
 
 impl TryFrom<proto::TransactionRecord::TransactionRecord> for TransactionRecord {
@@ -33,24 +28,24 @@ impl TryFrom<proto::TransactionRecord::TransactionRecord> for TransactionRecord 
             },
             memo: record.take_memo(),
             transaction_fee: record.get_transactionFee(),
-            body: {
-                if record.has_contractCallResult() {
-                    Some(TransactionRecordBody::ContractResult(record.take_contractCallResult().into()))
-                } else if record.has_contractCreateResult() {
-                    Some(TransactionRecordBody::ContractResult(record.take_contractCreateResult().into()))
-                } else if record.has_transferList() {
-                    Some(TransactionRecordBody::Transfer(record.take_transferList().into()))
-                } else {
-                    //Err(err_msg("transaction record contained no body"))?
-                    None
-                }
+            transfers: if record.has_transferList() {
+                Some(record.take_transferList())
+            } else {
+                None
+            },
+            contract_function_result: if record.has_contractCallResult() {
+                Some(record.take_contractCallResult().into())
+            } else if record.has_contractCreateResult() {
+                Some(record.take_contractCreateResult().into())
+            } else {
+                None
             },
         })
     }
 }
 
 impl TryFrom<proto::ContractGetRecords::ContractGetRecordsResponse> for Vec<TransactionRecord> {
-    type Err = Error;
+       type Err = Error;
 
     fn try_from(
         mut response: proto::ContractGetRecords::ContractGetRecordsResponse,

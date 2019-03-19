@@ -9,7 +9,7 @@ use ethabi::token::{Token, Tokenizer, StrictTokenizer, LenientTokenizer};
 use ethabi::{encode, decode, Contract, Function, Event, Hash};
 use failure::{format_err, Error};
 use futures::FutureExt;
-use hedera::{Client, Status, query, TransactionRecordBody};
+use hedera::{Client, Status, query};
 use std::{env, thread::sleep, time::Duration};
 use std::str::FromStr;
 use tokio::{await, run_async};
@@ -107,12 +107,10 @@ async fn main_() -> Result<(), Error> {
         ))?;
     }
 
-    println!("Got record body {:?}", record.body);
+    println!("Got record body {:?}", record.contract_function_result);
+    println!("Got call result {:?}", record.contract_function_result.contract_id);
 
-    match record.body { //this match expression has type `hedera::transaction_record::TransactionRecordBody`
-        TransactionRecordBody::ContractResult { contractCallResult } => println!("Result is {:?}", contractCallResult),
-        _ => println!("Not what I expected"),
-    }
+    let contract_function_result = record.contract_function_result; //.contract_call_result;
 
 
     // get the byte array containing results from the record
