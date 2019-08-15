@@ -72,7 +72,22 @@ Developers who wish to work in other languages are at liberty to do so, but shou
     You should see version `1.32.0` or higher. If this command fails, the most likely reason relates to the `PATH` environment variable as explained in [the instructions](https://www.rust-lang.org/tools/install).
 
   * The `rust-toolchain` file in this repo currently makes this project dependent on a nightly build of Rust. Users who choose manage this project using `rustup` should not notice this, as the correct version of Rust will be installed transparently as required. This dependency will be removed when the asynchronous I/O packages used by this SDK are deemed stable, which is expected to happen in March 2019.
-
+  * Also, ensure you have Protobuf compiler installed on your system. If not then follow the steps.
+      * Mac OS
+        ```sh
+         brew install autoconf automake libtool
+        ```
+      * Ubuntu
+        ```sh
+         apt-get install autoconf automake libtool
+        ```
+   * Download the appropriate release here: https://github.com/google/protobuf/releases and unzip the folder.
+        ```sh
+        ./autogen.sh && ./configure && make
+        make check
+        make install
+        ```
+        
 ### Hedera Account
 
 The [Hedera Portal](https://go.hedera.com) allows people to create a **Hedera Account** facilitating access to the Hedera mainnet and Hedera testnets. A Hedera Account allows entry of a testnet access code, in order to add a number of testnet __ℏ__ ([hbars](#a-hbar)) to a testnet account created (as can be seen [below][03-03-hedera-testnet]) using Hedera SDKs. The public key associated with a testnet account must also be associated with your Hedera account. A detailed explanation of this whole process is contained within this document.
