@@ -1,7 +1,7 @@
 use crate::{
     crypto::PublicKey,
     id::{AccountId, ContractId, FileId},
-    proto::{self, ToProto, Transaction::Transaction_oneof_bodyData},
+    proto::{self, ToProto, TransactionBody::TransactionBody_oneof_data},
     transaction::Transaction,
     Client,
 };
@@ -21,7 +21,7 @@ pub struct TransactionContractUpdate {
 
 interfaces!(
     TransactionContractUpdate: dyn Any,
-    dyn ToProto<Transaction_oneof_bodyData>
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionContractUpdate {
@@ -77,8 +77,8 @@ impl Transaction<TransactionContractUpdate> {
     }
 }
 
-impl ToProto<Transaction_oneof_bodyData> for TransactionContractUpdate {
-    fn to_proto(&self) -> Result<Transaction_oneof_bodyData, Error> {
+impl ToProto<TransactionBody_oneof_data> for TransactionContractUpdate {
+    fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
         let mut data = proto::ContractUpdate::ContractUpdateTransactionBody::new();
         data.set_contractID(self.contract.to_proto()?);
 
@@ -102,6 +102,6 @@ impl ToProto<Transaction_oneof_bodyData> for TransactionContractUpdate {
             data.set_fileID(file.to_proto()?);
         }
 
-        Ok(Transaction_oneof_bodyData::contractUpdateInstance(data))
+        Ok(TransactionBody_oneof_data::contractUpdateInstance(data))
     }
 }

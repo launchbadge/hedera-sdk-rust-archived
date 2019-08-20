@@ -1,6 +1,6 @@
 use crate::{
     crypto::PublicKey,
-    proto::{self, ToProto, Transaction::Transaction_oneof_bodyData},
+    proto::{self, ToProto, TransactionBody::TransactionBody_oneof_data},
     AccountId, FileId,
 };
 
@@ -15,14 +15,13 @@ pub struct TransactionContractCreate {
     gas: i64,
     initial_balance: i64,
     proxy_account: Option<AccountId>,
-    proxy_fraction: Option<i32>,
     auto_renew_period: Duration,
     constructor_parameters: Option<Vec<u8>>,
 }
 
 interfaces!(
     TransactionContractCreate: dyn Any,
-    dyn ToProto<Transaction_oneof_bodyData>
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionContractCreate {
@@ -35,7 +34,6 @@ impl TransactionContractCreate {
                 gas: 0,
                 initial_balance: 0,
                 proxy_account: None,
-                proxy_fraction: None,
                 auto_renew_period: Duration::from_secs(2_592_000),
                 constructor_parameters: None,
             },
@@ -75,12 +73,6 @@ impl Transaction<TransactionContractCreate> {
     }
 
     #[inline]
-    pub fn proxy_fraction(&mut self, fraction: i32) -> &mut Self {
-        self.inner().proxy_fraction = Some(fraction);
-        self
-    }
-
-    #[inline]
     pub fn auto_renew_period(&mut self, period: Duration) -> &mut Self {
         self.inner().auto_renew_period = period;
         self
@@ -93,8 +85,8 @@ impl Transaction<TransactionContractCreate> {
     }
 }
 
-impl ToProto<Transaction_oneof_bodyData> for TransactionContractCreate {
-    fn to_proto(&self) -> Result<Transaction_oneof_bodyData, Error> {
+impl ToProto<TransactionBody_oneof_data> for TransactionContractCreate {
+    fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
         let mut data = proto::ContractCreate::ContractCreateTransactionBody::new();
 
         let mut shard = proto::BasicTypes::ShardID::new();
@@ -109,10 +101,6 @@ impl ToProto<Transaction_oneof_bodyData> for TransactionContractCreate {
 
         if let Some(account) = self.proxy_account {
             data.set_proxyAccountID(account.to_proto()?);
-        }
-
-        if let Some(fraction) = self.proxy_fraction {
-            data.set_proxyFraction(fraction);
         }
 
         if let Some(id) = self.file_id {
@@ -131,6 +119,6 @@ impl ToProto<Transaction_oneof_bodyData> for TransactionContractCreate {
             data.set_constructorParameters(params.clone());
         }
 
-        Ok(Transaction_oneof_bodyData::contractCreateInstance(data))
+        Ok(TransactionBody_oneof_data::contractCreateInstance(data))
     }
 }

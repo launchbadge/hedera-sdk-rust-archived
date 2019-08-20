@@ -1,5 +1,5 @@
 use crate::{
-    proto::{self, ToProto, Transaction::Transaction_oneof_bodyData},
+    proto::{self, ToProto, TransactionBody::TransactionBody_oneof_data},
     transaction::Transaction,
     Client, FileId,
 };
@@ -14,7 +14,7 @@ pub struct TransactionFileDelete {
 
 interfaces!(
     TransactionFileDelete: dyn Any,
-    dyn ToProto<Transaction_oneof_bodyData>
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionFileDelete {
@@ -23,12 +23,12 @@ impl TransactionFileDelete {
     }
 }
 
-impl ToProto<Transaction_oneof_bodyData> for TransactionFileDelete {
-    fn to_proto(&self) -> Result<Transaction_oneof_bodyData, Error> {
+impl ToProto<TransactionBody_oneof_data> for TransactionFileDelete {
+    fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
         let mut data = proto::FileDelete::FileDeleteTransactionBody::new();
 
         data.set_fileID(self.id.to_proto()?);
 
-        Ok(Transaction_oneof_bodyData::fileDelete(data))
+        Ok(TransactionBody_oneof_data::fileDelete(data))
     }
 }

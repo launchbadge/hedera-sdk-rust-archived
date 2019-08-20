@@ -1,5 +1,5 @@
 use crate::{
-    proto::{self, ToProto, Transaction::Transaction_oneof_bodyData},
+    proto::{self, ToProto, TransactionBody::TransactionBody_oneof_data},
     transaction::Transaction,
     AccountId, Client,
 };
@@ -24,7 +24,7 @@ pub struct TransactionCryptoTransfer {
 
 interfaces!(
     TransactionCryptoTransfer: dyn Any,
-    dyn ToProto<Transaction_oneof_bodyData>
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionCryptoTransfer {
@@ -46,8 +46,8 @@ impl Transaction<TransactionCryptoTransfer> {
     }
 }
 
-impl ToProto<Transaction_oneof_bodyData> for TransactionCryptoTransfer {
-    fn to_proto(&self) -> Result<Transaction_oneof_bodyData, Error> {
+impl ToProto<TransactionBody_oneof_data> for TransactionCryptoTransfer {
+    fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
         let amounts: Result<Vec<proto::CryptoTransfer::AccountAmount>, Error> = self
             .transfers
             .iter()
@@ -65,6 +65,6 @@ impl ToProto<Transaction_oneof_bodyData> for TransactionCryptoTransfer {
         let mut data = proto::CryptoTransfer::CryptoTransferTransactionBody::new();
         data.set_transfers(transfers);
 
-        Ok(Transaction_oneof_bodyData::cryptoTransfer(data))
+        Ok(TransactionBody_oneof_data::cryptoTransfer(data))
     }
 }

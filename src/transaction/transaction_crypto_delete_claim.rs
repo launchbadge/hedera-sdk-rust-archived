@@ -1,5 +1,5 @@
 use crate::{
-    proto::{self, ToProto, Transaction::Transaction_oneof_bodyData},
+    proto::{self, ToProto, TransactionBody::TransactionBody_oneof_data},
     transaction::Transaction,
     AccountId, Client,
 };
@@ -14,7 +14,7 @@ pub struct TransactionCryptoDeleteClaim {
 
 interfaces!(
     TransactionCryptoDeleteClaim: dyn Any,
-    dyn ToProto<Transaction_oneof_bodyData>
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionCryptoDeleteClaim {
@@ -29,13 +29,13 @@ impl TransactionCryptoDeleteClaim {
     }
 }
 
-impl ToProto<Transaction_oneof_bodyData> for TransactionCryptoDeleteClaim {
-    fn to_proto(&self) -> Result<Transaction_oneof_bodyData, Error> {
+impl ToProto<TransactionBody_oneof_data> for TransactionCryptoDeleteClaim {
+    fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
         let mut data = proto::CryptoDeleteClaim::CryptoDeleteClaimTransactionBody::default();
         data.set_accountIDToDeleteFrom(self.account.to_proto()?);
         // fixme: it'd be nice to avoid the clone here
         data.set_hashToDelete(self.hash_to_delete.clone());
 
-        Ok(Transaction_oneof_bodyData::cryptoDeleteClaim(data))
+        Ok(TransactionBody_oneof_data::cryptoDeleteClaim(data))
     }
 }

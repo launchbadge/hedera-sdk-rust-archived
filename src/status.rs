@@ -1,4 +1,6 @@
 use crate::proto;
+//use crate::status::Status::EmptyClaimHash;
+//use test::TestFn::{StaticBenchFn, StaticTestFn};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[repr(u8)]
@@ -146,6 +148,145 @@ pub enum Status {
 
     // invalid transaction body
     InvalidTransactionBody = 50,
+
+    // invalid signature type
+    InvalidSignatureTypeMismatch = 51,
+
+    // amount of signatures does not match
+    InvalidSignatureCountMismatch = 52,
+
+    // empty claim bocy
+    EmptyClaimBody = 53,
+
+    // empty claim hash
+    EmptyClaimHash = 54,
+
+    // empty claim keys
+    EmptyClaimKeys = 55,
+
+    // invalid claim hash size
+    InvalidClaimHashSize = 56,
+
+    // empty query body
+    EmptyQueryBody = 57,
+
+    // claim query is empty
+    EmptyClaimQuery = 58,
+
+    // claim does not exist
+    ClaimNotFound = 59,
+
+    // account id passed doesn't exist
+    AccountIdDoesNotExist = 60,
+
+    // claim has already been created
+    ClaimAlreadyExists = 61,
+
+    // file WACL keys are invalid
+    InvalidFileWACL = 62,
+
+    // serialization failed
+    SerializationFailed = 63,
+
+    // transaction size greater than byte limit
+    TransactionOversize = 64,
+
+    // transaction has more than 50 levels
+    TransactionTooManyLayers = 65,
+
+    // contract was deleted
+    ContractDeleted = 66,
+
+    // platfoem is either disconnected or lagging
+    PlatformNotActive = 67,
+
+    // one public key matches multiple signature prefixes
+    KeyPrefixMismatch = 68,
+
+    // transaction not created by platform because of backlog or oversize
+    TransactionNotCreated = 69,
+
+    // auto renew value must be positive integer
+    InvalidRenewalPeriod = 70,
+
+    // smart contract id was passed for crypto tx
+    InvalidPayerAccount = 71,
+
+    // account has been deleted
+    AccountDeleted = 72,
+
+    // file has been deleted
+    FileDeleted = 73,
+
+    // multiple of the same account in the transfer list
+    AccountRepeatedInAccountAmounts = 74,
+
+    // attempting to set negative account balance
+    SettingNegativeAccountBalance = 75,
+
+    // when deleting smart contract with an account balance either an account or contract is needed
+    // obtain the outstanding balance
+    ObtainerRequired = 76,
+
+    // cannot use the contract that is being deleted for the obtainer address when delting contract
+    ObtainerSameContractId = 77,
+
+    // id passed for obtainer account doesn't exist
+    ObtainerDoesNotExist = 78,
+
+    // attempting to modify an immutable contract (ie. created without admin key)
+    ModifyingImmutableContract = 79,
+
+    // unexpected occurred during filesystem operation
+    FileSystemException = 80,
+
+    // the duration is not a subset of [MINIMUM_AUTORENEW_DURATION,MAXIMUM_AUTORENEW_DURATION]
+    AutorenewDurationNotInRange = 81,
+
+    // decoding contract binary to byte array failed, verify input is a valid hex string
+    ErrorDecodingBytestring = 82,
+
+    // file to create contract is empty
+    ContractFileEmpty = 83,
+
+    // contract file bytecode is empty
+    ContractBytecodeEmpty = 84,
+
+    // initial balance must be positive value
+    InvalidInitialBalance = 85,
+
+    // receive record threshold must be positive
+    InvalidReceiveRecordThreshold = 86,
+
+    // send record threashold must be positive
+    InvalidSendRecordThreshold = 87,
+
+    // Special Account Operations must occur from the Genesis Account
+    AccountIsNotGenesisAccount = 88,
+
+    // payer account is not authorized for this tx type
+    PayerAccountUnauthorized = 89,
+
+    // tx body is invalid
+    InvalidFreezeTransactionBody = 90,
+
+    // freeze tx body is empty
+    FreezeTransactionBodyNotFound = 91,
+
+    // exceeded the number of accounts (both from and to) allowed for crypto transfer list
+    TransferListSizeLimitExceeded = 92,
+
+    // contract result size greater than max limit
+    ResultSizeLimitExceeded = 93,
+
+    // not account 0:0:55
+    NotSpecialAccount = 94,
+
+    // contract tx gas value must be positive
+    ContractNegativeGas = 95,
+
+    // negative value or initial balance was set for tx, value must be positive
+    ContractNegativeValue = 96
 }
 
 impl From<proto::ResponseCode::ResponseCodeEnum> for Status {
@@ -204,6 +345,52 @@ impl From<proto::ResponseCode::ResponseCodeEnum> for Status {
             INVALID_ACCOUNT_AMOUNTS => Status::InvalidAccountAmounts,
             EMPTY_TRANSACTION_BODY => Status::EmptyTransactionBody,
             INVALID_TRANSACTION_BODY => Status::InvalidTransactionBody,
+            INVALID_SIGNATURE_TYPE_MISMATCHING_KEY => Status::InvalidSignatureTypeMismatch,
+            INVALID_SIGNATURE_COUNT_MISMATCHING_KEY => Status::InvalidSignatureCountMismatch,
+            EMPTY_CLAIM_BODY => Status::EmptyClaimBody,
+            EMPTY_CLAIM_HASH => Status::EmptyClaimHash,
+            EMPTY_CLAIM_KEYS => Status::EmptyClaimKeys,
+            INVALID_CLAIM_HASH_SIZE => Status::InvalidClaimHashSize,
+            EMPTY_QUERY_BODY => Status::EmptyQueryBody,
+            EMPTY_CLAIM_QUERY => Status::EmptyClaimQuery,
+            CLAIM_NOT_FOUND => Status::ClaimNotFound,
+            ACCOUNT_ID_DOES_NOT_EXIST => Status::AccountIdDoesNotExist,
+            CLAIM_ALREADY_EXISTS => Status::ClaimAlreadyExists,
+            INVALID_FILE_WACL => Status::InvalidFileWACL,
+            SERIALIZATION_FAILED => Status::SerializationFailed,
+            TRANSACTION_OVERSIZE => Status::TransactionOversize,
+            TRANSACTION_TOO_MANY_LAYERS => Status::TransactionTooManyLayers,
+            CONTRACT_DELETED => Status::ContractDeleted,
+            PLATFORM_NOT_ACTIVE => Status::PlatformNotActive,
+            KEY_PREFIX_MISMATCH => Status::KeyPrefixMismatch,
+            PLATFORM_TRANSACTION_NOT_CREATED => Status::PlatformNotActive,
+            INVALID_RENEWAL_PERIOD => Status::InvalidRenewalPeriod,
+            INVALID_PAYER_ACCOUNT_ID => Status::InvalidPayerAccount,
+            ACCOUNT_DELETED => Status::AccountDeleted,
+            FILE_DELETED => Status::FileDeleted,
+            ACCOUNT_REPEATED_IN_ACCOUNT_AMOUNTS => Status::AccountRepeatedInAccountAmounts,
+            SETTING_NEGATIVE_ACCOUNT_BALANCE => Status::SettingNegativeAccountBalance,
+            OBTAINER_REQUIRED => Status::ObtainerRequired,
+            OBTAINER_SAME_CONTRACT_ID => Status::ObtainerSameContractId,
+            OBTAINER_DOES_NOT_EXIST => Status::ObtainerDoesNotExist,
+            MODIFYING_IMMUTABLE_CONTRACT => Status::ModifyingImmutableContract,
+            FILE_SYSTEM_EXCEPTION => Status::FileSystemException,
+            AUTORENEW_DURATION_NOT_IN_RANGE => Status::AutorenewDurationNotInRange,
+            ERROR_DECODING_BYTESTRING => Status::ErrorDecodingBytestring,
+            CONTRACT_FILE_EMPTY => Status::ContractFileEmpty,
+            CONTRACT_BYTECODE_EMPTY => Status::ContractBytecodeEmpty,
+            INVALID_INITIAL_BALANCE => Status::InvalidInitialBalance,
+            INVALID_RECEIVE_RECORD_THRESHOLD => Status::InvalidReceiveRecordThreshold,
+            INVALID_SEND_RECORD_THRESHOLD => Status::InvalidSendRecordThreshold,
+            ACCOUNT_IS_NOT_GENESIS_ACCOUNT => Status::AccountIsNotGenesisAccount,
+            PAYER_ACCOUNT_UNAUTHORIZED => Status::PayerAccountUnauthorized,
+            INVALID_FREEZE_TRANSACTION_BODY => Status::InvalidFreezeTransactionBody,
+            FREEZE_TRANSACTION_BODY_NOT_FOUND => Status::FreezeTransactionBodyNotFound,
+            TRANSFER_LIST_SIZE_LIMIT_EXCEEDED => Status::TransferListSizeLimitExceeded,
+            RESULT_SIZE_LIMIT_EXCEEDED => Status::ResultSizeLimitExceeded,
+            NOT_SPECIAL_ACCOUNT => Status::NotSpecialAccount,
+            CONTRACT_NEGATIVE_GAS => Status::ContractNegativeGas,
+            CONTRACT_NEGATIVE_VALUE => Status::ContractNegativeValue
         }
     }
 }

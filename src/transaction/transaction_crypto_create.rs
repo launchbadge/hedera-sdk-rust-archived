@@ -1,6 +1,6 @@
 use crate::{
     crypto::PublicKey,
-    proto::{self, ToProto, Transaction::Transaction_oneof_bodyData},
+    proto::{self, ToProto, TransactionBody::TransactionBody_oneof_data},
     transaction::Transaction,
     AccountId, Client, ErrorKind,
 };
@@ -16,14 +16,12 @@ pub struct TransactionCryptoCreate {
     receive_record_threshold: i64,
     receiver_signature_required: bool,
     proxy_account: Option<AccountId>,
-    proxy_fraction: Option<i32>,
-    max_receive_proxy_fraction: Option<i32>,
     auto_renew_period: Duration,
 }
 
 interfaces!(
     TransactionCryptoCreate: dyn Any,
-    dyn ToProto<Transaction_oneof_bodyData>
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionCryptoCreate {
@@ -37,8 +35,6 @@ impl TransactionCryptoCreate {
                 receive_record_threshold: i64::max_value(),
                 receiver_signature_required: false,
                 proxy_account: None,
-                proxy_fraction: None,
-                max_receive_proxy_fraction: None,
                 auto_renew_period: Duration::from_secs(2_592_000),
             },
         )
@@ -61,18 +57,6 @@ impl Transaction<TransactionCryptoCreate> {
     #[inline]
     pub fn proxy_account(&mut self, account: AccountId) -> &mut Self {
         self.inner().proxy_account = Some(account);
-        self
-    }
-
-    #[inline]
-    pub fn proxy_fraction(&mut self, fraction: i32) -> &mut Self {
-        self.inner().proxy_fraction = Some(fraction);
-        self
-    }
-
-    #[inline]
-    pub fn max_receive_proxy_fraction(&mut self, fraction: i32) -> &mut Self {
-        self.inner().max_receive_proxy_fraction = Some(fraction);
         self
     }
 
@@ -115,8 +99,8 @@ impl Transaction<TransactionCryptoCreate> {
     }
 }
 
-impl ToProto<Transaction_oneof_bodyData> for TransactionCryptoCreate {
-    fn to_proto(&self) -> Result<Transaction_oneof_bodyData, Error> {
+impl ToProto<TransactionBody_oneof_data> for TransactionCryptoCreate {
+    fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
         let mut data = proto::CryptoCreate::CryptoCreateTransactionBody::new();
 
         let mut shard = proto::BasicTypes::ShardID::new();
@@ -136,14 +120,6 @@ impl ToProto<Transaction_oneof_bodyData> for TransactionCryptoCreate {
             data.set_proxyAccountID(account.to_proto()?);
         }
 
-        if let Some(fraction) = self.proxy_fraction {
-            data.set_proxyFraction(fraction);
-        }
-
-        if let Some(fraction) = self.max_receive_proxy_fraction {
-            data.set_maxReceiveProxyFraction(fraction);
-        }
-
         let key = match self.key.as_ref() {
             Some(key) => key,
             None => Err(ErrorKind::MissingField("key"))?,
@@ -152,6 +128,6 @@ impl ToProto<Transaction_oneof_bodyData> for TransactionCryptoCreate {
         data.set_key(key.to_proto()?);
         data.set_autoRenewPeriod(self.auto_renew_period.to_proto()?);
 
-        Ok(Transaction_oneof_bodyData::cryptoCreateAccount(data))
+        Ok(TransactionBody_oneof_data::cryptoCreateAccount(data))
     }
 }

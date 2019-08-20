@@ -2,7 +2,7 @@ use crate::{
     claim::Claim,
     crypto::PublicKey,
     id::AccountId,
-    proto::{self, ToProto, Transaction::Transaction_oneof_bodyData},
+    proto::{self, ToProto, TransactionBody::TransactionBody_oneof_data},
     transaction::Transaction,
     Client,
 };
@@ -19,7 +19,7 @@ pub struct TransactionCryptoAddClaim {
 
 interfaces!(
     TransactionCryptoAddClaim: dyn Any,
-    dyn ToProto<Transaction_oneof_bodyData>
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionCryptoAddClaim {
@@ -43,10 +43,9 @@ impl Transaction<TransactionCryptoAddClaim> {
     }
 }
 
-impl ToProto<Transaction_oneof_bodyData> for TransactionCryptoAddClaim {
-    fn to_proto(&self) -> Result<Transaction_oneof_bodyData, Error> {
+impl ToProto<TransactionBody_oneof_data> for TransactionCryptoAddClaim {
+    fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
         let mut data = proto::CryptoAddClaim::CryptoAddClaimTransactionBody::new();
-        data.set_accountID(self.account.to_proto()?);
 
         let claim = Claim {
             account: self.account,
@@ -56,6 +55,6 @@ impl ToProto<Transaction_oneof_bodyData> for TransactionCryptoAddClaim {
 
         data.set_claim(claim.to_proto()?);
 
-        Ok(Transaction_oneof_bodyData::cryptoAddClaim(data))
+        Ok(TransactionBody_oneof_data::cryptoAddClaim(data))
     }
 }

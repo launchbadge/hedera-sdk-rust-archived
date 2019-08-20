@@ -4,7 +4,7 @@ use failure::Error;
 use query_interface::{interfaces, vtable_for};
 
 use crate::{
-    proto::{self, ToProto, Transaction::Transaction_oneof_bodyData},
+    proto::{self, ToProto, TransactionBody::TransactionBody_oneof_data},
     transaction::Transaction,
     Client, FileId,
 };
@@ -16,7 +16,7 @@ pub struct TransactionFileAppend {
 
 interfaces!(
     TransactionFileAppend: dyn Any,
-    dyn ToProto<Transaction_oneof_bodyData>
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionFileAppend {
@@ -31,13 +31,13 @@ impl TransactionFileAppend {
     }
 }
 
-impl ToProto<Transaction_oneof_bodyData> for TransactionFileAppend {
-    fn to_proto(&self) -> Result<Transaction_oneof_bodyData, Error> {
+impl ToProto<TransactionBody_oneof_data> for TransactionFileAppend {
+    fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
         let mut data = proto::FileAppend::FileAppendTransactionBody::new();
 
         data.set_fileID(self.id.to_proto()?);
         data.set_contents(self.contents.clone());
 
-        Ok(Transaction_oneof_bodyData::fileAppend(data))
+        Ok(TransactionBody_oneof_data::fileAppend(data))
     }
 }

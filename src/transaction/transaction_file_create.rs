@@ -1,6 +1,6 @@
 use crate::{
     crypto::PublicKey,
-    proto::{self, ToProto, Transaction::Transaction_oneof_bodyData},
+    proto::{self, ToProto, TransactionBody::TransactionBody_oneof_data},
     transaction::Transaction,
     Client, ErrorKind,
 };
@@ -17,7 +17,7 @@ pub struct TransactionFileCreate {
 
 interfaces!(
     TransactionFileCreate: dyn Any,
-    dyn ToProto<Transaction_oneof_bodyData>
+    dyn ToProto<TransactionBody_oneof_data>
 );
 
 impl TransactionFileCreate {
@@ -58,8 +58,8 @@ impl Transaction<TransactionFileCreate> {
     }
 }
 
-impl ToProto<Transaction_oneof_bodyData> for TransactionFileCreate {
-    fn to_proto(&self) -> Result<Transaction_oneof_bodyData, Error> {
+impl ToProto<TransactionBody_oneof_data> for TransactionFileCreate {
+    fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
         let mut data = proto::FileCreate::FileCreateTransactionBody::new();
 
         let mut shard = proto::BasicTypes::ShardID::new();
@@ -85,6 +85,6 @@ impl ToProto<Transaction_oneof_bodyData> for TransactionFileCreate {
         data.set_keys(key_list);
         data.set_contents(self.bytes.clone());
 
-        Ok(Transaction_oneof_bodyData::fileCreate(data))
+        Ok(TransactionBody_oneof_data::fileCreate(data))
     }
 }

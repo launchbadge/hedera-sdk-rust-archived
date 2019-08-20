@@ -86,7 +86,7 @@ pub struct Transaction<T, S = TransactionBuilder<T>> {
 impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
     pub(crate) fn new(client: &Client, inner: T) -> Self
     where
-        T: Object + ToProto<proto::Transaction::Transaction_oneof_bodyData> + 'static,
+        T: Object + ToProto<proto::TransactionBody::TransactionBody_oneof_data> + 'static,
     {
         Self {
             crypto_service: client.crypto.clone(),
@@ -340,7 +340,7 @@ impl<T: 'static, S: 'static> Transaction<T, S> {
                         secret()?.sign(&state.bytes).to_proto().unwrap()
                     };
 
-                    match &tx.get_body().data {
+                    match &tx.get_body().clone().data {
                         Some(cryptoTransfer(data)) => {
                             // Insert a signature for the operator if the operator
                             // is sending any monies
