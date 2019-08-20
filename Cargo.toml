@@ -3,7 +3,7 @@ name = "hedera"
 version = "0.4.2-alpha.0"
 description = "Hedera SDK for Rust"
 license = "Apache-2.0"
-repository = "https://github.com/hashgraph/hedera-sdk-rust"
+repository = "https://github.com/launchbadge/hedera-sdk-rust"
 edition = "2018"
 keywords = ["hedera", "sdk"]
 authors = [
@@ -20,7 +20,7 @@ simple_asn1 = "0.3.0"
 failure_derive = "0.1.5"
 once_cell = { version = "0.1.7", features = [ "parking_lot" ] }
 num = "0.2.0"
-protobuf = "2.3.0"
+protobuf = "2.8.0"
 itertools = "0.8.0"
 chrono = "0.4.6"
 futures01 = { version = "0.1.25", package = "futures" }

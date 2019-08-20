@@ -4,7 +4,7 @@ use failure::Error;
 use query_interface::{interfaces, vtable_for};
 
 use crate::{
-    proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
+    proto::{self, ToProto, Transaction::Transaction_oneof_bodyData},
     transaction::Transaction,
     Client, ContractId, FileId,
 };
@@ -17,7 +17,7 @@ pub struct TransactionAdminFileRecover {
 
 interfaces!(
     TransactionAdminFileRecover: dyn Any,
-    dyn ToProto<TransactionBody_oneof_data>
+    dyn ToProto<Transaction_oneof_bodyData>
 );
 
 impl TransactionAdminFileRecover {
@@ -26,12 +26,12 @@ impl TransactionAdminFileRecover {
     }
 }
 
-impl ToProto<TransactionBody_oneof_data> for TransactionAdminFileRecover {
-    fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
+impl ToProto<Transaction_oneof_bodyData> for TransactionAdminFileRecover {
+    fn to_proto(&self) -> Result<Transaction_oneof_bodyData, Error> {
         let mut data = proto::AdminUndelete::AdminUndeleteTransactionBody::new();
         data.set_fileID(self.id.to_proto()?);
 
-        Ok(TransactionBody_oneof_data::adminUndelete(data))
+        Ok(Transaction_oneof_bodyData::adminUndelete(data))
     }
 }
 
@@ -43,7 +43,7 @@ pub struct TransactionAdminContractRecover {
 
 interfaces!(
     TransactionAdminContractRecover: dyn Any,
-    dyn ToProto<TransactionBody_oneof_data>
+    dyn ToProto<Transaction_oneof_bodyData>
 );
 
 impl TransactionAdminContractRecover {
@@ -52,11 +52,11 @@ impl TransactionAdminContractRecover {
     }
 }
 
-impl ToProto<TransactionBody_oneof_data> for TransactionAdminContractRecover {
-    fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
+impl ToProto<Transaction_oneof_bodyData> for TransactionAdminContractRecover {
+    fn to_proto(&self) -> Result<Transaction_oneof_bodyData, Error> {
         let mut data = proto::AdminUndelete::AdminUndeleteTransactionBody::new();
         data.set_contractID(self.id.to_proto()?);
 
-        Ok(TransactionBody_oneof_data::adminUndelete(data))
+        Ok(Transaction_oneof_bodyData::adminUndelete(data))
     }
 }

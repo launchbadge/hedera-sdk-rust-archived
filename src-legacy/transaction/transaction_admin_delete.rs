@@ -4,7 +4,7 @@ use query_interface::{interfaces, vtable_for};
 use std::any::Any;
 
 use crate::{
-    proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
+    proto::{self, ToProto, Transaction::Transaction_oneof_bodyData},
     transaction::Transaction,
     Client, ContractId, FileId,
 };
@@ -19,7 +19,7 @@ pub struct TransactionAdminFileDelete {
 
 interfaces!(
     TransactionAdminFileDelete: dyn Any,
-    dyn ToProto<TransactionBody_oneof_data>
+    dyn ToProto<Transaction_oneof_bodyData>
 );
 
 impl TransactionAdminFileDelete {
@@ -41,13 +41,13 @@ impl Transaction<TransactionAdminFileDelete> {
     }
 }
 
-impl ToProto<TransactionBody_oneof_data> for TransactionAdminFileDelete {
-    fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
+impl ToProto<Transaction_oneof_bodyData> for TransactionAdminFileDelete {
+    fn to_proto(&self) -> Result<Transaction_oneof_bodyData, Error> {
         let mut data = proto::AdminDelete::AdminDeleteTransactionBody::new();
         data.set_fileID(self.id.to_proto()?);
         data.set_expirationTime(self.exp.to_proto()?);
 
-        Ok(TransactionBody_oneof_data::adminDelete(data))
+        Ok(Transaction_oneof_bodyData::adminDelete(data))
     }
 }
 
@@ -61,7 +61,7 @@ pub struct TransactionAdminContractDelete {
 
 interfaces!(
     TransactionAdminContractDelete: dyn Any,
-    dyn ToProto<TransactionBody_oneof_data>
+    dyn ToProto<Transaction_oneof_bodyData>
 );
 
 impl TransactionAdminContractDelete {
@@ -83,12 +83,12 @@ impl Transaction<TransactionAdminContractDelete> {
     }
 }
 
-impl ToProto<TransactionBody_oneof_data> for TransactionAdminContractDelete {
-    fn to_proto(&self) -> Result<TransactionBody_oneof_data, Error> {
+impl ToProto<Transaction_oneof_bodyData> for TransactionAdminContractDelete {
+    fn to_proto(&self) -> Result<Transaction_oneof_bodyData, Error> {
         let mut data = proto::AdminDelete::AdminDeleteTransactionBody::new();
         data.set_contractID(self.id.to_proto()?);
         data.set_expirationTime(self.exp.to_proto()?);
 
-        Ok(TransactionBody_oneof_data::adminDelete(data))
+        Ok(Transaction_oneof_bodyData::adminDelete(data))
     }
 }
