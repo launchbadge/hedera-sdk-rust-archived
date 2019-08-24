@@ -31,7 +31,6 @@ impl QueryResponse for QueryFileGetContents {
     type Response = Vec<u8>;
 
     fn get(mut response: proto::Response::Response) -> Result<Self::Response, Error> {
-        print!("[RUST] preliminary get call");
         response
             .take_fileGetContents()
             .take_fileContents()
@@ -42,6 +41,7 @@ impl QueryResponse for QueryFileGetContents {
 impl ToQueryProto for QueryFileGetContents {
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error> {
         let mut query = proto::FileGetContents::FileGetContentsQuery::new();
+
         query.set_header(header);
         query.set_fileID(self.file.to_proto()?);
 

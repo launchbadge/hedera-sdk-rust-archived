@@ -12,9 +12,9 @@ use crate::{
     },
     transaction::{
         Transaction, TransactionContractCall, TransactionContractCreate, TransactionContractUpdate,
-        TransactionCryptoCreate, TransactionCryptoDelete, TransactionCryptoDeleteClaim,
-        TransactionCryptoTransfer, TransactionCryptoUpdate, TransactionFileAppend,
-        TransactionFileCreate, TransactionFileDelete,
+        TransactionContractDelete, TransactionCryptoCreate, TransactionCryptoDelete,
+        TransactionCryptoDeleteClaim, TransactionCryptoTransfer, TransactionCryptoUpdate,
+        TransactionFileAppend, TransactionFileCreate, TransactionFileDelete,
     },
     AccountId, TransactionId,
 };
@@ -178,6 +178,21 @@ impl Client {
     #[inline]
     pub fn create_contract(&self) -> Transaction<TransactionContractCreate> {
         TransactionContractCreate::new(self)
+    }
+
+    #[inline]
+    pub fn call_contract(&self, id: ContractId) -> Transaction<TransactionContractCall> {
+        TransactionContractCall::new(self, id)
+    }
+
+    #[inline]
+    pub fn update_contract(&self, id: ContractId) -> Transaction<TransactionContractUpdate> {
+        TransactionContractUpdate::new(self, id)
+    }
+
+    #[inline]
+    pub fn delete_contract(&self, id: ContractId) -> Transaction<TransactionContractDelete> {
+        TransactionContractDelete::new(self, id)
     }
 
     #[inline]

@@ -21,6 +21,7 @@ pub mod transaction;
 mod transaction_id;
 mod transaction_receipt;
 mod transaction_record;
+pub mod function_result;
 
 pub use self::{
     claim::Claim,

@@ -2,6 +2,7 @@
 //mod transaction_admin_recover;
 mod transaction_contract_call;
 mod transaction_contract_create;
+mod transaction_contract_delete;
 mod transaction_contract_update;
 mod transaction_crypto_add_claim;
 mod transaction_crypto_create;
@@ -16,8 +17,8 @@ mod transaction_file_update;
 
 pub use self::{
     transaction_contract_call::*, transaction_contract_create::*, transaction_contract_update::*,
-    transaction_crypto_add_claim::*, transaction_crypto_create::*, transaction_crypto_delete::*,
-    transaction_crypto_delete_claim::*, transaction_crypto_transfer::*,
+    transaction_contract_delete::*, transaction_crypto_add_claim::*, transaction_crypto_create::*,
+    transaction_crypto_delete::*, transaction_crypto_delete_claim::*, transaction_crypto_transfer::*,
     transaction_crypto_update::*, transaction_file_append::*, transaction_file_create::*,
     transaction_file_delete::*, transaction_file_update::*,
 };
@@ -98,7 +99,7 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
                 node: client.node,
                 memo: None,
                 inner: Box::<T>::new(inner) as Box<dyn Object>,
-                fee: 100_000,
+                fee: 1_000_000,
                 generate_record: false,
                 phantom: PhantomData,
             }),
@@ -282,18 +283,23 @@ impl<T: 'static> Transaction<T, TransactionRaw> {
                 .clone();
 
             log::trace!(target: "hedera::transaction", "sent: {:#?}", tx);
-    println!("transaction is = {:#?}", tx);
 
             let o = grpc::RequestOptions::default();
             let response = match tx.mut_body().data {
+                //////////////////////// CRYPTO TRANSACTIONS
                 Some(cryptoCreateAccount(_)) => crypto.create_account(o, tx),
                 Some(cryptoUpdateAccount(_)) => crypto.update_account(o, tx),
                 Some(cryptoTransfer(_)) => crypto.crypto_transfer(o, tx),
                 Some(cryptoDeleteClaim(_)) => crypto.delete_claim(o, tx),
                 Some(cryptoDelete(_)) => crypto.crypto_delete(o, tx),
+                //////////////////////// FILE TRANSACTIONS
                 Some(fileCreate(_)) => file.create_file(o, tx),
                 Some(fileAppend(_)) => file.append_content(o, tx),
+                //////////////////////// CONTRACT TRANSACTIONS
                 Some(contractCreateInstance(_)) => contract.create_contract(o, tx),
+                Some(contractUpdateInstance(_)) => contract.update_contract(o, tx),
+                Some(contractDeleteInstance(_)) => contract.delete_contract(o, tx),
+                Some(contractCall(_)) => contract.contract_call_method(o, tx),
 
                 _ => unimplemented!(),
             };

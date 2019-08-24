@@ -1,13 +1,14 @@
 [package]
 name = "hedera"
-version = "0.4.2-alpha.0"
+version = "0.5.0-alpha.0"
 description = "Hedera SDK for Rust"
 license = "Apache-2.0"
 repository = "https://github.com/launchbadge/hedera-sdk-rust"
 edition = "2018"
-keywords = ["hedera", "sdk"]
+keywords = ["hedera", "sdk", "rust"]
 authors = [
-    "LaunchBadge <contact@launchbadge.com>"
+    "LaunchBadge <contact@launchbadge.com> (PRIMARY)",
+    "Sam Ulrich <samson98ulrich@gmail.com>"
 ]
 
 [dependencies]
@@ -39,6 +40,13 @@ futures = { version = "0.3.0-alpha.12", package = "futures-preview" }
 [build-dependencies]
 protoc-rust-grpc = "0.6.1"
 glob = "0.2.11"
+
+[profile.dev]
+lto = true
+codegen-units = 1
+panic = 'abort'
+incremental = false
+debug-assertions = true
 
 [profile.release]
 lto = true
