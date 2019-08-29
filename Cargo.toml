@@ -15,6 +15,7 @@ authors = [
 ed25519-dalek = { version = "1.0.0-pre.1", default-features = false, features = [ "std", "nightly", "u64_backend" ] }
 rand = "0.6.5"
 sha2 = "0.8.0"
+sha3 = "0.8.2"
 hex = "0.3.2"
 failure = "0.1.5"
 simple_asn1 = "0.3.0"
