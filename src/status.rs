@@ -286,7 +286,25 @@ pub enum Status {
     ContractNegativeGas = 95,
 
     // negative value or initial balance was set for tx, value must be positive
-    ContractNegativeValue = 96
+    ContractNegativeValue = 96,
+
+    InvalidFeeFile = 97,
+
+    InvalidExchangeRateFile = 98,
+
+    InsufficientLocalCallGas = 99,
+
+    EntityNotAllowedToDelete = 100,
+
+    AuthorizationFailed = 101,
+
+    FileUploadedProtoInvalid = 102,
+
+    FileUploadedProtoNotSavedToDisk = 103,
+
+    FeeScheduleFilePartUploaded = 104,
+
+    ExchangeRateChangeLimitExceeded = 105,
 }
 
 impl From<proto::ResponseCode::ResponseCodeEnum> for Status {
@@ -390,7 +408,16 @@ impl From<proto::ResponseCode::ResponseCodeEnum> for Status {
             RESULT_SIZE_LIMIT_EXCEEDED => Status::ResultSizeLimitExceeded,
             NOT_SPECIAL_ACCOUNT => Status::NotSpecialAccount,
             CONTRACT_NEGATIVE_GAS => Status::ContractNegativeGas,
-            CONTRACT_NEGATIVE_VALUE => Status::ContractNegativeValue
+            CONTRACT_NEGATIVE_VALUE => Status::ContractNegativeValue,
+            INVALID_FEE_FILE => Status::InvalidFeeFile,
+            INVALID_EXCHANGE_RATE_FILE => Status::InvalidExchangeRateFile,
+            INSUFFICIENT_LOCAL_CALL_GAS => Status::InsufficientLocalCallGas,
+            ENTITY_NOT_ALLOWED_TO_DELETE => Status::EntityNotAllowedToDelete,
+            AUTHORIZATION_FAILED => Status::AuthorizationFailed,
+            FILE_UPLOADED_PROTO_INVALID => Status::FileUploadedProtoInvalid,
+            FILE_UPLOADED_PROTO_NOT_SAVED_TO_DISK => Status::FileUploadedProtoNotSavedToDisk,
+            FEE_SCHEDULE_FILE_PART_UPLOADED => Status::FeeScheduleFilePartUploaded,
+            EXCHANGE_RATE_CHANGE_LIMIT_EXCEEDED => Status::ExchangeRateChangeLimitExceeded
         }
     }
 }

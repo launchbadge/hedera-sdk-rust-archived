@@ -11,7 +11,6 @@ pub struct QueryCryptoGetAccountBalance {
 
 impl QueryCryptoGetAccountBalance {
     pub fn new(client: &Client, account: AccountId) -> Query<Self> {
-        println!("[RUST] Query Balance Created");
         Query::new(client, Self { account })
     }
 }
@@ -20,7 +19,6 @@ impl QueryResponse for QueryCryptoGetAccountBalance {
     type Response = u64;
 
     fn get(mut response: proto::Response::Response) -> Result<Self::Response, Error> {
-        println!("[RUST] Query Balance Get Called");
         Ok(response.take_cryptogetAccountBalance().get_balance())
     }
 }

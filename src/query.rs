@@ -92,7 +92,6 @@ where
     where
         T: ToQueryProto,
     {
-        println!("[RUST] New Query Object");
         Self {
             payment: None,
             crypto_service: client.crypto.clone(),
@@ -110,7 +109,6 @@ where
         &mut self,
         transaction: &mut Transaction<TransactionCryptoTransfer, S>,
     ) -> Result<&mut Self, Error> {
-        println!("[RUST] Query Payment Added");
         self.payment = Some(transaction.build().take_raw()?.tx);
         Ok(self)
     }
@@ -137,7 +135,6 @@ where
             Error,
         >,
     > {
-        println!("[RUST] Query Called");
         use self::proto::Query::Query_oneof_query::*;
 
         if !self.inner.is_free() && self.payment.is_none() {

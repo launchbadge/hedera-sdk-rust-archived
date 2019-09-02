@@ -9,6 +9,13 @@ pub struct TransactionReceipt {
     pub file_id: Option<Box<FileId>>,
 }
 
+impl std::fmt::Display for TransactionReceipt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "TX Receipt\n\tStatus: {:#?}\n\tAccount: {:#?}\n\tContract: {:#?}\n\tFile: {:#?}",
+               self.status, self.account_id, self.contract_id, self.file_id)
+    }
+}
+
 impl From<proto::TransactionReceipt::TransactionReceipt> for TransactionReceipt {
     fn from(mut receipt: proto::TransactionReceipt::TransactionReceipt) -> Self {
         let account_id = if receipt.has_accountID() {

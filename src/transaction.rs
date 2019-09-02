@@ -230,6 +230,7 @@ impl<T: 'static> Transaction<T, TransactionRaw> {
     pub fn sign(&mut self, secret: &SecretKey) -> &mut Self {
         if let Some(state) = self.as_raw() {
             // note: this cannot fail
+
             let id = state
                 .tx
                 .get_body()

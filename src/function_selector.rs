@@ -31,15 +31,6 @@ impl FunctionSelector {
         ()
     }
 
-//    pub(crate) fn add_param_type(&mut self, param_type: String) -> Self {
-//        if self.needs_comma == true {
-//            self.finished.extend(",".as_bytes().to_vec())
-//        }
-//        self.finished.extend(param_type.as_bytes().to_vec());
-//        self.needs_comma = true;
-//        self.clone()
-//    }
-
     pub(crate) fn finish_intermediate(&self) -> Vec<u8> {
         let mut f = self.finished.clone();
         if self.complete != true {
