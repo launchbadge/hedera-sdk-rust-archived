@@ -35,15 +35,7 @@ impl CallParams {
         };
     }
 
-//    fn add_param_type(&mut self, param_type: String) {
-//        self.func_selector = match self.func_selector.clone() {
-//            Some(mut fs) => Some(fs.add_param_type(param_type)),
-//            None => None,
-//        };
-//    }
-
     pub fn add_string(&mut self, param: String) {
-        println!("[RUST] Add String Called: {:#?}", param);
         let enc_string = encode_string(param);
         let arg = Argument::new(enc_string, true);
         self.add_param_type("string".to_string());
