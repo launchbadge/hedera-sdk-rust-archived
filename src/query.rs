@@ -141,7 +141,7 @@ where
             // Attach a payment transaction if this is a non-free query and we
             // have payment details
             if self.operator.is_some() && self.node.is_some() && self.secret.is_some() {
-                let cost = 1_000_000;
+                let cost = 100_300_000;
                 self.payment = TransactionCryptoTransfer::new(&Client {
                     node: self.node.clone(),
                     operator: self.operator.clone(),
