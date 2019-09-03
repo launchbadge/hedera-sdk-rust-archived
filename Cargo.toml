@@ -8,7 +8,7 @@ edition = "2018"
 keywords = ["hedera", "sdk", "rust"]
 authors = [
     "LaunchBadge <contact@launchbadge.com> (PRIMARY)",
-    "Sam Ulrich <samson98ulrich@gmail.com>"
+    "Lonestar Data Technologies <sam@lonestardata.io>"
 ]
 
 [dependencies]
