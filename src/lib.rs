@@ -18,7 +18,7 @@ mod id;
 mod info;
 mod proto;
 pub mod query;
-mod status;
+pub mod status;
 pub mod solidity_util;
 mod timestamp;
 pub mod transaction;
