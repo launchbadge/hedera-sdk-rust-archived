@@ -5,7 +5,7 @@ use query_interface::{interfaces, vtable_for};
 
 use crate::{
     crypto::PublicKey,
-    proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
+    proto::{self, ToProto, TransactionBody::TransactionBody_oneof_data},
     transaction::Transaction,
     AccountId, Client,
 };
@@ -16,7 +16,6 @@ pub struct TransactionCryptoUpdate {
     account: AccountId,
     key: Option<PublicKey>,
     proxy_account: Option<AccountId>,
-    proxy_fraction: Option<i32>,
     send_record_threshold: Option<u64>,
     receive_record_threshold: Option<u64>,
     auto_renew_period: Option<Duration>,
@@ -36,7 +35,6 @@ impl TransactionCryptoUpdate {
                 account: id,
                 key: None,
                 proxy_account: None,
-                proxy_fraction: None,
                 send_record_threshold: None,
                 receive_record_threshold: None,
                 auto_renew_period: None,
@@ -56,12 +54,6 @@ impl Transaction<TransactionCryptoUpdate> {
     #[inline]
     pub fn proxy_account(&mut self, proxy_account: AccountId) -> &mut Self {
         self.inner().proxy_account = Some(proxy_account);
-        self
-    }
-
-    #[inline]
-    pub fn proxy_fraction(&mut self, proxy_fraction: i32) -> &mut Self {
-        self.inner().proxy_fraction = Some(proxy_fraction);
         self
     }
 
@@ -106,10 +98,6 @@ impl ToProto<TransactionBody_oneof_data> for TransactionCryptoUpdate {
 
         if let Some(proxy_account) = self.proxy_account.as_ref() {
             data.set_proxyAccountID(proxy_account.to_proto()?);
-        }
-
-        if let Some(proxy_fraction) = self.proxy_fraction.as_ref() {
-            data.set_proxyFraction(*proxy_fraction);
         }
 
         if let Some(send_record_threshold) = self.send_record_threshold.as_ref() {

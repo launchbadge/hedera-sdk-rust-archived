@@ -4,7 +4,7 @@ use failure::Error;
 use query_interface::{interfaces, vtable_for};
 
 use crate::{
-    proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
+    proto::{self, ToProto, TransactionBody::TransactionBody_oneof_data},
     transaction::Transaction,
     Client, FileId,
 };

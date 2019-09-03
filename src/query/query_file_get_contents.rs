@@ -41,6 +41,7 @@ impl QueryResponse for QueryFileGetContents {
 impl ToQueryProto for QueryFileGetContents {
     fn to_query_proto(&self, header: QueryHeader) -> Result<Query_oneof_query, Error> {
         let mut query = proto::FileGetContents::FileGetContentsQuery::new();
+
         query.set_header(header);
         query.set_fileID(self.file.to_proto()?);
 

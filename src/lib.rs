@@ -5,6 +5,9 @@
 #[macro_use]
 mod macros;
 
+mod argument;
+pub mod call_params;
+mod call_param_utils;
 mod claim;
 pub mod client;
 mod crypto;
@@ -15,12 +18,15 @@ mod id;
 mod info;
 mod proto;
 pub mod query;
-mod status;
+pub mod status;
+pub mod solidity_util;
 mod timestamp;
 pub mod transaction;
 mod transaction_id;
 mod transaction_receipt;
 mod transaction_record;
+pub mod function_result;
+pub mod function_selector;
 
 pub use self::{
     claim::Claim,

@@ -1,6 +1,7 @@
 mod query_contract_get_bytecode;
 mod query_contract_get_info;
 mod query_contract_get_records;
+mod query_contract_call;
 mod query_crypto_get_account_balance;
 mod query_crypto_get_account_records;
 mod query_crypto_get_claim;
@@ -13,7 +14,7 @@ mod query_transaction_get_record;
 
 pub use self::{
     query_contract_get_bytecode::*, query_contract_get_info::*, query_contract_get_records::*,
-    query_crypto_get_account_balance::*, query_crypto_get_account_records::*,
+    query_contract_call::*, query_crypto_get_account_balance::*, query_crypto_get_account_records::*,
     query_crypto_get_claim::*, query_crypto_get_info::*, query_file_get_contents::*,
     query_file_get_info::*, query_get_by_key::*, query_transaction_get_receipt::*,
     query_transaction_get_record::*,
@@ -140,7 +141,7 @@ where
             // Attach a payment transaction if this is a non-free query and we
             // have payment details
             if self.operator.is_some() && self.node.is_some() && self.secret.is_some() {
-                let cost = 100_000;
+                let cost = 100_300_000;
                 self.payment = TransactionCryptoTransfer::new(&Client {
                     node: self.node.clone(),
                     operator: self.operator.clone(),
@@ -175,15 +176,20 @@ where
                     let query = query.clone();
                     let o = grpc::RequestOptions::default();
                     let response = match query.query {
+                        //////////////////////// CRYPTO QUERIES
                         Some(cryptogetAccountBalance(_)) => crypto.crypto_get_balance(o, query),
                         Some(cryptoGetInfo(_)) => crypto.get_account_info(o, query),
+                        Some(cryptoGetAccountRecords(_)) => crypto.get_account_records(o, query),
+                        //////////////////////// FILE QUERIES
                         Some(fileGetInfo(_)) => file.get_file_info(o, query),
                         Some(fileGetContents(_)) => file.get_file_content(o, query),
+                        //////////////////////// TRANSACTION QUERIES
                         Some(transactionGetRecord(_)) => crypto.get_tx_record_by_tx_id(o, query),
-                        Some(cryptoGetAccountRecords(_)) => crypto.get_account_records(o, query),
+                        Some(transactionGetReceipt(_)) => crypto.get_transaction_receipts(o, query),
+                        //////////////////////// CONTRACT QUERIES
                         Some(contractGetInfo(_)) => contract.get_contract_info(o, query),
                         Some(contractGetBytecode(_)) => contract.contract_get_bytecode(o, query),
-                        Some(transactionGetReceipt(_)) => crypto.get_transaction_receipts(o, query),
+                        Some(contractCallLocal(_)) => contract.contract_call_local_method(o, query),
 
                         _ => unreachable!(),
                     };
@@ -219,6 +225,7 @@ where
 {
     fn to_proto(&self) -> Result<proto::Query::Query, Error> {
         let mut header = proto::QueryHeader::QueryHeader::new();
+
         header.set_responseType(proto::QueryHeader::ResponseType::ANSWER_ONLY);
 
         if let Some(payment) = &self.payment {

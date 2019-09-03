@@ -1,4 +1,4 @@
-use crate::{id::AccountId, proto, query::ContractFunctionResult, TransactionReceipt};
+use crate::{id::AccountId, proto, function_result::ContractFunctionResult, TransactionReceipt};
 use chrono::{DateTime, Utc};
 use failure::{err_msg, Error};
 use try_from::{TryFrom, TryInto};

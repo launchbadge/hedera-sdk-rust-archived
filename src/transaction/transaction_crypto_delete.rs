@@ -1,5 +1,5 @@
 use crate::{
-    proto::{self, ToProto, Transaction::TransactionBody_oneof_data},
+    proto::{self, ToProto, TransactionBody::TransactionBody_oneof_data},
     transaction::Transaction,
     AccountId, Client,
 };

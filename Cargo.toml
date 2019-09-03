@@ -1,26 +1,28 @@
 [package]
 name = "hedera"
-version = "0.4.2-alpha.0"
+version = "0.5.0-alpha.0"
 description = "Hedera SDK for Rust"
 license = "Apache-2.0"
-repository = "https://github.com/hashgraph/hedera-sdk-rust"
+repository = "https://github.com/launchbadge/hedera-sdk-rust"
 edition = "2018"
-keywords = ["hedera", "sdk"]
+keywords = ["hedera", "sdk", "rust"]
 authors = [
-    "LaunchBadge <contact@launchbadge.com>"
+    "LaunchBadge <contact@launchbadge.com> (PRIMARY)",
+    "Lonestar Data Technologies <sam@lonestardata.io>"
 ]
 
 [dependencies]
 ed25519-dalek = { version = "1.0.0-pre.1", default-features = false, features = [ "std", "nightly", "u64_backend" ] }
 rand = "0.6.5"
 sha2 = "0.8.0"
+sha3 = "0.8.2"
 hex = "0.3.2"
 failure = "0.1.5"
 simple_asn1 = "0.3.0"
 failure_derive = "0.1.5"
 once_cell = { version = "0.1.7", features = [ "parking_lot" ] }
 num = "0.2.0"
-protobuf = "2.3.0"
+protobuf = "2.8.0"
 itertools = "0.8.0"
 chrono = "0.4.6"
 futures01 = { version = "0.1.25", package = "futures" }
@@ -39,6 +41,13 @@ futures = { version = "0.3.0-alpha.12", package = "futures-preview" }
 [build-dependencies]
 protoc-rust-grpc = "0.6.1"
 glob = "0.2.11"
+
+[profile.dev]
+lto = true
+codegen-units = 1
+panic = 'abort'
+incremental = false
+debug-assertions = true
 
 [profile.release]
 lto = true

@@ -1,7 +1,8 @@
-mod transaction_admin_delete;
-mod transaction_admin_recover;
+//mod transaction_admin_delete;
+//mod transaction_admin_recover;
 mod transaction_contract_call;
 mod transaction_contract_create;
+mod transaction_contract_delete;
 mod transaction_contract_update;
 mod transaction_crypto_add_claim;
 mod transaction_crypto_create;
@@ -15,10 +16,9 @@ mod transaction_file_delete;
 mod transaction_file_update;
 
 pub use self::{
-    transaction_admin_delete::*, transaction_admin_recover::*, transaction_contract_call::*,
-    transaction_contract_create::*, transaction_contract_update::*,
-    transaction_crypto_add_claim::*, transaction_crypto_create::*, transaction_crypto_delete::*,
-    transaction_crypto_delete_claim::*, transaction_crypto_transfer::*,
+    transaction_contract_call::*, transaction_contract_create::*, transaction_contract_update::*,
+    transaction_contract_delete::*, transaction_crypto_add_claim::*, transaction_crypto_create::*,
+    transaction_crypto_delete::*, transaction_crypto_delete_claim::*, transaction_crypto_transfer::*,
     transaction_crypto_update::*, transaction_file_append::*, transaction_file_create::*,
     transaction_file_delete::*, transaction_file_update::*,
 };
@@ -42,6 +42,8 @@ use query_interface::Object;
 use std::{any::Any, marker::PhantomData, mem::swap, sync::Arc, time::Duration};
 use tokio::await;
 use tokio_async_await::compat::backward::Compat;
+
+use crate::proto::TransactionBody::TransactionBody_oneof_data::*;
 
 pub struct TransactionBuilder<T> {
     id: Option<TransactionId>,
@@ -85,7 +87,7 @@ pub struct Transaction<T, S = TransactionBuilder<T>> {
 impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
     pub(crate) fn new(client: &Client, inner: T) -> Self
     where
-        T: Object + ToProto<proto::Transaction::TransactionBody_oneof_data> + 'static,
+        T: Object + ToProto<proto::TransactionBody::TransactionBody_oneof_data> + 'static,
     {
         Self {
             crypto_service: client.crypto.clone(),
@@ -97,7 +99,7 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
                 node: client.node,
                 memo: None,
                 inner: Box::<T>::new(inner) as Box<dyn Object>,
-                fee: 100_000,
+                fee: 100_300_000,
                 generate_record: false,
                 phantom: PhantomData,
             }),
@@ -228,11 +230,10 @@ impl<T: 'static> Transaction<T, TransactionRaw> {
     pub fn sign(&mut self, secret: &SecretKey) -> &mut Self {
         if let Some(state) = self.as_raw() {
             // note: this cannot fail
+
             let id = state
                 .tx
-                .body
-                .as_ref()
-                .unwrap()
+                .get_body()
                 .transactionID
                 .as_ref()
                 .unwrap()
@@ -267,7 +268,7 @@ impl<T: 'static> Transaction<T, TransactionRaw> {
     }
 
     pub fn execute_async(&mut self) -> impl Future<Output = Result<TransactionId, Error>> {
-        use self::proto::Transaction::TransactionBody_oneof_data::*;
+//        use self::proto::Transaction::Transaction_oneof_bodyData;
 
         let crypto = self.crypto_service.clone();
         let file = self.file_service.clone();
@@ -275,30 +276,31 @@ impl<T: 'static> Transaction<T, TransactionRaw> {
 
         future::ready(self.take_raw()).and_then(async move |state| {
             let mut tx = state.tx;
-
-            // note: cannot fail
             let id = tx
-                .body
-                .as_ref()
-                .unwrap()
+                .get_body()
                 .transactionID
                 .as_ref()
                 .unwrap()
                 .clone();
 
             log::trace!(target: "hedera::transaction", "sent: {:#?}", tx);
-    println!("transaction is = {:#?}", tx);
 
             let o = grpc::RequestOptions::default();
             let response = match tx.mut_body().data {
+                //////////////////////// CRYPTO TRANSACTIONS
                 Some(cryptoCreateAccount(_)) => crypto.create_account(o, tx),
                 Some(cryptoUpdateAccount(_)) => crypto.update_account(o, tx),
                 Some(cryptoTransfer(_)) => crypto.crypto_transfer(o, tx),
                 Some(cryptoDeleteClaim(_)) => crypto.delete_claim(o, tx),
                 Some(cryptoDelete(_)) => crypto.crypto_delete(o, tx),
+                //////////////////////// FILE TRANSACTIONS
                 Some(fileCreate(_)) => file.create_file(o, tx),
                 Some(fileAppend(_)) => file.append_content(o, tx),
+                //////////////////////// CONTRACT TRANSACTIONS
                 Some(contractCreateInstance(_)) => contract.create_contract(o, tx),
+                Some(contractUpdateInstance(_)) => contract.update_contract(o, tx),
+                Some(contractDeleteInstance(_)) => contract.delete_contract(o, tx),
+                Some(contractCall(_)) => contract.contract_call_method(o, tx),
 
                 _ => unimplemented!(),
             };
@@ -314,7 +316,7 @@ impl<T: 'static> Transaction<T, TransactionRaw> {
 impl<T: 'static, S: 'static> Transaction<T, S> {
     #[inline]
     pub(crate) fn take_raw(&mut self) -> Result<TransactionRaw, Error> {
-        use self::proto::Transaction::TransactionBody_oneof_data::*;
+//        use self::proto::Transaction::Transaction_oneof_bodyData::*;
 
         match self.kind.take() {
             TransactionKind::Builder(_) => self.build().take_raw(),
@@ -324,9 +326,7 @@ impl<T: 'static, S: 'static> Transaction<T, S> {
 
                 // note: cannot fail
                 let id = tx
-                    .body
-                    .as_ref()
-                    .unwrap()
+                    .get_body()
                     .transactionID
                     .as_ref()
                     .unwrap()
@@ -347,7 +347,7 @@ impl<T: 'static, S: 'static> Transaction<T, S> {
                         secret()?.sign(&state.bytes).to_proto().unwrap()
                     };
 
-                    match &tx.body.as_ref().unwrap().data {
+                    match &tx.get_body().clone().data {
                         Some(cryptoTransfer(data)) => {
                             // Insert a signature for the operator if the operator
                             // is sending any monies
@@ -408,7 +408,7 @@ impl<T: 'static, S: 'static> Transaction<T, S> {
                 Ok(tx) => {
                     // note: this cannot fail
                     let tx: proto::Transaction::Transaction = tx;
-                    let bytes = tx.body.as_ref().unwrap().write_to_bytes().unwrap();
+                    let bytes = tx.get_body().write_to_bytes().unwrap();
 
                     self.kind = TransactionKind::Raw(TransactionRaw { tx, bytes })
                 }
@@ -433,10 +433,10 @@ impl<T> ToProto<proto::Transaction::Transaction> for TransactionBuilder<T> {
     }
 }
 
-impl<T> ToProto<proto::Transaction::TransactionBody> for TransactionBuilder<T> {
-    fn to_proto(&self) -> Result<proto::Transaction::TransactionBody, Error> {
+impl<T> ToProto<proto::TransactionBody::TransactionBody> for TransactionBuilder<T> {
+    fn to_proto(&self) -> Result<proto::TransactionBody::TransactionBody, Error> {
         // Get a reference to the trait implementation for ToProto for the inner builder
-        let inner: &dyn ToProto<proto::Transaction::TransactionBody_oneof_data> =
+        let inner: &dyn ToProto<proto::TransactionBody::TransactionBody_oneof_data> =
             match self.inner.query_ref() {
                 Some(inner) => inner,
 
@@ -449,7 +449,7 @@ impl<T> ToProto<proto::Transaction::TransactionBody> for TransactionBuilder<T> {
             .as_ref()
             .ok_or_else(|| ErrorKind::MissingField("operator"))?;
 
-        let mut body = proto::Transaction::TransactionBody::new();
+        let mut body = proto::TransactionBody::TransactionBody::new();
         let node = self.node.ok_or_else(|| ErrorKind::MissingField("node"))?;
 
         body.set_nodeAccountID(node.to_proto()?);
