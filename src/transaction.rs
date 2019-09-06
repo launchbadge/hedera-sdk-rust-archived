@@ -35,13 +35,12 @@ use crate::{
     },
     AccountId, Client, TransactionId,
 };
+use futures::compat::Compat01As03;
 use failure::Error;
-use futures::{future, Future, TryFutureExt};
+use futures::{Future,};
 use protobuf::Message;
 use query_interface::Object;
 use std::{any::Any, marker::PhantomData, mem::swap, sync::Arc, time::Duration};
-use tokio::await;
-use tokio_async_await::compat::backward::Compat;
 
 use crate::proto::TransactionBody::TransactionBody_oneof_data::*;
 
@@ -164,7 +163,7 @@ impl<T: 'static> Transaction<T, TransactionBuilder<T>> {
     pub fn execute(&mut self) -> Result<TransactionId, Error> {
         crate::RUNTIME
             .lock()
-            .block_on(Compat::new(self.execute_async()))
+            .block_on(self.execute_async())
     }
 
     #[inline]
@@ -264,17 +263,18 @@ impl<T: 'static> Transaction<T, TransactionRaw> {
     pub fn execute(&mut self) -> Result<TransactionId, Error> {
         crate::RUNTIME
             .lock()
-            .block_on(Compat::new(self.execute_async()))
+            .block_on(self.execute_async())
     }
 
     pub fn execute_async(&mut self) -> impl Future<Output = Result<TransactionId, Error>> {
-//        use self::proto::Transaction::Transaction_oneof_bodyData;
-
         let crypto = self.crypto_service.clone();
         let file = self.file_service.clone();
         let contract = self.contract_service.clone();
+        let state = self.take_raw();
 
-        future::ready(self.take_raw()).and_then(async move |state| {
+        async move {
+            let state = state?;
+
             let mut tx = state.tx;
             let id = tx
                 .get_body()
@@ -305,11 +305,11 @@ impl<T: 'static> Transaction<T, TransactionRaw> {
                 _ => unimplemented!(),
             };
 
-            let response = await!(response.drop_metadata())?;
+            let response = Compat01As03::new(response.drop_metadata()).await?;
             log::trace!("recv: {:#?}", response);
 
             try_precheck!(response).map(|_| id.into())
-        })
+        }
     }
 }
 

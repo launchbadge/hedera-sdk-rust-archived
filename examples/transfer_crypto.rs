@@ -1,11 +1,9 @@
-#![feature(async_await, futures_api, await_macro)]
 use failure::{format_err, Error};
-use futures::FutureExt;
 use hedera::{AccountId, Client, Status};
 use std::{env, thread::sleep, time::Duration};
-use tokio::{await, run_async};
 
-async fn main_() -> Result<(), Error> {
+#[tokio::main]
+async fn main() -> Result<(), Error> {
     pretty_env_logger::try_init()?;
 
     // Operator is the account that sends the transaction to the network
@@ -20,14 +18,15 @@ async fn main_() -> Result<(), Error> {
     let receiver: AccountId = "0:0:2".parse()?;
 
     // transfer 1 hbar from the operator account to the receiver account.
-    let id = await!(client
+    let id = client
         .transfer_crypto()
         .transfer(operator, -1_000_000)
         .transfer(receiver, 1_000_000)
         .memo("[hedera-sdk-rust][example] transfer_crypto")
         .sign(&env::var("OPERATOR_SECRET")?.parse()?)
         .sign(&env::var("OPERATOR_SECRET")?.parse()?)
-        .execute_async())?;
+        .execute_async()
+        .await?;
 
     println!("created transfer; transaction = {}", id);
 
@@ -36,7 +35,8 @@ async fn main_() -> Result<(), Error> {
     sleep(Duration::from_secs(5));
 
     // Get the receipt and check the status to prove it was successful
-    let receipt = await!(client.transaction(id).receipt().get_async())?;
+    let mut tx = client.transaction(id).receipt();
+    let receipt = tx.get_async().await?;
 
     if receipt.status != Status::Success {
         Err(format_err!(
@@ -46,11 +46,4 @@ async fn main_() -> Result<(), Error> {
     }
 
     Ok(())
-}
-
-fn main() {
-    run_async(main_().map(|res| match res {
-        Ok(_) => {}
-        Err(err) => eprintln!("error: {}", err),
-    }))
 }

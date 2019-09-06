@@ -1,12 +1,10 @@
-#![feature(async_await, futures_api, await_macro)]
 use failure::{format_err, Error};
-use futures::FutureExt;
 use hedera::{Client, SecretKey, Status};
 use std::{env, thread::sleep, time::Duration};
 use std::str::FromStr;
-use tokio::{await, run_async};
 
-async fn main_() -> Result<(), Error> {
+#[tokio::main]
+async fn main() -> Result<(), Error> {
     pretty_env_logger::try_init()?;
 
     // Operator is the account that sends the transaction to the network
@@ -27,14 +25,15 @@ async fn main_() -> Result<(), Error> {
     let file_contents_bytes = file_contents_string.into_bytes();
 
     // Create a file
-    let id = await!(client
+    let id = client
         .create_file()
         .expires_in(Duration::from_secs(2_592_000))
         .key(public)
         .contents(file_contents_bytes)
         .memo("[hedera-sdk-rust][example] create_file")
         .sign(&env::var("OPERATOR_SECRET")?.parse()?) // sign as the owner of the file
-        .execute_async())?;
+        .execute_async()
+        .await?;
 
     println!("creating file; transaction = {}", id);
 
@@ -43,7 +42,9 @@ async fn main_() -> Result<(), Error> {
     sleep(Duration::from_secs(2));
 
     // Get the receipt and check the status to prove it was successful
-    let receipt = await!(client.transaction(id).receipt().get_async())?;
+    let mut tx = client.transaction(id).receipt();
+    let receipt = tx.get_async().await?;
+
     if receipt.status != Status::Success {
         Err(format_err!(
             "transaction has a non-successful status: {:?}",
@@ -55,11 +56,4 @@ async fn main_() -> Result<(), Error> {
     println!("file ID = {}", file);
 
     Ok(())
-}
-
-fn main() {
-    run_async(main_().map(|res| match res {
-        Ok(_) => {}
-        Err(err) => eprintln!("error: {}", err),
-    }))
 }

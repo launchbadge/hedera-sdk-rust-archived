@@ -34,7 +34,8 @@ use crate::{
     AccountId, Client, ErrorKind, SecretKey, Status,
 };
 use failure::Error;
-use futures::{Future, TryFutureExt};
+use futures::compat::Compat01As03;
+use futures::{Future};
 use std::{
     marker::PhantomData,
     sync::{
@@ -44,8 +45,6 @@ use std::{
     thread::sleep,
     time::Duration,
 };
-use tokio::await;
-use tokio_async_await::compat::backward::Compat;
 
 pub(crate) trait ToQueryProto {
     fn is_free(&self) -> bool {
@@ -113,15 +112,14 @@ where
         Ok(self)
     }
 
-    pub fn get_async(&mut self) -> impl Future<Output = Result<T::Response, Error>> {
-        self.send()
-            .and_then(move |(_, response)| futures::future::ready(T::get(response)))
+    pub async fn get_async(&mut self) -> Result<T::Response, Error> {
+        T::get(self.send().await?.1)
     }
 
     pub fn get(&mut self) -> Result<T::Response, Error> {
         crate::RUNTIME
             .lock()
-            .block_on(Compat::new(self.get_async()))
+            .block_on(self.get_async())
     }
 
     fn send(
@@ -194,7 +192,7 @@ where
                         _ => unreachable!(),
                     };
 
-                    let mut response = await!(response.drop_metadata())?;
+                    let mut response = Compat01As03::new(response.drop_metadata()).await?;
                     log::trace!("recv: {:#?}", response);
 
                     let header = take_header(&mut response);
