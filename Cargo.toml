@@ -7,7 +7,7 @@ repository = "https://github.com/launchbadge/hedera-sdk-rust"
 edition = "2018"
 keywords = ["hedera", "sdk", "rust"]
 authors = [
-    "LaunchBadge <contact@launchbadge.com> (PRIMARY)",
+    "LaunchBadge <contact@launchbadge.com>",
     "Lonestar Data Technologies <sam@lonestardata.io>"
 ]
 
