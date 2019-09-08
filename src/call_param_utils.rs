@@ -43,19 +43,19 @@ pub(crate) fn right_pad(input: Vec<u8>) -> Vec<u8> {
     padding
 }
 
-pub(crate) fn int256(val: i64) -> Vec<u8> {
+pub(crate) fn int256(val: isize) -> Vec<u8> {
     let bytes: [u8; 8] = val.to_be_bytes();
     let padded_bytes = left_pad(bytes.to_vec(), val < 0);
     padded_bytes
 }
 
-pub(crate) fn uint256(val: u64) -> Vec<u8> {
+pub(crate) fn uint256(val: usize) -> Vec<u8> {
     let padded_bytes = left_pad(val.to_be_bytes().to_vec(), false);
     padded_bytes
 }
 
 pub(crate) fn encode_bytes(b: Vec<u8>) -> Vec<u8> {
-    let mut pad = int256(b.len() as i64);
+    let mut pad = int256(b.len() as isize);
     let bytes = right_pad(b);
     pad.extend(bytes);
     pad
@@ -68,7 +68,7 @@ pub(crate) fn encode_string(string: String) -> Vec<u8> {
 }
 
 pub(crate) fn encode_fixed_bytes(b: Vec<u8>) -> Vec<u8> {
-    let pad = left_pad(b, false);
+    let pad = right_pad(b);
     pad
 }
 
@@ -79,43 +79,88 @@ pub(crate) fn encode_byte_array(byte_array: Vec<Vec<u8>>, prepend_len: bool) -> 
     }
 
     if prepend_len == true {
-        let mut enc_bytes = int256(byte_array.len() as i64);
+        let mut enc_bytes = int256(byte_array.len() as isize);
         enc_bytes.extend(bytes);
         return enc_bytes
     }
     bytes
 }
 
-pub(crate) fn encode_int_array(int_array: Vec<i64>, int_width: usize, prepend_len: bool) -> Vec<u8> {
+pub(crate) fn encode_int_array(int_array: Vec<isize>, int_width: usize, prepend_len: bool) -> Vec<u8> {
     check_int_width(int_width);
 
     let mut bytes = Vec::new();
     for i in int_array.iter() {
-        let enc_i = int256(*i as i64);
+        let enc_i = int256(*i);
         bytes.extend(enc_i);
     }
 
     if prepend_len == true {
-        let mut enc_bytes = int256(int_array.len() as i64);
+        let mut enc_bytes = int256(int_array.len() as isize);
         enc_bytes.extend(bytes);
         return enc_bytes
     }
     bytes
 }
 
-pub(crate) fn encode_uint_array(int_array: Vec<u64>, int_width: usize, prepend_len: bool) -> Vec<u8> {
+pub(crate) fn encode_uint_array(int_array: Vec<usize>, int_width: usize, prepend_len: bool) -> Vec<u8> {
     check_int_width(int_width);
 
     let mut bytes = Vec::new();
     for i in int_array.iter() {
-        let enc_i = uint256(*i as u64);
+        let enc_i = uint256(*i);
         bytes.extend(enc_i);
     }
 
     if prepend_len == true {
-        let mut enc_bytes = int256(int_array.len() as i64);
+        let mut enc_bytes = int256(int_array.len() as isize);
         enc_bytes.extend(bytes);
         return enc_bytes
     }
     bytes
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+    use std::string::ToString;
+    use std::iter::Iterator;
+
+    #[test]
+    fn test_int256_encoding() {
+        let enc_vals = vec![
+            "0000000000000000000000000000000000000000000000000000000000000000".to_string(),
+            "0000000000000000000000000000000000000000000000000000000000000002".to_string(),
+            "00000000000000000000000000000000000000000000000000000000000000ff".to_string(),
+            "0000000000000000000000000000000000000000000000000000000000000fff".to_string(),
+            "000000000000000000000000000000000000000000000000000000007f000000".to_string(),
+            "000000000000000000000000000000000000000000000000000000007ff00000".to_string(),
+            "00000000000000000000000000000000000000000000000000000000deadbeef".to_string(),
+            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff".to_string(),
+            "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe".to_string(),
+            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00".to_string(),
+            "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000".to_string(),
+        ];
+        let vals = vec![0, 2, 255, 4095, 127 << 24, 2047 << 20, 0xdeadbeefi64, -1, -2, -256,
+                        -4096];
+
+        let test_set: HashMap<_, _> = enc_vals.iter().zip(vals.iter()).collect();
+
+        for (k, v) in &test_set {
+            assert_eq!(hex::encode(int256(*v.clone() as isize)), *k.clone())
+        }
+
+        // The initial bit size for the left shift operations below is critical.
+        // They need to be left outside the vector so that they are not forced into an incorrect size.
+        assert_eq!(
+            hex::encode(int256((255 << 24) as isize)),
+            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000".to_string()
+        );
+
+        assert_eq!(
+            hex::encode(int256((4095 << 20) as isize)),
+            "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000".to_string()
+        );
+    }
 }

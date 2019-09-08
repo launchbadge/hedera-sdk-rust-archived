@@ -23,7 +23,6 @@ async fn main_() -> Result<(), Error> {
         .send_record_threshold(1000005)
         .receive_record_threshold(2000005)
         .proxy_account("0:0:3".parse()?)
-        .proxy_fraction(1)
         .auto_renew_period(Duration::from_secs(1000))
         // .expires_at(expiration: DateTime<Utc>)
         .expires_in(Duration::from_secs(2_592_000))
