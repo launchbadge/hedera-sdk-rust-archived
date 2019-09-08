@@ -5,8 +5,8 @@ use failure::{bail, err_msg, Error};
 use failure_derive::Fail;
 use hex;
 use num::BigUint;
-use once_cell::{sync::Lazy, sync_lazy};
-use rand::SeedableRng;
+use once_cell::{sync::Lazy};
+use rand_core::SeedableRng;
 use rand_chacha::ChaChaRng;
 use simple_asn1::{
     der_decode, der_encode, oid, to_der, ASN1Block, ASN1Class, ASN1DecodeErr, ASN1EncodeErr,
@@ -49,7 +49,7 @@ impl From<ASN1EncodeErr> for ASN1Error {
 }
 
 // [https://tools.ietf.org/id/draft-ietf-curdle-pkix-01.html#rfc.section.3]
-static OID_ED25519: Lazy<OID> = sync_lazy! { oid!(1, 3, 101, 112) };
+static OID_ED25519: Lazy<OID> = Lazy::new(|| { oid!(1, 3, 101, 112) });
 
 // [https://www.ietf.org/rfc/rfc3280.txt]
 // AlgorithmIdentifier ::= SEQUENCE {

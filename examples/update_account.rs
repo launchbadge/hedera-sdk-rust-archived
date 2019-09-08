@@ -1,11 +1,10 @@
-#![feature(async_await, futures_api, await_macro)]
 use failure::{format_err, Error};
 use futures::FutureExt;
 use hedera::{Client, Status};
 use std::{env, thread::sleep, time::Duration};
-use tokio::{await, run_async};
 
-async fn main_() -> Result<(), Error> {
+#[tokio::main]
+async fn main() -> Result<(), Error> {
     pretty_env_logger::try_init()?;
 
     // Operator is the account that sends the transaction to the network
@@ -18,7 +17,7 @@ async fn main_() -> Result<(), Error> {
 
     // update the account below
 
-    let id = await!(client
+    let id = client
         .update_account(operator)
         .send_record_threshold(1000005)
         .receive_record_threshold(2000005)
@@ -27,7 +26,8 @@ async fn main_() -> Result<(), Error> {
         // .expires_at(expiration: DateTime<Utc>)
         .expires_in(Duration::from_secs(2_592_000))
         .sign(&env::var("OPERATOR_SECRET")?.parse()?) // sign as the owner of the account to approve the change
-        .execute_async())?;
+        .execute_async()
+        .await?;
 
     println!("updating account; transaction = {}", id);
 
@@ -36,7 +36,9 @@ async fn main_() -> Result<(), Error> {
     sleep(Duration::from_secs(2));
 
     // Get the receipt and check the status to prove it was successful
-    let receipt = await!(client.transaction(id).receipt().get_async())?;
+    let mut tx = client.transaction(id).receipt();
+    let receipt = tx.get_async().await?;
+
     if receipt.status != Status::Success {
         Err(format_err!(
             "transaction has a non-successful status: {:?}",
@@ -45,11 +47,4 @@ async fn main_() -> Result<(), Error> {
     }
 
     Ok(())
-}
-
-fn main() {
-    run_async(main_().map(|res| match res {
-        Ok(_) => {}
-        Err(err) => eprintln!("error: {}", err),
-    }))
 }

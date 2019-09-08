@@ -73,6 +73,15 @@ Developers who wish to work in other languages are at liberty to do so, but shou
 
   * The `rust-toolchain` file in this repo currently makes this project dependent on a nightly build of Rust. Users who choose manage this project using `rustup` should not notice this, as the correct version of Rust will be installed transparently as required. This dependency will be removed when the asynchronous I/O packages used by this SDK are deemed stable, which is expected to happen in March 2019.
 
+* [Protobuf](https://developers.google.com/protocol-buffers/)
+  * The Hedera Rust SDK implementation relies upon on Google [Protobuf](https://developers.google.com/protocol-buffers/) to generate portions of the Rust source code for the SDK.  To compile the SDK, the protobuf compiler, `protoc`, must be installed and available to the system.  To confirm that protobuf compiler is available: execute the following command from a terminal window:
+
+    ```sh
+    protoc --version
+    ```
+
+    You should see version `3.3.x` or later.  If the command fails, it is likely that the `protoc` executable is not included in the `PATH` environment variable, or perhaps absent from your system.  It can be installed as explained in the [readme](https://github.com/protocolbuffers/protobuf).
+
 ### Hedera Account
 
 The [Hedera Portal](https://go.hedera.com) allows people to create a **Hedera Account** facilitating access to the Hedera mainnet and Hedera testnets. A Hedera Account allows entry of a testnet access code, in order to add a number of testnet __ℏ__ ([hbars](#a-hbar)) to a testnet account created (as can be seen [below][03-03-hedera-testnet]) using Hedera SDKs. The public key associated with a testnet account must also be associated with your Hedera account. A detailed explanation of this whole process is contained within this document.

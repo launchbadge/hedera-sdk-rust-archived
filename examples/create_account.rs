@@ -1,11 +1,10 @@
-#![feature(async_await, futures_api, await_macro)]
 use failure::{format_err, Error};
 use futures::FutureExt;
 use hedera::{Client, SecretKey, Status};
 use std::{env, thread::sleep, time::Duration};
-use tokio::{await, run_async};
 
-async fn main_() -> Result<(), Error> {
+#[tokio::main]
+async fn main() -> Result<(), Error> {
     pretty_env_logger::try_init()?;
 
     let (secret, _) = SecretKey::generate("");
@@ -23,12 +22,13 @@ async fn main_() -> Result<(), Error> {
         .build()?;
 
     // Create our account
-    let id = await!(client
+    let id = client
         .create_account()
         .key(public)
         .initial_balance(5_000_000)
         .memo("[hedera-sdk-rust][example] create_account")
-        .execute_async())?;
+        .execute_async()
+        .await?;
 
     println!("created account; transaction = {}", id);
 
@@ -37,7 +37,9 @@ async fn main_() -> Result<(), Error> {
     sleep(Duration::from_secs(2));
 
     // Get the receipt and check the status to prove it was successful
-    let receipt = await!(client.transaction(id).receipt().get_async())?;
+    let mut tx = client.transaction(id).receipt();
+    let receipt = tx.get_async().await?;
+
     if receipt.status != Status::Success {
         Err(format_err!(
             "transaction has a non-successful status: {:?}",
@@ -50,11 +52,4 @@ async fn main_() -> Result<(), Error> {
     println!("account = {}", account);
 
     Ok(())
-}
-
-fn main() {
-    run_async(main_().map(|res| match res {
-        Ok(_) => {}
-        Err(err) => eprintln!("error: {}", err),
-    }))
 }
