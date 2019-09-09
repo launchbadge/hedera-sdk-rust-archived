@@ -89,7 +89,6 @@ impl CallParams {
         }
 
         let enc_bytes = encode_fixed_bytes(param);
-        println!("encoded: {:#?}", hex::encode(enc_bytes.clone()));
         let arg = Argument::new(enc_bytes, false);
         let param_type = format!("bytes{:#?}", fixed_len);
         self.add_param_type(param_type);
