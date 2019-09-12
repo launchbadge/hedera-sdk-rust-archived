@@ -1,5 +1,4 @@
 use failure::{format_err, Error};
-use futures::FutureExt;
 use hedera::{Client, Status};
 use std::{env, thread::sleep, time::Duration};
 

@@ -1,13 +1,11 @@
 use crate::proto::{self, ToProto};
-use bip39::{Language, Mnemonic, MnemonicType, Seed};
+use bip39::{Language, Mnemonic};
 use ed25519_dalek;
 use failure::{bail, err_msg, Error};
 use failure_derive::Fail;
 use hex;
 use num::BigUint;
 use once_cell::{sync::Lazy};
-use rand_core::SeedableRng;
-use rand_chacha::ChaChaRng;
 use simple_asn1::{
     der_decode, der_encode, oid, to_der, ASN1Block, ASN1Class, ASN1DecodeErr, ASN1EncodeErr,
     FromASN1, ToASN1, OID,
@@ -17,6 +15,7 @@ use std::{
     str::FromStr,
 };
 use try_from::{TryFrom, TryInto};
+use hmac::Hmac;
 
 // Types used for (de-)serializing public and secret keys from ASN.1 byte
 // streams.
@@ -370,25 +369,54 @@ impl TryFrom<proto::BasicTypes::Key> for PublicKey {
 pub struct SecretKey(ed25519_dalek::SecretKey);
 
 impl SecretKey {
-    /// Generate a `SecretKey` with a BIP-39 mnemonic using a cryptographically
-    /// secure random number generator.
-    ///
-    /// The `password` is required with the mnemonic to reproduce the secret key.
-    pub fn generate(password: &str) -> (Self, String) {
-        let mnemonic = Mnemonic::new(MnemonicType::Words24, Language::English);
+    /// Generate a `SecretKey` with 32 cryptographically random bytes
+    pub fn generate() -> Self {
+        let mut buf = [0u8; 32];
 
-        let secret = Self::generate_with_mnemonic(&mnemonic, password);
+        getrandom::getrandom(&mut buf).expect("Could not retrieve entropy from the os");
+
+        let bytes = Self::derive_seed(&buf);
+
+        // this should never fail unless getrandom fails which will cause a panic
+        SecretKey(ed25519_dalek::SecretKey::from_bytes(&bytes).unwrap())
+    }
+
+    /// Generate a `SecretKey` with 32 bytes of provided entropy
+    pub fn generate_from_entropy(entropy: &[u8; 32]) -> Self {
+        // this should never fail since entropy is required to be a 32-length u8 array
+        SecretKey(ed25519_dalek::SecretKey::from_bytes(entropy).unwrap())
+    }
+
+    /// Generate a `SecretKey` alongside a BIP-39 mnemonic using a cryptographically
+    /// secure random number generator.
+    pub fn generate_mnemonic() -> (Self, String) {
+        let mut entropy = [0u8; 32];
+
+        getrandom::getrandom(&mut entropy).expect("Could not retrieve entropy from the os");
+
+        // this should never fail as 32 is a valid entropy length
+        let mnemonic = Mnemonic::from_entropy(&entropy, Language::English).unwrap();
+        let secret = Self::generate_from_entropy(&entropy);
 
         (secret, mnemonic.into_phrase())
     }
 
-    fn generate_with_mnemonic(mnemonic: &Mnemonic, password: &str) -> Self {
-        let mut seed: [u8; 32] = Default::default();
+    /// Duplicating what is done here:
+    /// https://github.com/hashgraph/hedera-keygen-java/blob/master/src/main/java/com/hedera/sdk/keygen/CryptoUtils.java#L43
+    fn derive_seed(entropy: &[u8]) -> [u8; 32] {
+        let password = entropy
+            .into_iter()
+            .chain([u8::max_value(); 8].iter())
+            .map(|u| { *u })
+            .collect::<Vec<u8>>();
 
-        seed.copy_from_slice(&Seed::new(&mnemonic, password).as_bytes()[0..32]);
+        let salt = [u8::max_value()];
 
-        let mut rng = ChaChaRng::from_seed(seed);
-        SecretKey(ed25519_dalek::SecretKey::generate(&mut rng))
+        let mut seed = [0u8; 32];
+
+        pbkdf2::pbkdf2::<Hmac<sha2::Sha512>>(&password, &salt, 2048, &mut seed);
+
+        seed
     }
 
     /// Construct a `SecretKey` from a slice of bytes.
@@ -421,15 +449,25 @@ impl SecretKey {
     }
 
     /// Re-construct a `SecretKey` from the supplied mnemonic and password.
-    pub fn from_mnemonic(mnemonic: &str, password: &str) -> Result<Self, Error> {
+    pub fn from_mnemonic(mnemonic: &str) -> Result<Self, Error> {
         let mnemonic = Mnemonic::from_phrase(mnemonic, Language::English)?;
 
-        Ok(Self::generate_with_mnemonic(&mnemonic, password))
+        let mut entropy =  [0u8; 32];
+
+        let seed_entropy = mnemonic.entropy();
+
+        for i in 0..32 {
+            entropy[i] = seed_entropy[i];
+        }
+
+        //let entropy: &[u8; 32] = vec!(mnemonic.entropy()).try_into()?;
+
+        Ok(Self::generate_from_entropy(&entropy))
     }
 
     /// Return the `SecretKey` as raw bytes.
     #[inline]
-    pub fn as_bytes(&self) -> &[u8; ed25519_dalek::PUBLIC_KEY_LENGTH] {
+    pub fn as_bytes(&self) -> &[u8; ed25519_dalek::SECRET_KEY_LENGTH] {
         self.0.as_bytes()
     }
 
@@ -646,7 +684,8 @@ mod tests {
 
     #[test]
     fn test_generate() -> Result<(), Error> {
-        let (key, _mnemonic) = SecretKey::generate("");
+        let key = SecretKey::generate();
+
         let signature = key.sign(MESSAGE.as_bytes());
         let verified = key.public().verify(MESSAGE.as_bytes(), &signature)?;
 
@@ -671,8 +710,8 @@ mod tests {
 
     #[test]
     fn test_reconstruct() -> Result<(), Error> {
-        let (secret1, mnemonic) = SecretKey::generate("this-is-not-a-password");
-        let secret2 = SecretKey::from_mnemonic(&mnemonic, "this-is-not-a-password")?;
+        let (secret1, mnemonic) = SecretKey::generate_mnemonic();
+        let secret2 = SecretKey::from_mnemonic(&mnemonic)?;
 
         assert_eq!(secret1.as_bytes(), secret2.as_bytes());
 
