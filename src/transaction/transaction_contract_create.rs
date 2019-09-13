@@ -34,7 +34,7 @@ impl TransactionContractCreate {
                 gas: 0,
                 initial_balance: 0,
                 proxy_account: None,
-                auto_renew_period: Duration::from_secs(2_592_000),
+                auto_renew_period: Duration::from_secs(7_890_000),
                 constructor_parameters: None,
             },
         )
