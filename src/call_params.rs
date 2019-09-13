@@ -168,8 +168,8 @@ impl CallParams {
     }
 
     pub fn add_bool(&mut self, param: bool) {
-        let mut val = 0i64;
-        if param == true { val = 1i64; }
+        let mut val = 0isize;
+        if param == true { val = 1isize; }
 
         let enc_bool = int256(val);
         let arg = Argument::new(enc_bool, false);
@@ -177,7 +177,7 @@ impl CallParams {
         self.args.push(arg);
     }
 
-    pub fn add_int(&mut self, param: i64, width: usize) {
+    pub fn add_int(&mut self, param: isize, width: usize) {
         check_int_width(width);
 
         let enc_int = int256(param);
@@ -187,7 +187,7 @@ impl CallParams {
         self.args.push(arg);
     }
 
-    pub fn add_int_array(&mut self, param: Vec<i64>, width: usize) {
+    pub fn add_int_array(&mut self, param: Vec<isize>, width: usize) {
         let arg_bytes = encode_int_array(param, width, true);
         let arg = Argument::new(arg_bytes, true);
         let param_type = format!("int{:#?}[]", width);
@@ -195,7 +195,7 @@ impl CallParams {
         self.args.push(arg);
     }
 
-    pub fn add_fixed_int_array(&mut self, param: Vec<i64>, width: usize, fixed_len: usize) {
+    pub fn add_fixed_int_array(&mut self, param: Vec<isize>, width: usize, fixed_len: usize) {
         check_fixed_array_len(&param[..], fixed_len);
 
         let arg_bytes = encode_int_array(param, width, true);
@@ -205,7 +205,7 @@ impl CallParams {
         self.args.push(arg);
     }
 
-    pub fn add_uint(&mut self, param: u64, width: usize) {
+    pub fn add_uint(&mut self, param: usize, width: usize) {
         check_int_width(width);
 
         let enc_uint = uint256(param);
@@ -215,7 +215,7 @@ impl CallParams {
         self.args.push(arg);
     }
 
-    pub fn add_uint_array(&mut self, param: Vec<u64>, width: usize) {
+    pub fn add_uint_array(&mut self, param: Vec<usize>, width: usize) {
         let arg_bytes = encode_uint_array(param, width, true);
         let arg = Argument::new(arg_bytes, true);
         let param_type = format!("uint{:#?}[]", width);
@@ -223,7 +223,7 @@ impl CallParams {
         self.args.push(arg);
     }
 
-    pub fn add_fixed_uint_array(&mut self, param: Vec<u64>, width: usize, fixed_len: usize) {
+    pub fn add_fixed_uint_array(&mut self, param: Vec<usize>, width: usize, fixed_len: usize) {
         check_fixed_array_len(&param[..], fixed_len);
 
         let arg_bytes = encode_uint_array(param, width, true);
@@ -370,7 +370,7 @@ impl CallParams {
 
         for arg in self.args.clone() {
             if arg.dynamic == true {
-                let offset = int256(dynamic_offset as i64);
+                let offset = int256(dynamic_offset as isize);
                 param_bytes.push(offset);
                 dynamic_bytes.push(arg.clone().value);
                 dynamic_offset += arg.value.len();
@@ -386,5 +386,95 @@ impl CallParams {
             out.extend(b);
         }
         out
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_dyn_params_encoding() {
+        let string_correct = "2e98260200000000000000000000000000000000000000000000000000000\
+        00000000020000000000000000000000000000000000000000000000000000000000000000d48656c6c6f2c2077\
+        6f726c642100000000000000000000000000000000000000".to_string();
+
+        let bytes_correct = "010473a7000000000000000000000000000000000000000000000000000000\
+        0000000020000000000000000000000000000000000000000000000000000000000000000d48656c6c6f2c20776\
+        f726c642100000000000000000000000000000000000000".to_string();
+
+        let mut cp = CallParams::new(Some("set_message".to_string()));
+
+        cp.add_string("Hello, world!".to_string());
+        let param_string_args = hex::encode(cp.assemble());
+
+        cp = CallParams::new(Some("set_message".to_string()));
+        cp.add_bytes("Hello, world!".as_bytes().to_vec());
+        let param_bytes_arg = hex::encode(cp.assemble());
+
+        assert_eq!(param_string_args, string_correct);
+        assert_eq!(param_bytes_arg, bytes_correct);
+    }
+
+    #[test]
+    fn test_static_params_encoding() {
+        let correct = "00000000000000000000000000000000000000000000000000000000112233440000\
+        0000000000000000000000000000000000000000000000000000445566771122334400000000000000000000000\
+        00000000000000000000000000000000000000000000000000000000000112233445566778899aabbccddeeff00\
+        11223344556677889900aabbccddeeff00112233445566aabbccdd0000000000000000".to_string();
+
+        let mut cp = CallParams::new(None);
+        cp.add_int(0x11223344, 32);
+        cp.add_uint(0x44556677, 128);
+        cp.add_fixed_bytes(vec![0x11u8, 0x22u8, 0x33u8, 0x44u8], 4);
+        cp.add_address_string("00112233445566778899aabbccddeeff00112233".to_string());
+        cp.add_function_string("44556677889900aabbccddeeff00112233445566".to_string(),
+                               "aabbccdd".to_string());
+        let params = hex::encode(cp.assemble());
+
+        assert_eq!(params, correct);
+    }
+
+    // TODO: Figure out how to create a byte array from negative integers
+//    #[test]
+//    fn test_mixed_params_encoding() {
+//        let correct = "cd3bd246ffffffffffffffffffffffffffffffffffffffffffffffffffffffdeadbe\
+//        ef0000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000\
+//        0000000000000000000000000000000778899000000000000000000000000000000000000000000000000000000\
+//        000000000000e000000000000000000000000000000000000000000000000000000000000000010000000000000\
+//        00000000000000000000000000000000000000000000000000d48656c6c6f2c20776f726c642100000000000000\
+//        0000000000000000000000000000000000000000000000000000000000000000000000000000000000000004ffe\
+//        e3f7f00000000000000000000000000000000000000000000000000000000".to_string();
+//
+//        let mut cp = CallParams::new(Some("foo".to_string()));
+//        cp.add_int(0xdeadbeef, 72);
+//        cp.add_string("Hello, world!".to_string());
+//        cp.add_uint(0x77889900, 72);
+//        cp.add_bytes(vec![-1, -18, 63, 127]);
+//        cp.add_bool(true);
+//        let params = hex::encode(cp.assemble());
+//
+//        assert_eq!(params, correct);
+//    }
+
+    #[test]
+    fn test_array_encodings() {
+        let correct = "08712407".to_string();
+
+        let mut cp = CallParams::new(Some("foo".to_string()));
+        cp.add_string_array(vec!["hello".to_string(), ", ".to_string(), "world!".to_string()]);
+        cp.add_fixed_string_array(vec!["lorem".to_string(), "ipsum".to_string(), "dolor".to_string(),
+                                 "sit".to_string(), "amet".to_string()], 5);
+        cp.add_int_array(vec![0x88isize, 0x99, 0xAA, 0xBB], 32);
+        cp.add_fixed_int_array(vec![0xCCisize, 0xDD, 0xEE, 0xFF], 32, 4);
+        cp.add_int_array(vec![0x1111isize], 128);
+        cp.add_fixed_int_array(vec![2222isize], 128, 1);
+        cp.add_uint_array(vec![0x111usize, 0x222, 0x333, 0x444], 256);
+        cp.add_fixed_uint_array(vec![0x555usize, 0x666], 64, 2);
+        cp.add_uint_array(vec![0x777usize], 168);
+        cp.add_fixed_uint_array(vec![0x888usize], 144, 1);
+        let params = hex::encode(cp.assemble());
+
+        assert_eq!(params[0..8].to_string(), correct);
     }
 }
