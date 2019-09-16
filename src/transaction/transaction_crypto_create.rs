@@ -35,7 +35,7 @@ impl TransactionCryptoCreate {
                 receive_record_threshold: i64::max_value(),
                 receiver_signature_required: false,
                 proxy_account: None,
-                auto_renew_period: Duration::from_secs(2_592_000),
+                auto_renew_period: Duration::from_secs(7_890_000),
             },
         )
     }
