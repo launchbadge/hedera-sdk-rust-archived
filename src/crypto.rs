@@ -6,8 +6,6 @@ use failure_derive::Fail;
 use hex;
 use num::BigUint;
 use once_cell::{sync::Lazy};
-use rand_core::SeedableRng;
-use rand_chacha::ChaChaRng;
 use simple_asn1::{
     der_decode, der_encode, oid, to_der, ASN1Block, ASN1Class, ASN1DecodeErr, ASN1EncodeErr,
     FromASN1, ToASN1, OID,
@@ -17,6 +15,9 @@ use std::{
     str::FromStr,
 };
 use try_from::{TryFrom, TryInto};
+use hmac::{Hmac, Mac};
+use sha2::Sha512;
+use failure::_core::ops::Deref;
 
 // Types used for (de-)serializing public and secret keys from ASN.1 byte
 // streams.
@@ -312,8 +313,7 @@ impl PublicKey {
     }
 }
 
-/// Construct a `PublicKey` from a hex representation of a raw or ASN.1 encoded
-/// key.
+/// Construct a `PublicKey` from a hex representation of a raw or ASN.1 encoded key.
 impl FromStr for PublicKey {
     type Err = Error;
 
@@ -367,32 +367,58 @@ impl TryFrom<proto::BasicTypes::Key> for PublicKey {
 
 /// An EdDSA secret key.
 #[repr(C)]
-pub struct SecretKey(ed25519_dalek::SecretKey);
+pub struct SecretKey {
+    pub value: ed25519_dalek::SecretKey,
+    chain_code: Option<[u8; 32]>
+}
 
 impl SecretKey {
-    /// Generate a `SecretKey` with a BIP-39 mnemonic using a cryptographically
-    /// secure random number generator.
+    /// Generate a `SecretKey` with 32 cryptographically random bytes
     ///
-    /// The `password` is required with the mnemonic to reproduce the secret key.
-    pub fn generate(password: &str) -> (Self, String) {
-        let mnemonic = Mnemonic::new(MnemonicType::Words24, Language::English);
+    /// This `SecretKey` will _not_ support child key derivation.
+    pub fn generate() -> Self {
+        let mut bytes:[u8; 32] = Default::default();
 
-        let secret = Self::generate_with_mnemonic(&mnemonic, password);
+        getrandom::getrandom(&mut bytes)
+            .expect("Could not retrieve secure entropy from the os");
 
-        (secret, mnemonic.into_phrase())
+        Self::generate_from_entropy(&bytes)
     }
 
-    fn generate_with_mnemonic(mnemonic: &Mnemonic, password: &str) -> Self {
-        let mut seed: [u8; 32] = Default::default();
+    /// Generate a `SecretKey` with 32 bytes of provided entropy
+    ///
+    /// This `SecretKey` will _not_ support child key derivation.
+    #[inline]
+    pub fn generate_from_entropy(entropy: &[u8; 32]) -> Self {
+        // this should never fail since 32 byte arrays are guaranteed to be compatible
+        Self::from_bytes(entropy).unwrap()
+    }
 
-        seed.copy_from_slice(&Seed::new(&mnemonic, password).as_bytes()[0..32]);
+    /// Generate a `SecretKey` alongside a BIP-39 mnemonic using a cryptographically
+    /// secure random number generator.
+    ///
+    /// Generated `SecretKey` will support deriving child keys with `.derive_child()`.
+    #[inline]
+    pub fn generate_mnemonic() -> (Self, String) {
+        Self::generate_mnemonic_with_passphrase("")
+    }
 
-        let mut rng = ChaChaRng::from_seed(seed);
-        SecretKey(ed25519_dalek::SecretKey::generate(&mut rng))
+    /// Generate a `SecretKey` alongside a BIP-39 mnemonic using a cryptographically
+    /// secure random number generate and provided passphrase
+    ///
+    /// Generated `SecretKey` will support deriving child keys with `.derive_child()`.
+    pub fn generate_mnemonic_with_passphrase(passphrase: &str) -> (Self, String) {
+        let mnemonic_phrase = Mnemonic::new(MnemonicType::Words24, Language::English).into_phrase();
+
+        // Cannot fail since it is being passed in compatible generated values
+        (Self::from_mnemonic_with_passphrase(&mnemonic_phrase, passphrase).unwrap(), mnemonic_phrase)
     }
 
     /// Construct a `SecretKey` from a slice of bytes.
     /// Bytes are expected to be either a raw key or encoded in ASN.1.
+    ///
+    /// This `SecretKey` will _not_ support child key derivation as it is impossible
+    /// to determine if the original key was generated with compatibility
     pub fn from_bytes(bytes: impl AsRef<[u8]>) -> Result<Self, Error> {
         let bytes = bytes.as_ref();
 
@@ -401,9 +427,10 @@ impl SecretKey {
         {
             // If the buffer looks like a {secret}{public} byte string; just pull the secret
             // key bytes off of it
-            return Ok(SecretKey(ed25519_dalek::SecretKey::from_bytes(
-                &bytes[..ed25519_dalek::SECRET_KEY_LENGTH],
-            )?));
+            return Ok(SecretKey{
+                value: ed25519_dalek::SecretKey::from_bytes(&bytes[..ed25519_dalek::SECRET_KEY_LENGTH], )?,
+                chain_code: None
+            });
         }
 
         let info: PrivateKeyInfo = der_decode(&bytes)?;
@@ -415,22 +442,72 @@ impl SecretKey {
             );
         }
 
-        Ok(SecretKey(ed25519_dalek::SecretKey::from_bytes(
-            &info.private_key[2..],
-        )?))
+        Ok(SecretKey{
+            value: ed25519_dalek::SecretKey::from_bytes(&info.private_key[2..],)?,
+            chain_code: None
+        })
     }
 
-    /// Re-construct a `SecretKey` from the supplied mnemonic and password.
-    pub fn from_mnemonic(mnemonic: &str, password: &str) -> Result<Self, Error> {
+    /// Re-construct a `SecretKey` from a supplied 24-word mnemonic and passphrase.
+    ///
+    /// There is no corresponding `to_mnemonic()` as the mnemonic cannot be recovered from the key.
+    ///
+    /// Mnemonics generated by the Android and iOS wallets will work
+    ///
+    /// Returned key will support deriving child keys with `.derive_child()`
+    #[inline]
+    pub fn from_mnemonic(mnemonic: &str) -> Result<Self, Error> {
+        Self::from_mnemonic_with_passphrase(mnemonic, "")
+    }
+
+    /// Re-construct a `SecretKey` from a supplied 24-word mnemonic and passphrase.
+    ///
+    /// There is no corresponding `to_mnemonic_with_passphrase()` as the mnemonic cannot be
+    /// recovered from the key.
+    ///
+    /// Mnemonics generated by the Android and iOS wallets will work
+    ///
+    /// Returned key will support deriving child keys with `.derive_child_key(index)`
+    pub fn from_mnemonic_with_passphrase(mnemonic: &str, passphrase: &str) -> Result<Self, Error> {
         let mnemonic = Mnemonic::from_phrase(mnemonic, Language::English)?;
 
-        Ok(Self::generate_with_mnemonic(&mnemonic, password))
+        let seed = Seed::new(&mnemonic, passphrase);
+
+        let mut key_bytes: [u8; 32] = Default::default();
+        key_bytes.copy_from_slice(&seed.as_bytes()[0..32]);
+
+        let mut chain_code: [u8; 32] = Default::default();
+        chain_code.copy_from_slice(&seed.as_bytes()[32..64]);
+
+        for i in [44u32, 3030u32, 0u32, 0u32].iter() {
+            let (new_key_bytes, new_chain_code) = Self::derive_child_key_bytes(&key_bytes, &chain_code, i)?;
+
+            key_bytes.copy_from_slice(&new_key_bytes);
+            chain_code.copy_from_slice(&new_chain_code);
+        }
+
+        let secret_key = SecretKey {
+            value: ed25519_dalek::SecretKey::from_bytes(&key_bytes)?,
+            chain_code: Some(chain_code)
+        };
+
+        Ok(secret_key)
     }
 
-    /// Return the `SecretKey` as raw bytes.
-    #[inline]
-    pub fn as_bytes(&self) -> &[u8; ed25519_dalek::PUBLIC_KEY_LENGTH] {
-        self.0.as_bytes()
+    /// Derive a new private key at the given wallet index.
+    ///
+    /// Currently fails if the key was not generated with `generate_mnemonic` or `generated_mnemonic_with_passphrase`
+    /// or reconstructed with `from_mnemonic` or `from_mnemonic_with_passphrase`
+    pub fn derive_child_key(&self, index: u32) -> Result<Self, Error> {
+        let chain_code = self.chain_code
+            .map_or(Err(err_msg("this Ed25519 private key does not support key derivation")), |cc| {Ok(cc)})?;
+
+        let (key_bytes, chain_code) = Self::derive_child_key_bytes(self.as_bytes(), &chain_code, &index)?;
+
+        Ok(SecretKey{
+            value: ed25519_dalek::SecretKey::from_bytes(&key_bytes)?,
+            chain_code: Some(chain_code)
+        })
     }
 
     /// Format a `SecretKey` as a vec of bytes in ASN.1 format.
@@ -439,7 +516,7 @@ impl SecretKey {
             algorithm: AlgorithmIdentifier {
                 algorithm: OID_ED25519.clone(),
             },
-            private_key: self.0.to_bytes().to_vec(),
+            private_key: self.to_bytes().to_vec(),
         })
         // NOTE: Not possible to fail. Only fail case the library has is if OIDs are
         //       given incorrectly.
@@ -449,23 +526,49 @@ impl SecretKey {
     /// Derive a `PublicKey` from this `SecretKey`.
     #[inline]
     pub fn public(&self) -> PublicKey {
-        PublicKey(ed25519_dalek::PublicKey::from(&self.0))
+        PublicKey(ed25519_dalek::PublicKey::from(&self.value))
     }
 
     /// Sign a message with this `SecretKey`.
     #[inline]
     pub fn sign(&self, message: impl AsRef<[u8]>) -> Signature {
         Signature(
-            ed25519_dalek::ExpandedSecretKey::from(&self.0)
+            ed25519_dalek::ExpandedSecretKey::from(&self.value)
                 .sign(message.as_ref(), &self.public().0),
         )
     }
+
+    /// SLIP-10/BIP-32 child key derivation
+    fn derive_child_key_bytes(parent_key: &[u8; 32], chain_code: &[u8; 32], index: &u32) -> Result<([u8; 32], [u8; 32]), Error> {
+        // This can't fail since 32 bytes is a valid key length
+        let mut hmac = Hmac::<Sha512>::new_varkey(chain_code).unwrap();
+
+        let mut input= [0u8; 37];
+
+        input[0] = 0u8;
+        input[1..33].copy_from_slice(parent_key);
+        input[33..37].copy_from_slice(&index.to_be_bytes());
+
+        input[33] = input[33] | 128u8;
+
+        hmac.input(&input);
+
+        let hmac = hmac.result().code();
+
+        let mut new_key_bytes: [u8; 32] = Default::default();
+        let mut chain_code: [u8; 32] = Default::default();
+        new_key_bytes.copy_from_slice(&hmac.as_slice()[0..32]);
+        chain_code.copy_from_slice(&hmac.as_slice()[32..64]);
+
+        Ok((new_key_bytes, chain_code))
+    }
+
 }
 
 impl Clone for SecretKey {
     #[inline]
     fn clone(&self) -> Self {
-        Self::from_bytes(self.0.as_bytes()).unwrap()
+        Self::from_bytes(self.as_bytes()).unwrap()
     }
 }
 
@@ -514,6 +617,15 @@ impl Debug for SecretKey {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "\"{}\"", self)
+    }
+}
+
+impl Deref for SecretKey {
+    type Target = ed25519_dalek::SecretKey;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        &self.value
     }
 }
 
@@ -615,7 +727,7 @@ mod tests {
         let secret_key2: SecretKey = KEY_SECRET_HEX.parse()?;
 
         assert_eq!(public_key1, public_key2);
-        assert_eq!(secret_key1.0.as_bytes(), secret_key2.0.as_bytes());
+        assert_eq!(secret_key1.as_bytes(), secret_key2.as_bytes());
         assert_eq!(public_key1, secret_key1.public());
         assert_eq!(public_key2, secret_key2.public());
         assert_eq!(secret_key2.public(), secret_key1.public());
@@ -646,7 +758,8 @@ mod tests {
 
     #[test]
     fn test_generate() -> Result<(), Error> {
-        let (key, _mnemonic) = SecretKey::generate("");
+        let key = SecretKey::generate();
+
         let signature = key.sign(MESSAGE.as_bytes());
         let verified = key.public().verify(MESSAGE.as_bytes(), &signature)?;
 
@@ -669,10 +782,23 @@ mod tests {
         Ok(())
     }
 
+
     #[test]
     fn test_reconstruct() -> Result<(), Error> {
-        let (secret1, mnemonic) = SecretKey::generate("this-is-not-a-password");
-        let secret2 = SecretKey::from_mnemonic(&mnemonic, "this-is-not-a-password")?;
+        let (secret1, mnemonic) = SecretKey::generate_mnemonic();
+        let secret2 = SecretKey::from_mnemonic(&mnemonic)?;
+
+        assert_eq!(secret1.as_bytes(), secret2.as_bytes());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_reconstruct_with_passphrase() -> Result<(), Error> {
+        let passphrase = "HelloHedera!";
+
+        let (secret1, mnemonic) = SecretKey::generate_mnemonic_with_passphrase(passphrase);
+        let secret2 = SecretKey::from_mnemonic_with_passphrase(&mnemonic, passphrase)?;
 
         assert_eq!(secret1.as_bytes(), secret2.as_bytes());
 

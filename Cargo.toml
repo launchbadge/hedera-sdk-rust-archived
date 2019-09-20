@@ -17,6 +17,7 @@ rand_core = "0.4.0"
 sha2 = "0.8.0"
 sha3 = "0.8.2"
 hex = "0.3.2"
+hmac = "0.7.0"
 failure = "0.1.5"
 simple_asn1 = "0.4.0"
 failure_derive = "0.1.5"
@@ -26,13 +27,14 @@ protobuf = "2.8.1"
 itertools = "0.8.0"
 chrono = "0.4.9"
 parking_lot = "0.9.0"
+pbkdf2 = { version = "0.3.0", default-features = false }
+getrandom = "0.1.12"
 grpc = "0.6.1"
 query_interface = "0.3.5"
 httpbis = "0.7.0"
 log = "0.4.8"
 try_from = "0.3.2"
-bip39 = "0.6.0-beta.1"
-rand_chacha = "0.1.1"
+tiny-bip39 = { version="0.6.2", default-features = false }
 tokio = { version = "0.2.0-alpha.4" }
 futures = { version = "0.3.0-alpha.18", package = "futures-preview", features = [ "compat" ] }
 

@@ -1,5 +1,4 @@
 use failure::{format_err, Error};
-use futures::FutureExt;
 use hedera::{Client, SecretKey, Status};
 use std::{env, thread::sleep, time::Duration};
 
@@ -7,7 +6,7 @@ use std::{env, thread::sleep, time::Duration};
 async fn main() -> Result<(), Error> {
     pretty_env_logger::try_init()?;
 
-    let (secret, _) = SecretKey::generate("");
+    let secret = SecretKey::generate();
     let public = secret.public();
 
     println!("secret = {}", secret);
