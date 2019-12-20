@@ -305,6 +305,12 @@ pub enum Status {
     FeeScheduleFilePartUploaded = 104,
 
     ExchangeRateChangeLimitExceeded = 105,
+
+    MaxContractStorageExceeded = 106,
+
+    MaxGasLimitExceeded = 111,
+
+    MaxFileSizeExceeded = 112
 }
 
 impl From<proto::ResponseCode::ResponseCodeEnum> for Status {
@@ -417,7 +423,10 @@ impl From<proto::ResponseCode::ResponseCodeEnum> for Status {
             FILE_UPLOADED_PROTO_INVALID => Status::FileUploadedProtoInvalid,
             FILE_UPLOADED_PROTO_NOT_SAVED_TO_DISK => Status::FileUploadedProtoNotSavedToDisk,
             FEE_SCHEDULE_FILE_PART_UPLOADED => Status::FeeScheduleFilePartUploaded,
-            EXCHANGE_RATE_CHANGE_LIMIT_EXCEEDED => Status::ExchangeRateChangeLimitExceeded
+            EXCHANGE_RATE_CHANGE_LIMIT_EXCEEDED => Status::ExchangeRateChangeLimitExceeded,
+            MAX_CONTRACT_STORAGE_EXCEEDED => Status::MaxContractStorageExceeded,
+            MAX_GAS_LIMIT_EXCEEDED => Status::MaxGasLimitExceeded,
+            MAX_FILE_SIZE_EXCEEDED => Status::MaxFileSizeExceeded
         }
     }
 }

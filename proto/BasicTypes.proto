@@ -3,7 +3,6 @@ syntax = "proto3";
 package proto;
 
 import "Timestamp.proto";
-import "Duration.proto";
 
 option java_package = "com.hederahashgraph.api.proto.java";
 option java_multiple_files = true;
