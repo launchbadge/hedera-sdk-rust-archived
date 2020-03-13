@@ -1,4 +1,4 @@
-use crate::{crypto::PublicKey, proto, AccountId, Claim, ContractId, FileId};
+use crate::{ crypto::PublicKey, proto, AccountId, Claim, ContractId, FileId };
 use chrono::{DateTime, Utc};
 use failure::Error;
 use std::time::Duration;
@@ -62,6 +62,8 @@ pub struct ContractInfo {
     pub expiration_time: DateTime<Utc>,
     pub auto_renew_period: Duration,
     pub storage: i64,
+    pub memo: String,
+    pub balance: u64
 }
 
 impl TryFrom<proto::ContractGetInfo::ContractGetInfoResponse_ContractInfo> for ContractInfo {
@@ -84,6 +86,8 @@ impl TryFrom<proto::ContractGetInfo::ContractGetInfoResponse_ContractInfo> for C
             expiration_time: info.take_expirationTime().into(),
             auto_renew_period: info.take_autoRenewPeriod().try_into()?,
             storage: info.get_storage(),
+            memo: info.get_memo(),
+            balance: info.get_balance()
         })
     }
 }
@@ -112,6 +116,53 @@ impl TryFrom<proto::FileGetInfo::FileGetInfoResponse_FileInfo> for FileInfo {
                 .into_iter()
                 .map(|k| k.try_into())
                 .collect::<Result<Vec<_>, _>>()?,
+        })
+    }
+}
+
+#[derive(Debug)]
+pub struct ConsensusTopicInfo {
+    pub memo: String,
+    pub running_hash: Vec<u8>,
+    pub sequence_number: u64,
+    pub expiration_time: DateTime<Utc>,
+    pub admin_key: Option<PublicKey>,
+    pub submit_key: Option<PublicKey>,
+    pub auto_renew_period: Duration,
+    pub auto_renew_account: Option<AccountId>
+}
+
+impl TryFrom<proto::ConsensusTopicInfo::ConsensusTopicInfo> for ConsensusTopicInfo {
+    type Err = Error;
+
+    fn try_from(mut info: proto::ConsensusTopicInfo::ConsensusTopicInfo) -> Result<Self, Error> {
+        let _admin_key = if info.has_adminKey() {
+            Some(info.take_adminKey().try_into()?)
+        } else {
+            None
+        };
+
+        let _submit_key = if info.has_submitKey() {
+            Some(info.take_submitKey().try_into()?)
+        } else {
+            None
+        };
+
+        let _auto_renew_account = if info.has_autoRenewAccount() {
+            Some(info.take_autoRenewAccount().try_into()?)
+        } else {
+            None
+        };
+
+        Ok(Self {
+            memo: info.get_memo(),
+            running_hash: info.take_runningHash(),
+            sequence_number: info.get_sequenceNumber(),
+            expiration_time: info.take_expirationTime().into(),
+            admin_key: _admin_key,
+            submit_key: _submit_key,
+            auto_renew_period: info.take_autoRenewPeriod().try_into()?,
+            auto_renew_account: _auto_renew_account
         })
     }
 }

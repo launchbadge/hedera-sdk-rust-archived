@@ -229,7 +229,7 @@ impl<'a> PartialAccountMessage<'a> {
     /// Get the balance of a crypto-currency account.
     #[inline]
     pub fn balance(self) -> Query<QueryCryptoGetAccountBalance> {
-        QueryCryptoGetAccountBalance::new(self.0, self.1)
+        QueryCryptoGetAccountBalance::new(self.0, Some(self.1), None)
     }
 
     /// Get all the information about an account, including the balance.

@@ -308,9 +308,27 @@ pub enum Status {
 
     MaxContractStorageExceeded = 106,
 
+    TransferAccountSameAsDeleteAccount = 107,
+
+    TotalLedgerBalanceInvalid = 108,
+
+    ExpirationReductionNotAllowed = 110,
+
     MaxGasLimitExceeded = 111,
 
-    MaxFileSizeExceeded = 112
+    MaxFileSizeExceeded = 112,
+
+    InvalidTopicId = 150,
+
+    InvalidAdminKey = 155,
+
+    InvalidSubmitKey = 156,
+
+    Unauthorized = 157,
+
+    InvalidTopicMessage = 158,
+
+    InvalidAutoRenewAccount = 159
 }
 
 impl From<proto::ResponseCode::ResponseCodeEnum> for Status {
@@ -425,8 +443,17 @@ impl From<proto::ResponseCode::ResponseCodeEnum> for Status {
             FEE_SCHEDULE_FILE_PART_UPLOADED => Status::FeeScheduleFilePartUploaded,
             EXCHANGE_RATE_CHANGE_LIMIT_EXCEEDED => Status::ExchangeRateChangeLimitExceeded,
             MAX_CONTRACT_STORAGE_EXCEEDED => Status::MaxContractStorageExceeded,
+            TRANSFER_ACCOUNT_SAME_AS_DELETE_ACCOUNT => Status::TransferAccountSameAsDeleteAccount,
+            TOTAL_LEDGER_BALANCE_INVALID => Status::TotalLedgerBalanceInvalid,
+            EXPIRATION_REDUCTION_NOT_ALLOWED => Status::ExpirationReductionNotAllowed,
             MAX_GAS_LIMIT_EXCEEDED => Status::MaxGasLimitExceeded,
-            MAX_FILE_SIZE_EXCEEDED => Status::MaxFileSizeExceeded
+            MAX_FILE_SIZE_EXCEEDED => Status::MaxFileSizeExceeded,
+            INVALID_TOPIC_ID => Status::InvalidTopicId,
+            INVALID_ADMIN_KEY => Status::InvalidAdminKey,
+            INVALID_SUBMIT_KEY => Status::InvalidSubmitKey,
+            UNAUTHORIZED => Status::Unauthorized,
+            INVALID_TOPIC_MESSAGE => Status::InvalidTopicMessage,
+            INVALID_AUTO_RENEW_ACCOUNT => Status::InvalidAutoRenewAccount
         }
     }
 }
