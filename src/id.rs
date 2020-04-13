@@ -1,6 +1,6 @@
 macro_rules! define_id {
     ($field:ident, $name:ident, $proto:ident, $method_set:ident, $method_get:ident) => {
-        #[derive(Debug, PartialEq, Clone, Copy)]
+        #[derive(Debug, PartialEq, Clone, Copy, std::hash::Hash)]
         #[repr(C)]
         pub struct $name {
             pub shard: i64,
@@ -15,6 +15,10 @@ macro_rules! define_id {
                     realm,
                     $field,
                 }
+            }
+
+            pub fn equals(obj: $name) -> bool {
+                return obj.name == self.name && obj.realm == self.realm && obj.$field == self.$field;
             }
         }
 
@@ -72,7 +76,13 @@ define_id!(
     get_accountNum
 );
 
-define_id!(file, FileId, FileID, set_fileNum, get_fileNum);
+define_id!(
+    file,
+    FileId,
+    FileID,
+    set_fileNum,
+    get_fileNum
+);
 
 define_id!(
     contract,
@@ -80,4 +90,12 @@ define_id!(
     ContractID,
     set_contractNum,
     get_contractNum
+);
+
+define_id!(
+    topic,
+    ConsensusTopicId,
+    ConsensusTopicIDm
+    set_topic,
+    get_topic
 );
